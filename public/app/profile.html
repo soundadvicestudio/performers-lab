@@ -293,7 +293,7 @@
     // Run profile, membership, and submission count queries in parallel
     const [profileRes, membershipRes, countRes] = await Promise.all([
       supabase.from('profiles')
-        .select('display_name, bio, location, photo_url, is_admin')
+        .select('display_name, bio, location, photo_url')
         .eq('user_id', currentUserId)
         .single(),
       supabase.from('memberships')
@@ -306,8 +306,6 @@
     ]);
 
     const profile = profileRes.data;
-    if (profile?.is_admin) { window.location.href = '/admin'; return; }
-
     // Populate nav + form
     const name = profile?.display_name || session.user.email.split('@')[0];
     document.getElementById('nav-name').textContent = name;
