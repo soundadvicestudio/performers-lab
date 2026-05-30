@@ -1,0 +1,24 @@
+# ── Admin editors — never pushed to GitHub ──
+# These files contain the site editor. Keep them local only.
+admin.html
+admin3.html
+
+# ── macOS system files ──
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Windows system files ──
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Editor / IDE files ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Node (if you ever add build tools) ──
+node_modules/
+npm-debug.log*
