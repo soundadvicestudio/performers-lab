@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "buildCommand": "echo 'No build step'",
+  "outputDirectory": "public",
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/admin", "dest": "/admin/index.html" },
+    { "src": "/admin/(.*)", "dest": "/admin/$1" },
+    { "src": "/app/(.*)", "dest": "/app/$1" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}

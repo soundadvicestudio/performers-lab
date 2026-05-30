@@ -3,36 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Performer's Lab — Admin Editor (Branded)</title>
+<title>The Performer's Lab — Admin Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --purple:        #8B3FD8;
-    --purple-light:  #A259EC;
-    --purple-dim:    rgba(139,63,216,0.14);
-    --border-purple: rgba(139,63,216,0.30);
-    --border-purple2:rgba(139,63,216,0.55);
-    --teal:          #1FBFBF;
-    --teal-light:    #2ED4D4;
-    --teal-dim:      rgba(31,191,191,0.12);
-    --border-teal:   rgba(31,191,191,0.30);
-
-    --bg:   #000000;
-    --bg-2: #0a0a0a;
-    --bg-3: #101010;
-    --bg-4: #161616;
-
-    --text:       #ffffff;
-    --text-muted: rgba(255,255,255,0.58);
-    --text-dim:   rgba(255,255,255,0.28);
-    --border:     rgba(255,255,255,0.09);
-    --border-mid: rgba(255,255,255,0.15);
-
-    --green:     #4caf84;
-    --green-dim: rgba(76,175,132,0.15);
+    --gold:        #c9a96e;
+    --gold-light:  #d4b87e;
+    --gold-warm:   #b8925a;
+    --gold-dim:    rgba(201,169,110,0.14);
+    --border-gold: rgba(201,169,110,0.28);
+    --border-gold2:rgba(201,169,110,0.55);
+    --bg:   #070707;
+    --bg-2: #0d0d0d;
+    --bg-3: #131313;
+    --bg-4: #181818;
+    --text:       #f0ede6;
+    --text-muted: rgba(240,237,230,0.58);
+    --text-dim:   rgba(240,237,230,0.28);
+    --border:     rgba(240,237,230,0.08);
+    --border-mid: rgba(240,237,230,0.15);
+    --green:      #4caf84;
+    --green-dim:  rgba(76,175,132,0.15);
   }
   body {
     font-family: 'Raleway', sans-serif;
@@ -42,44 +36,126 @@
     line-height: 1.6;
   }
 
+  /* ── LOCK SCREEN ── */
+  #lock-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #070707;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #lock-screen::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% -10%, rgba(201,169,110,0.14) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .lock-box {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 380px;
+    background: var(--bg-2);
+    border: 0.5px solid var(--border-gold);
+    border-radius: 6px; padding: 2.5rem; text-align: center;
+  }
+  .lock-box::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    border-radius: 6px 6px 0 0;
+  }
+  .lock-icon { font-size: 30px; margin-bottom: 1.25rem; opacity: 0.6; }
+  .lock-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 500; color: var(--text);
+    margin-bottom: 0.2rem; letter-spacing: 0.04em;
+  }
+  .lock-title span { color: var(--gold); }
+  .lock-subtitle {
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-dim); font-weight: 500; margin-bottom: 2rem;
+  }
+  .lock-subtitle a { color: var(--gold); opacity: 0.7; text-decoration: none; }
+  .lock-input-wrap { position: relative; margin-bottom: 1rem; }
+  .lock-input {
+    width: 100%; background: var(--bg-3);
+    border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 12px 44px 12px 14px;
+    border-radius: 3px; font-size: 14px;
+    font-family: 'Raleway', sans-serif; font-weight: 400;
+    outline: none; transition: border-color 0.2s;
+    letter-spacing: 0.06em;
+  }
+  .lock-input:focus { border-color: var(--gold); background: var(--bg-4); }
+  .lock-input.error { border-color: #e05c5c; animation: shake 0.35s ease; }
+  .lock-toggle {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 15px; padding: 4px;
+    transition: color 0.2s;
+  }
+  .lock-toggle:hover { color: var(--text-muted); }
+  .lock-btn {
+    width: 100%; background: var(--gold); color: #070707;
+    border: none; padding: 13px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+    margin-bottom: 1rem;
+  }
+  .lock-btn:hover { background: var(--gold-light); }
+  .lock-error { font-size: 12px; color: #e05c5c; font-weight: 500; min-height: 18px; margin-bottom: 0.5rem; }
+  .lock-attempts { font-size: 11px; color: var(--text-dim); font-weight: 300; }
+  .lock-attempts span { color: var(--gold); }
+  .lock-lockout {
+    background: rgba(224,92,92,0.08); border: 0.5px solid rgba(224,92,92,0.3);
+    border-radius: 3px; padding: 10px 14px; margin-top: 1rem;
+    font-size: 12px; color: #e05c5c; line-height: 1.5;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+
   /* ── LAYOUT ── */
-  .app { display: flex; min-height: 100vh; }
+  .app { display: none; min-height: 100vh; }
+  .app.unlocked { display: flex; }
 
   /* ── SIDEBAR ── */
   .sidebar {
-    width: 224px; flex-shrink: 0;
+    width: 220px; flex-shrink: 0;
     background: var(--bg-2);
-    border-right: 1px solid rgba(139,63,216,0.18);
+    border-right: 0.5px solid var(--border);
     position: sticky; top: 0; height: 100vh;
     overflow-y: auto;
     display: flex; flex-direction: column;
   }
   .sidebar-logo {
     padding: 1.4rem 1.25rem 1.1rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
   }
   .sidebar-logo-main {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 16px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--text); line-height: 1;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px; font-weight: 500; letter-spacing: 0.05em;
+    color: var(--text); line-height: 1;
   }
-  .sidebar-logo-main span { color: var(--purple); }
+  .sidebar-logo-main span { color: var(--gold); }
   .sidebar-logo-sub {
-    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--text-dim); margin-top: 3px; font-weight: 500;
   }
-  .sidebar-logo-sub a { color: var(--teal); opacity: 0.75; text-decoration: none; }
+  .sidebar-logo-sub a { color: var(--gold); opacity: 0.7; text-decoration: none; }
   .sidebar-logo-tag {
     display: inline-block; margin-top: 8px;
-    background: var(--purple-dim); color: var(--purple-light);
-    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
-    padding: 3px 10px; border-radius: 2px; font-weight: 700;
-    border: 1px solid var(--border-purple);
+    background: var(--gold-dim); color: var(--gold);
+    font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 2px; font-weight: 600;
+    border: 0.5px solid var(--border-gold);
   }
   .sidebar-nav { padding: 0.75rem 0; flex: 1; }
   .nav-section {
     padding: 0.75rem 1.25rem 0.25rem;
-    font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
     color: var(--text-dim); font-weight: 700;
   }
   .nav-item {
@@ -87,25 +163,20 @@
     padding: 0.6rem 1.25rem; cursor: pointer;
     font-size: 12px; color: var(--text-muted);
     transition: all 0.15s; border-left: 2px solid transparent;
-    font-weight: 400;
   }
-  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
-  .nav-item.active { color: var(--purple-light); border-left-color: var(--purple); background: var(--purple-dim); }
+  .nav-item:hover { color: var(--text); background: rgba(240,237,230,0.03); }
+  .nav-item.active { color: var(--gold); border-left-color: var(--gold); background: var(--gold-dim); }
   .nav-item svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.6; }
   .nav-item.active svg { opacity: 1; }
-  .sidebar-footer {
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--border);
-  }
+  .sidebar-footer { padding: 1rem 1.25rem; border-top: 0.5px solid var(--border); }
   .preview-btn {
     width: 100%; background: transparent;
-    border: 1px solid var(--border-teal); color: var(--teal);
+    border: 0.5px solid var(--border-gold); color: var(--gold);
     padding: 8px; border-radius: 3px; font-size: 11px;
-    font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-    cursor: pointer; font-family: 'Raleway', sans-serif;
-    transition: all 0.2s;
+    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
   }
-  .preview-btn:hover { background: var(--teal-dim); }
+  .preview-btn:hover { background: var(--gold-dim); }
 
   /* ── MAIN ── */
   .main { flex: 1; overflow-y: auto; }
@@ -115,9 +186,9 @@
     position: sticky; top: 0; z-index: 100;
     display: flex; justify-content: space-between; align-items: center;
     padding: 0.85rem 2rem;
-    background: rgba(0,0,0,0.97);
+    background: rgba(7,7,7,0.97);
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(139,63,216,0.18);
+    border-bottom: 0.5px solid var(--border);
   }
   .topbar-title { font-size: 13px; font-weight: 500; color: var(--text); }
   .topbar-title span { color: var(--text-dim); font-weight: 300; }
@@ -125,21 +196,21 @@
   .save-status { font-size: 11px; color: var(--text-dim); letter-spacing: 0.06em; }
   .save-status.saved { color: var(--green); }
   .save-btn {
-    background: var(--purple); color: #fff;
+    background: var(--gold); color: #070707;
     border: none; padding: 8px 20px; border-radius: 2px;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; cursor: pointer;
     font-family: 'Raleway', sans-serif; transition: all 0.2s;
   }
-  .save-btn:hover { background: var(--purple-light); }
+  .save-btn:hover { background: var(--gold-light); }
   .export-btn {
     background: transparent; color: var(--text-muted);
-    border: 1px solid var(--border-mid); padding: 8px 16px; border-radius: 2px;
+    border: 0.5px solid var(--border-mid); padding: 8px 16px; border-radius: 2px;
     font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
     text-transform: uppercase; cursor: pointer;
     font-family: 'Raleway', sans-serif; transition: all 0.2s;
   }
-  .export-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+  .export-btn:hover { color: var(--text); border-color: rgba(240,237,230,0.3); }
 
   /* ── CONTENT ── */
   .content { padding: 2rem; max-width: 780px; }
@@ -152,16 +223,15 @@
 
   /* ── CARDS ── */
   .edit-card {
-    background: var(--bg-2); border: 1px solid var(--border);
+    background: var(--bg-2); border: 0.5px solid var(--border);
     border-radius: 4px; margin-bottom: 1.25rem; overflow: hidden;
   }
   .edit-card-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0.85rem 1.25rem;
-    border-bottom: 1px solid var(--border);
+    padding: 0.85rem 1.25rem; border-bottom: 0.5px solid var(--border);
     cursor: pointer; user-select: none;
   }
-  .edit-card-header:hover { background: rgba(255,255,255,0.02); }
+  .edit-card-header:hover { background: rgba(240,237,230,0.02); }
   .card-label {
     font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--text-muted);
@@ -182,77 +252,67 @@
   .field-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-weight: 300; }
   input[type="text"], textarea {
     width: 100%; background: var(--bg-3);
-    border: 1px solid var(--border);
+    border: 0.5px solid var(--border);
     color: var(--text); padding: 9px 12px;
     border-radius: 3px; font-size: 13px;
     font-family: 'Raleway', sans-serif; font-weight: 300;
     transition: border-color 0.2s; resize: vertical; outline: none;
   }
-  input[type="text"]:focus, textarea:focus { border-color: var(--purple); background: var(--bg-4); }
+  input[type="text"]:focus, textarea:focus { border-color: var(--gold); background: var(--bg-4); }
   textarea { min-height: 80px; line-height: 1.6; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
   /* ── PHOTO UPLOAD ── */
   .photo-upload-area {
-    border: 1px dashed var(--border-mid);
-    border-radius: 4px; padding: 2rem;
-    text-align: center; cursor: pointer;
-    transition: all 0.2s; background: var(--bg-3);
+    border: 1px dashed var(--border-mid); border-radius: 4px; padding: 2rem;
+    text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg-3);
   }
-  .photo-upload-area:hover { border-color: var(--border-purple); background: var(--bg-4); }
-  .photo-upload-area.has-photo { border-style: solid; border-color: var(--border-purple); }
+  .photo-upload-area:hover { border-color: var(--border-gold); background: var(--bg-4); }
+  .photo-upload-area.has-photo { border-style: solid; border-color: var(--border-gold); }
   .photo-preview {
     width: 80px; height: 80px; border-radius: 50%;
-    object-fit: cover; margin: 0 auto 12px;
-    display: none; border: 1px solid var(--border-purple);
+    object-fit: cover; margin: 0 auto 12px; display: none;
+    border: 0.5px solid var(--border-gold);
   }
   .photo-preview.show { display: block; }
   .upload-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.35; }
   .upload-text { font-size: 12px; color: var(--text-dim); font-weight: 300; }
-  .upload-text strong { color: var(--teal); font-weight: 600; }
+  .upload-text strong { color: var(--gold); font-weight: 600; }
   #photo-file { display: none; }
 
-  /* ── LINK FIELD ── */
+  /* ── LINK / SOCIAL ── */
   .link-field { display: flex; gap: 8px; }
   .link-field input { flex: 1; }
   .link-test {
-    background: var(--bg-3); border: 1px solid var(--border-mid);
+    background: var(--bg-3); border: 0.5px solid var(--border-mid);
     color: var(--text-muted); padding: 9px 14px; border-radius: 3px;
     font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; cursor: pointer; white-space: nowrap;
     font-family: 'Raleway', sans-serif; transition: all 0.2s;
   }
-  .link-test:hover { color: var(--teal); border-color: var(--border-teal); }
-
-  /* ── SOCIAL FIELDS ── */
+  .link-test:hover { color: var(--gold); border-color: var(--border-gold); }
   .social-field { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .social-badge {
-    background: var(--teal-dim); color: var(--teal);
+    background: var(--gold-dim); color: var(--gold);
     font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; padding: 4px 10px; border-radius: 2px;
     width: 84px; text-align: center; flex-shrink: 0;
-    border: 1px solid var(--border-teal);
+    border: 0.5px solid var(--border-gold);
   }
   .social-field input { flex: 1; }
 
-  /* ── TWO COL ── */
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-  /* ── TESTIMONIAL FIELDS ── */
-  .testimonial-card {
-    background: var(--bg-3); border: 1px solid var(--border);
-    border-radius: 4px; padding: 1.25rem; margin-bottom: 1rem;
-    border-left: 2px solid var(--purple-dim);
+  /* ── INFO BOX ── */
+  .info-box {
+    background: var(--gold-dim); border: 0.5px solid var(--border-gold);
+    border-radius: 3px; padding: 12px 16px; margin-bottom: 1.5rem;
+    font-size: 12px; color: var(--text-muted); font-weight: 300; line-height: 1.6;
   }
-  .testimonial-card-label {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--purple-light);
-    margin-bottom: 1rem; display: block;
-  }
+  .info-box strong { color: var(--gold); font-weight: 600; }
 
   /* ── TOAST ── */
   .toast {
     position: fixed; bottom: 2rem; right: 2rem;
-    background: var(--bg-3); border: 1px solid var(--border-purple);
+    background: var(--bg-3); border: 0.5px solid var(--border-gold);
     color: var(--text); padding: 12px 20px; border-radius: 4px;
     font-size: 13px; font-weight: 500;
     transform: translateY(80px); opacity: 0;
@@ -273,161 +333,55 @@
     width: 90vw; height: 90vh;
     background: #000; border-radius: 4px; overflow: hidden;
     display: flex; flex-direction: column;
-    border: 1px solid var(--border-purple);
+    border: 0.5px solid var(--border-gold);
   }
   .preview-bar {
     display: flex; justify-content: space-between; align-items: center;
     padding: 0.75rem 1rem; background: var(--bg-2); flex-shrink: 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
   }
   .preview-bar span { font-size: 12px; color: var(--text-dim); }
   .close-preview {
-    background: transparent; border: 1px solid var(--border-mid);
+    background: transparent; border: 0.5px solid var(--border-mid);
     color: var(--text-muted); padding: 5px 14px;
     border-radius: 2px; cursor: pointer; font-size: 11px;
     font-family: 'Raleway', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
     transition: all 0.2s;
   }
-  .close-preview:hover { border-color: var(--border-purple); color: var(--purple-light); }
+  .close-preview:hover { border-color: var(--border-gold); color: var(--gold); }
   .preview-frame { flex: 1; border: none; width: 100%; }
 
-  /* ── DEPLOY STEPS ── */
+  /* ── DEPLOY ── */
   .deploy-step {
     display: flex; gap: 14px; padding: 1.25rem;
-    background: var(--bg-2); border: 1px solid var(--border);
+    background: var(--bg-2); border: 0.5px solid var(--border);
     border-radius: 4px; margin-bottom: 12px;
   }
   .deploy-num {
     width: 28px; height: 28px; border-radius: 50%;
-    background: var(--purple-dim); border: 1px solid var(--border-purple);
+    background: var(--gold-dim); border: 0.5px solid var(--border-gold);
     display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; color: var(--purple-light); flex-shrink: 0;
+    font-size: 12px; font-weight: 700; color: var(--gold); flex-shrink: 0;
   }
   .deploy-content h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
   .deploy-content p { font-size: 12px; color: var(--text-dim); font-weight: 300; line-height: 1.6; }
   .deploy-content code {
     display: inline-block; background: var(--bg-4);
-    border: 1px solid var(--border); padding: 2px 8px;
+    border: 0.5px solid var(--border); padding: 2px 8px;
     border-radius: 2px; font-family: monospace; font-size: 11px;
-    color: var(--teal); margin-top: 6px;
+    color: var(--gold); margin-top: 6px;
   }
   .action-btn {
-    background: var(--bg-3); border: 1px solid var(--border);
+    background: var(--bg-3); border: 0.5px solid var(--border);
     color: var(--text-muted); padding: 8px 16px; border-radius: 3px;
     font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; cursor: pointer;
     font-family: 'Raleway', sans-serif; transition: all 0.2s;
   }
   .action-btn:hover { color: var(--text); border-color: var(--border-mid); }
-  .action-btn.primary { background: var(--purple); color: #fff; border-color: var(--purple); }
-  .action-btn.primary:hover { background: var(--purple-light); }
+  .action-btn.primary { background: var(--gold); color: #070707; border-color: var(--gold); }
+  .action-btn.primary:hover { background: var(--gold-light); }
   .export-actions { display: flex; gap: 10px; margin-top: 12px; }
-
-  /* ── INFO BOX ── */
-  .info-box {
-    background: var(--teal-dim); border: 1px solid var(--border-teal);
-    border-radius: 3px; padding: 12px 16px; margin-bottom: 1.5rem;
-    font-size: 12px; color: var(--text-muted); font-weight: 300; line-height: 1.6;
-  }
-  .info-box strong { color: var(--teal); font-weight: 600; }
-
-  /* ── LOCK SCREEN ── */
-  #lock-screen {
-    position: fixed; inset: 0; z-index: 9999;
-    background: #000;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column;
-  }
-  #lock-screen::before {
-    content: '';
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse 55% 60% at 10% 65%, rgba(31,191,191,0.12) 0%, transparent 55%),
-      radial-gradient(ellipse 50% 55% at 90% 70%, rgba(139,63,216,0.16) 0%, transparent 55%);
-    pointer-events: none;
-  }
-  .lock-box {
-    position: relative; z-index: 1;
-    width: 100%; max-width: 380px;
-    background: var(--bg-2);
-    border: 1px solid var(--border-purple);
-    border-radius: 6px;
-    padding: 2.5rem;
-    text-align: center;
-  }
-  .lock-box::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--purple), var(--teal), transparent);
-    border-radius: 6px 6px 0 0;
-  }
-  .lock-icon {
-    font-size: 32px; margin-bottom: 1.25rem; opacity: 0.7;
-  }
-  .lock-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 20px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--text);
-    margin-bottom: 0.25rem;
-  }
-  .lock-title span { color: var(--purple); }
-  .lock-subtitle {
-    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--text-dim); font-weight: 500; margin-bottom: 2rem;
-  }
-  .lock-subtitle a { color: var(--teal); opacity: 0.75; text-decoration: none; }
-  .lock-input-wrap { position: relative; margin-bottom: 1rem; }
-  .lock-input {
-    width: 100%; background: var(--bg-3);
-    border: 1px solid var(--border-mid);
-    color: var(--text); padding: 12px 44px 12px 14px;
-    border-radius: 3px; font-size: 14px;
-    font-family: 'Raleway', sans-serif; font-weight: 400;
-    outline: none; transition: border-color 0.2s;
-    letter-spacing: 0.08em;
-  }
-  .lock-input:focus { border-color: var(--purple); background: var(--bg-4); }
-  .lock-input.error { border-color: #e05c5c; animation: shake 0.35s ease; }
-  .lock-toggle {
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer;
-    color: var(--text-dim); font-size: 16px; padding: 4px;
-    transition: color 0.2s;
-  }
-  .lock-toggle:hover { color: var(--text-muted); }
-  .lock-btn {
-    width: 100%; background: var(--purple); color: #fff;
-    border: none; padding: 13px; border-radius: 3px;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
-    text-transform: uppercase; cursor: pointer;
-    font-family: 'Raleway', sans-serif; transition: all 0.2s;
-    margin-bottom: 1rem;
-  }
-  .lock-btn:hover { background: var(--purple-light); }
-  .lock-error {
-    font-size: 12px; color: #e05c5c; font-weight: 500;
-    letter-spacing: 0.04em; min-height: 18px;
-    margin-bottom: 0.5rem;
-  }
-  .lock-attempts {
-    font-size: 11px; color: var(--text-dim); font-weight: 300;
-    letter-spacing: 0.04em;
-  }
-  .lock-attempts span { color: var(--teal); }
-  .lock-lockout {
-    background: rgba(224,92,92,0.1); border: 1px solid rgba(224,92,92,0.3);
-    border-radius: 3px; padding: 10px 14px; margin-top: 1rem;
-    font-size: 12px; color: #e05c5c; font-weight: 400; line-height: 1.5;
-  }
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    20%      { transform: translateX(-8px); }
-    40%      { transform: translateX(8px); }
-    60%      { transform: translateX(-5px); }
-    80%      { transform: translateX(5px); }
-  }
-  .app { display: none; }
-  .app.unlocked { display: flex; }
 </style>
 </head>
 <body>
@@ -439,15 +393,9 @@
     <div class="lock-title">The Performer's <span>Lab</span></div>
     <div class="lock-subtitle">by <a href="https://www.alittlesoundadvice.com" target="_blank">Sound Advice Vocal Studio</a> · Admin Editor</div>
     <div class="lock-input-wrap">
-      <input
-        class="lock-input"
-        id="lock-input"
-        type="password"
-        placeholder="Enter password"
-        autocomplete="current-password"
-        onkeydown="if(event.key==='Enter')attemptUnlock()"
-      >
-      <button class="lock-toggle" onclick="toggleVisible()" title="Show/hide password" id="lock-toggle-btn">👁</button>
+      <input class="lock-input" id="lock-input" type="password" placeholder="Enter password"
+        autocomplete="current-password" onkeydown="if(event.key==='Enter')attemptUnlock()">
+      <button class="lock-toggle" onclick="toggleVisible()" id="lock-toggle-btn">👁</button>
     </div>
     <div class="lock-error" id="lock-error"></div>
     <button class="lock-btn" onclick="attemptUnlock()">Unlock Editor →</button>
@@ -463,7 +411,7 @@
     <div class="sidebar-logo">
       <div class="sidebar-logo-main">The Performer's <span>Lab</span></div>
       <div class="sidebar-logo-sub">by <a href="https://www.alittlesoundadvice.com" target="_blank">Sound Advice Vocal Studio</a></div>
-      <div class="sidebar-logo-tag">Branded Edition</div>
+      <div class="sidebar-logo-tag">Site Editor</div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section">Sections</div>
@@ -517,7 +465,7 @@
   <!-- ══ MAIN ══ -->
   <main class="main">
     <div class="topbar">
-      <div class="topbar-title">The Performer's Lab <span>/ Branded Edition Editor</span></div>
+      <div class="topbar-title">The Performer's Lab <span>/ Site Editor</span></div>
       <div class="topbar-actions">
         <span class="save-status" id="save-status">Unsaved changes</span>
         <button class="export-btn" onclick="switchPanel(document.querySelector('[data-panel=deploy]'),'deploy')">Export HTML</button>
@@ -527,76 +475,44 @@
 
     <div class="content">
 
-      <!-- ══ HERO ══ -->
+      <!-- HERO -->
       <div class="panel active" id="panel-hero">
         <div class="panel-title">Hero Section</div>
-        <div class="panel-desc">The first thing visitors see. Sets the tone for the whole page.</div>
-
+        <div class="panel-desc">The first thing visitors see at performers-lab.com.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Headline & Subtext</span>
-            <span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Headline & Subtext</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
-            <div class="field">
-              <label class="field-label">Eyebrow (teal label above headline)</label>
-              <input type="text" id="f-hero-eyebrow" value="The Performer's Lab">
-            </div>
+            <div class="field"><label class="field-label">Eyebrow (gold label above headline)</label><input type="text" id="f-hero-eyebrow" value="The Performer's Lab"></div>
             <div class="field">
               <label class="field-label">Main Headline</label>
               <input type="text" id="f-hero-headline" value="Your voice deserves &lt;em&gt;consistent&lt;/em&gt; attention.">
-              <div class="field-hint">Wrap a word in &lt;em&gt;&lt;/em&gt; to make it italic and purple.</div>
+              <div class="field-hint">Wrap a word in &lt;em&gt;&lt;/em&gt; to make it italic and gold.</div>
             </div>
-            <div class="field">
-              <label class="field-label">Subheadline</label>
-              <textarea id="f-hero-sub">Weekly personalized performance feedback and monthly live masterclasses — for serious singers and performers ready to do the work.</textarea>
-            </div>
+            <div class="field"><label class="field-label">Subheadline</label><textarea id="f-hero-sub">Weekly personalized performance feedback and monthly live masterclasses — for serious singers and performers ready to do the work.</textarea></div>
           </div>
         </div>
-
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Buttons & Founding Offer</span>
-            <span class="card-chevron">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Buttons & Founding Offer</span><span class="card-chevron">⌄</span></div>
           <div class="edit-card-body">
             <div class="two-col">
-              <div class="field">
-                <label class="field-label">Primary Button</label>
-                <input type="text" id="f-hero-cta-primary" value="Claim your founding spot">
-              </div>
-              <div class="field">
-                <label class="field-label">Secondary Button</label>
-                <input type="text" id="f-hero-cta-secondary" value="See how it works">
-              </div>
+              <div class="field"><label class="field-label">Primary Button</label><input type="text" id="f-hero-cta-primary" value="Claim your founding spot"></div>
+              <div class="field"><label class="field-label">Secondary Button</label><input type="text" id="f-hero-cta-secondary" value="See how it works"></div>
             </div>
             <div class="two-col">
-              <div class="field">
-                <label class="field-label">Founding Price</label>
-                <input type="text" id="f-founding-price" value="$40/mo">
-              </div>
-              <div class="field">
-                <label class="field-label">Founding Spots</label>
-                <input type="text" id="f-founding-spots" value="20 spots">
-              </div>
+              <div class="field"><label class="field-label">Founding Price</label><input type="text" id="f-founding-price" value="$40/mo"></div>
+              <div class="field"><label class="field-label">Founding Spots</label><input type="text" id="f-founding-spots" value="20 spots"></div>
             </div>
-            <div class="field">
-              <label class="field-label">Regular Price (after founding)</label>
-              <input type="text" id="f-regular-price" value="$60">
-            </div>
+            <div class="field"><label class="field-label">Regular Price (after founding)</label><input type="text" id="f-regular-price" value="$60"></div>
           </div>
         </div>
       </div>
 
-      <!-- ══ STATS ══ -->
+      <!-- STATS -->
       <div class="panel" id="panel-stats">
         <div class="panel-title">Stats Bar</div>
-        <div class="panel-desc">Four numbers that communicate your offer at a glance. Numbers appear in teal.</div>
+        <div class="panel-desc">Four numbers that communicate your offer at a glance. Numbers appear in gold.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Four Stats</span>
-            <span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Four Stats</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="two-col">
               <div class="field"><label class="field-label">Stat 1 Number</label><input type="text" id="f-stat-1-num" value="4×"></div>
@@ -618,15 +534,12 @@
         </div>
       </div>
 
-      <!-- ══ HOW IT WORKS ══ -->
+      <!-- HOW IT WORKS -->
       <div class="panel" id="panel-how">
         <div class="panel-title">How It Works</div>
-        <div class="panel-desc">The four steps that walk visitors through your process. Step numbers appear in purple.</div>
+        <div class="panel-desc">The four steps. Step numbers appear in gold.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Section Header</span>
-            <span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Section Header</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-how-eyebrow" value="How it works"></div>
             <div class="field"><label class="field-label">Heading</label><input type="text" id="f-how-heading" value="Simple. Consistent. &lt;em&gt;Effective.&lt;/em&gt;"></div>
@@ -663,14 +576,12 @@
         </div>
       </div>
 
-      <!-- ══ INCLUDES ══ -->
+      <!-- INCLUDES -->
       <div class="panel" id="panel-includes">
         <div class="panel-title">What's Included</div>
-        <div class="panel-desc">The six things members get. Dot indicators appear in teal.</div>
+        <div class="panel-desc">Six membership benefits. Dot indicators appear in gold.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Section Header</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Section Header</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-includes-eyebrow" value="What's included"></div>
             <div class="field"><label class="field-label">Heading</label><input type="text" id="f-includes-heading" value="Everything a working performer needs."></div>
@@ -680,14 +591,12 @@
         <div id="includes-items"></div>
       </div>
 
-      <!-- ══ FOR WHO ══ -->
+      <!-- FOR WHO -->
       <div class="panel" id="panel-for">
         <div class="panel-title">Who It's For</div>
-        <div class="panel-desc">The four audience types. Card numbers appear in purple.</div>
+        <div class="panel-desc">Four audience cards.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Section Header</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Section Header</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-for-eyebrow" value="Who it's for"></div>
             <div class="field"><label class="field-label">Heading</label><input type="text" id="f-for-heading" value="Built for performers who are &lt;em&gt;serious&lt;/em&gt; about growing."></div>
@@ -697,18 +606,13 @@
         <div id="for-items"></div>
       </div>
 
-      <!-- ══ TESTIMONIALS ══ -->
+      <!-- TESTIMONIALS -->
       <div class="panel" id="panel-testimonials">
         <div class="panel-title">Testimonials</div>
-        <div class="panel-desc">Three quote cards. The opening quotation mark appears in purple. Replace the placeholder cards when you have real Lab testimonials.</div>
-        <div class="info-box">
-          <strong>Tip:</strong> Each testimonial has a quote, a name, and a role/context line. Keep quotes conversational and specific — they sell better than generic praise.
-        </div>
+        <div class="panel-desc">Three quote cards. Opening quotation marks appear in gold. Replace placeholders when you have real Lab testimonials.</div>
+        <div class="info-box"><strong>Tip:</strong> Keep quotes specific and conversational — they convert better than generic praise.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Testimonial 1</span>
-            <span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Testimonial 1</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="field"><label class="field-label">Quote Text</label><textarea id="f-t1-text">Working with Jonathan Sturcken has been an incredible journey. His coaching feels like being in a master class every session. His unique ability to inspire and push me has been transformative.</textarea></div>
             <div class="two-col">
@@ -718,10 +622,7 @@
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Testimonial 2</span>
-            <span class="card-chevron">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Testimonial 2</span><span class="card-chevron">⌄</span></div>
           <div class="edit-card-body">
             <div class="field"><label class="field-label">Quote Text</label><textarea id="f-t2-text">Your testimonial here. Replace this with a real quote from a student or client of The Performer's Lab.</textarea></div>
             <div class="two-col">
@@ -731,10 +632,7 @@
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Testimonial 3</span>
-            <span class="card-chevron">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Testimonial 3</span><span class="card-chevron">⌄</span></div>
           <div class="edit-card-body">
             <div class="field"><label class="field-label">Quote Text</label><textarea id="f-t3-text">Your testimonial here. Replace this with a real quote from a student or client of The Performer's Lab.</textarea></div>
             <div class="two-col">
@@ -745,14 +643,12 @@
         </div>
       </div>
 
-      <!-- ══ PRICING ══ -->
+      <!-- PRICING -->
       <div class="panel" id="panel-pricing">
         <div class="panel-title">Pricing Section</div>
-        <div class="panel-desc">Your membership card. The top gradient bar uses purple → teal. Checkmarks appear in purple.</div>
+        <div class="panel-desc">Your membership card. Checkmarks appear in gold.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Section Header</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Section Header</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-pricing-eyebrow" value="Membership"></div>
             <div class="field"><label class="field-label">Heading</label><input type="text" id="f-pricing-heading" value="One price. Everything included."></div>
@@ -760,31 +656,27 @@
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Price Card</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Price Card</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="field"><label class="field-label">Badge Label</label><input type="text" id="f-pricing-badge" value="Founding member rate"></div>
             <div class="two-col">
               <div class="field"><label class="field-label">Price Amount</label><input type="text" id="f-price-amount" value="$40"></div>
               <div class="field"><label class="field-label">Spots Remaining</label><input type="text" id="f-spots-remaining" value="20 founding spots"></div>
             </div>
-            <div class="field"><label class="field-label">Price Note (below amount)</label><input type="text" id="f-price-note" value="Locks in forever. Price goes to $60 when founding spots are gone."></div>
+            <div class="field"><label class="field-label">Price Note</label><input type="text" id="f-price-note" value="Locks in forever. Price goes to $60 when founding spots are gone."></div>
             <div class="field"><label class="field-label">CTA Button Text</label><input type="text" id="f-pricing-cta-btn" value="Claim your founding spot →"></div>
             <div class="field">
-              <label class="field-label">Skool Community Link</label>
+              <label class="field-label">Skool / Join Link</label>
               <div class="link-field">
                 <input type="text" id="f-skool-link" placeholder="https://www.skool.com/your-community">
                 <button class="link-test" onclick="testLink()">Test ↗</button>
               </div>
-              <div class="field-hint">This is where the Join button sends people. Paste your Skool community URL here.</div>
+              <div class="field-hint">Where the Join button sends people. Update to performers-lab.com/join once the platform is live.</div>
             </div>
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Feature List</span><span class="card-chevron">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Feature List</span><span class="card-chevron">⌄</span></div>
           <div class="edit-card-body">
             <div class="field"><label class="field-label">Feature 1</label><input type="text" id="f-pf-1" value="Weekly video feedback — 4 sessions per month"></div>
             <div class="field"><label class="field-label">Feature 2</label><input type="text" id="f-pf-2" value="48-hour turnaround on every submission"></div>
@@ -796,14 +688,12 @@
         </div>
       </div>
 
-      <!-- ══ ABOUT ══ -->
+      <!-- ABOUT -->
       <div class="panel" id="panel-about">
         <div class="panel-title">About You</div>
-        <div class="panel-desc">Your bio section. Upload your headshot and update your credentials.</div>
+        <div class="panel-desc">Your bio, photo, and credentials.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Your Photo</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Your Photo</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="photo-upload-area" id="upload-area" onclick="document.getElementById('photo-file').click()">
               <img class="photo-preview" id="photo-preview-img">
@@ -814,91 +704,60 @@
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Name & Title</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Name & Title</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
-            <div class="field">
-              <label class="field-label">Eyebrow</label>
-              <input type="text" id="f-about-eyebrow" value="Your coach">
-            </div>
+            <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-about-eyebrow" value="Your coach"></div>
             <div class="field">
               <label class="field-label">Name Display</label>
               <input type="text" id="f-about-name" value="Jonathan &lt;em&gt;Sturcken&lt;/em&gt;">
-              <div class="field-hint">Wrap last name in &lt;em&gt;&lt;/em&gt; to highlight it in purple.</div>
+              <div class="field-hint">Wrap last name in &lt;em&gt;&lt;/em&gt; to render it italic and gold.</div>
             </div>
             <div class="field">
               <label class="field-label">Title Line</label>
-              <input type="text" id="f-about-title-line" value="Vocal Coach &amp; Music Director · &lt;a href='https://www.alittlesoundadvice.com' target='_blank' rel='noopener'&gt;Sound Advice &lt;span style='opacity:0.7;'&gt;Vocal Studio&lt;/span&gt;&lt;/a&gt;">
-              <div class="field-hint">HTML is supported. The Sound Advice link is pre-set.</div>
+              <input type="text" id="f-about-title-line" value="Vocal Coach &amp; Music Director · &lt;a href='https://www.alittlesoundadvice.com' target='_blank' rel='noopener' style='color:var(--gold);text-decoration:none;opacity:0.8;'&gt;Sound Advice &lt;span style='opacity:0.7;'&gt;Vocal Studio&lt;/span&gt;&lt;/a&gt;">
             </div>
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Bio Text</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Bio Text</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="field"><label class="field-label">Paragraph 1</label><textarea id="f-about-body-1">I've spent years in rehearsal rooms and in the wings — coaching singers, directing music, and watching what separates performers who grow from those who plateau. My approach is grounded in the Biopsychosocial model: your voice is shaped by biology, psychology, and environment, and great coaching honors all three.</textarea></div>
             <div class="field"><label class="field-label">Paragraph 2</label><textarea id="f-about-body-2">The Performer's Lab exists because consistent, specific feedback is the single most reliable driver of growth — and it shouldn't require weekly private-lesson budgets to access it.</textarea></div>
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Credentials</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Credentials</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="field"><label class="field-label">Credential 1</label><input type="text" id="f-about-cred-1" value="Certified Vocal Health First Aid (Voice Health Education, London)"></div>
             <div class="field"><label class="field-label">Credential 2</label><input type="text" id="f-about-cred-2" value="Music Director · Theatrical Productions"></div>
             <div class="field"><label class="field-label">Credential 3</label><input type="text" id="f-about-cred-3" value="2025 St. Tammany Parish Performing Artist of the Year"></div>
             <div class="field"><label class="field-label">Credential 4</label><input type="text" id="f-about-cred-4" value="Berklee College of Music · Southeastern Louisiana University"></div>
-            <div class="field">
-              <label class="field-label">Credential 5 (link line)</label>
-              <input type="text" id="f-about-cred-5" value="&lt;a href='https://www.alittlesoundadvice.com/meet-your-coach' target='_blank' rel='noopener'&gt;Full bio at Sound Advice Vocal Studio →&lt;/a&gt;">
-            </div>
+            <div class="field"><label class="field-label">Credential 5 (link line)</label><input type="text" id="f-about-cred-5" value="&lt;a href='https://www.alittlesoundadvice.com/meet-your-coach' target='_blank' rel='noopener'&gt;Full bio at Sound Advice Vocal Studio →&lt;/a&gt;"></div>
           </div>
         </div>
       </div>
 
-      <!-- ══ FOOTER ══ -->
+      <!-- FOOTER -->
       <div class="panel" id="panel-footer">
         <div class="panel-title">Links & Footer</div>
-        <div class="panel-desc">Social links, the Sound Advice Vocal Studio link, and footer branding.</div>
+        <div class="panel-desc">Social links, Sound Advice Vocal Studio link, footer text, and bottom CTA.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Social Links</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Social & Nav Links</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
-            <div class="social-field">
-              <div class="social-badge">TikTok</div>
-              <input type="text" id="f-footer-tiktok" value="https://www.tiktok.com/@soundadvicestudio">
-            </div>
-            <div class="social-field">
-              <div class="social-badge">Instagram</div>
-              <input type="text" id="f-footer-instagram" value="https://www.instagram.com/soundadvicestudio/">
-            </div>
-            <div class="social-field">
-              <div class="social-badge">Contact</div>
-              <input type="text" id="f-footer-contact" value="https://www.alittlesoundadvice.com/contact">
-            </div>
-            <div class="social-field">
-              <div class="social-badge">SAVS Site</div>
-              <input type="text" id="f-footer-savs-link" value="https://www.alittlesoundadvice.com">
-            </div>
+            <div class="social-field"><div class="social-badge">TikTok</div><input type="text" id="f-footer-tiktok" value="https://www.tiktok.com/@soundadvicestudio"></div>
+            <div class="social-field"><div class="social-badge">Instagram</div><input type="text" id="f-footer-instagram" value="https://www.instagram.com/soundadvicestudio/"></div>
+            <div class="social-field"><div class="social-badge">Contact</div><input type="text" id="f-footer-contact" value="https://www.alittlesoundadvice.com/contact"></div>
+            <div class="social-field"><div class="social-badge">SAVS Site</div><input type="text" id="f-footer-savs-link" value="https://www.alittlesoundadvice.com"></div>
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Footer Brand Text</span><span class="card-chevron">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Footer Brand Text</span><span class="card-chevron">⌄</span></div>
           <div class="edit-card-body">
             <div class="field"><label class="field-label">Footer Brand Line</label><input type="text" id="f-footer-brand" value="The Performer's Lab"></div>
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Bottom CTA Section</span><span class="card-chevron">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Bottom CTA Section</span><span class="card-chevron">⌄</span></div>
           <div class="edit-card-body">
             <div class="field"><label class="field-label">CTA Eyebrow</label><input type="text" id="f-cta-eyebrow" value="Ready to grow?"></div>
             <div class="field"><label class="field-label">CTA Heading</label><input type="text" id="f-cta-heading" value="Your voice has more in it.&lt;br&gt;&lt;em&gt;Let's find it.&lt;/em&gt;"></div>
@@ -908,74 +767,53 @@
         </div>
       </div>
 
-      <!-- ══ DEPLOY ══ -->
+      <!-- DEPLOY -->
       <div class="panel" id="panel-deploy">
         <div class="panel-title">Export & Deploy</div>
-        <div class="panel-desc">Download your branded site file and get it live.</div>
-        <div class="info-box">
-          <strong>Note:</strong> This admin editor saves to <code style="color:var(--teal);font-family:monospace;">index3.html</code> — your branded Sound Advice edition. Keep this file alongside <code style="color:var(--teal);font-family:monospace;">index3.html</code> in your <code style="color:var(--teal);font-family:monospace;">/performers-lab</code> folder.
-        </div>
+        <div class="panel-desc">Download your site file and push it live to performers-lab.com.</div>
+        <div class="info-box"><strong>How this works:</strong> Save your changes, then download index.html below. Drop it into your <code style="color:var(--gold);font-family:monospace;">/performers-lab/public/</code> folder and push to GitHub. Vercel auto-deploys within 60 seconds.</div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Download Your Site</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Download Site File</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:1.25rem;font-weight:300;">Downloads your complete branded website as a single HTML file with all edits baked in. Upload this to your GitHub repo as <strong style="color:var(--text);">index3.html</strong> to replace the live version.</p>
-            <button class="action-btn primary" onclick="downloadHTML()">Download index3.html</button>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:1.25rem;font-weight:300;">Downloads your complete site as a single HTML file with all edits baked in. Save as <strong style="color:var(--text);">index.html</strong> and place in your <code style="color:var(--gold);font-family:monospace;">public/</code> folder.</p>
+            <button class="action-btn primary" onclick="downloadHTML()">Download index.html</button>
           </div>
         </div>
         <div class="edit-card">
-          <div class="edit-card-header" onclick="toggleCard(this)">
-            <span class="card-label">Deploy to GitHub + Vercel</span><span class="card-chevron open">⌄</span>
-          </div>
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Push to Live Site</span><span class="card-chevron open">⌄</span></div>
           <div class="edit-card-body open">
             <div class="deploy-step">
               <div class="deploy-num">1</div>
-              <div class="deploy-content">
-                <h4>Download index3.html above</h4>
-                <p>Use the button above to get the latest version with your edits baked in.</p>
-              </div>
+              <div class="deploy-content"><h4>Download index.html above</h4><p>Gets the latest version with your edits baked in.</p></div>
             </div>
             <div class="deploy-step">
               <div class="deploy-num">2</div>
-              <div class="deploy-content">
-                <h4>Go to your GitHub repository</h4>
-                <p>Navigate to your <code>performers-lab</code> repo and drag the downloaded file in. GitHub will detect it as an update to the existing file.</p>
-              </div>
+              <div class="deploy-content"><h4>Replace the file in your repo</h4><p>Drop the downloaded file into <code>/performers-lab/public/index.html</code>, replacing the existing one.</p></div>
             </div>
             <div class="deploy-step">
               <div class="deploy-num">3</div>
-              <div class="deploy-content">
-                <h4>Commit the change</h4>
-                <p>Add a commit message like <code>Update branded page</code> and click Commit changes.</p>
-              </div>
+              <div class="deploy-content"><h4>Push to GitHub</h4><p>In Terminal: <code>cd ~/performers-lab</code> then <code>git add . && git commit -m "Update site" && git push</code></p></div>
             </div>
             <div class="deploy-step">
               <div class="deploy-num">4</div>
-              <div class="deploy-content">
-                <h4>Vercel auto-deploys</h4>
-                <p>If you have Vercel connected to your repo, it detects the push and deploys automatically — usually within 60 seconds. No action needed.</p>
-              </div>
+              <div class="deploy-content"><h4>Vercel auto-deploys</h4><p>performers-lab.com updates automatically within 60 seconds. No action needed.</p></div>
             </div>
           </div>
         </div>
       </div>
 
-    </div><!-- /content -->
+    </div>
   </main>
-</div><!-- /app -->
-
-<!-- ══ TOAST ══ -->
-<div class="toast" id="toast">
-  <div class="toast-dot"></div>
-  <span id="toast-msg">Changes saved</span>
 </div>
 
-<!-- ══ PREVIEW MODAL ══ -->
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg">Changes saved</span></div>
+
+<!-- PREVIEW MODAL -->
 <div class="preview-modal" id="preview-modal">
   <div class="preview-wrap">
     <div class="preview-bar">
-      <span>Preview — The Performer's Lab (Branded)</span>
+      <span>Preview — The Performer's Lab (performers-lab.com)</span>
       <button class="close-preview" onclick="closePreview()">Close</button>
     </div>
     <iframe class="preview-frame" id="preview-frame"></iframe>
@@ -983,102 +821,46 @@
 </div>
 
 <script>
-  // ── Field → Element ID map ──
   const fieldMap = {
-    'f-hero-eyebrow':      'hero-eyebrow',
-    'f-hero-headline':     'hero-headline',
-    'f-hero-sub':          'hero-sub',
-    'f-hero-cta-primary':  'hero-cta-primary',
-    'f-hero-cta-secondary':'hero-cta-secondary',
-    'f-founding-price':    'founding-price',
-    'f-founding-spots':    'founding-spots',
-    'f-regular-price':     'regular-price',
-    'f-stat-1-num':        'stat-1-num',
-    'f-stat-1-label':      'stat-1-label',
-    'f-stat-2-num':        'stat-2-num',
-    'f-stat-2-label':      'stat-2-label',
-    'f-stat-3-num':        'stat-3-num',
-    'f-stat-3-label':      'stat-3-label',
-    'f-stat-4-num':        'stat-4-num',
-    'f-stat-4-label':      'stat-4-label',
-    'f-how-eyebrow':       'how-eyebrow',
-    'f-how-heading':       'how-heading',
-    'f-how-body':          'how-body',
-    'f-step-1-title':      'step-1-title',
-    'f-step-1-desc':       'step-1-desc',
-    'f-step-2-title':      'step-2-title',
-    'f-step-2-desc':       'step-2-desc',
-    'f-step-3-title':      'step-3-title',
-    'f-step-3-desc':       'step-3-desc',
-    'f-step-4-title':      'step-4-title',
-    'f-step-4-desc':       'step-4-desc',
-    'f-includes-eyebrow':  'includes-eyebrow',
-    'f-includes-heading':  'includes-heading',
-    'f-includes-body':     'includes-body',
-    'f-inc-1-title':       'inc-1-title',
-    'f-inc-1-desc':        'inc-1-desc',
-    'f-inc-2-title':       'inc-2-title',
-    'f-inc-2-desc':        'inc-2-desc',
-    'f-inc-3-title':       'inc-3-title',
-    'f-inc-3-desc':        'inc-3-desc',
-    'f-inc-4-title':       'inc-4-title',
-    'f-inc-4-desc':        'inc-4-desc',
-    'f-inc-5-title':       'inc-5-title',
-    'f-inc-5-desc':        'inc-5-desc',
-    'f-inc-6-title':       'inc-6-title',
-    'f-inc-6-desc':        'inc-6-desc',
-    'f-for-eyebrow':       'for-eyebrow',
-    'f-for-heading':       'for-heading',
-    'f-for-body':          'for-body',
-    'f-for-1-title':       'for-1-title',
-    'f-for-1-desc':        'for-1-desc',
-    'f-for-2-title':       'for-2-title',
-    'f-for-2-desc':        'for-2-desc',
-    'f-for-3-title':       'for-3-title',
-    'f-for-3-desc':        'for-3-desc',
-    'f-for-4-title':       'for-4-title',
-    'f-for-4-desc':        'for-4-desc',
-    // testimonials
-    'f-t1-text':           't1-text',
-    'f-t1-name':           't1-name',
-    'f-t1-role':           't1-role',
-    'f-t2-text':           't2-text',
-    'f-t2-name':           't2-name',
-    'f-t2-role':           't2-role',
-    'f-t3-text':           't3-text',
-    'f-t3-name':           't3-name',
-    'f-t3-role':           't3-role',
-    // pricing
-    'f-pricing-eyebrow':   'pricing-eyebrow',
-    'f-pricing-heading':   'pricing-heading',
-    'f-pricing-body':      'pricing-body',
-    'f-pricing-badge':     'pricing-badge',
-    'f-price-amount':      'price-amount',
-    'f-price-note':        'price-note',
-    'f-pricing-cta-btn':   'pricing-cta-btn',
-    'f-spots-remaining':   'spots-remaining',
-    'f-pf-1': 'pf-1', 'f-pf-2': 'pf-2', 'f-pf-3': 'pf-3',
-    'f-pf-4': 'pf-4', 'f-pf-5': 'pf-5', 'f-pf-6': 'pf-6',
-    // about
-    'f-about-eyebrow':     'about-eyebrow',
-    'f-about-name':        'about-name',
-    'f-about-title-line':  'about-title-line',
-    'f-about-body-1':      'about-body-1',
-    'f-about-body-2':      'about-body-2',
-    'f-about-cred-1':      'about-cred-1',
-    'f-about-cred-2':      'about-cred-2',
-    'f-about-cred-3':      'about-cred-3',
-    'f-about-cred-4':      'about-cred-4',
-    'f-about-cred-5':      'about-cred-5',
-    // footer / cta
-    'f-footer-brand':      'footer-brand',
-    'f-cta-eyebrow':       'cta-eyebrow',
-    'f-cta-heading':       'cta-heading',
-    'f-cta-body':          'cta-body',
-    'f-cta-btn':           'cta-btn',
+    'f-hero-eyebrow':'hero-eyebrow','f-hero-headline':'hero-headline','f-hero-sub':'hero-sub',
+    'f-hero-cta-primary':'hero-cta-primary','f-hero-cta-secondary':'hero-cta-secondary',
+    'f-founding-price':'founding-price','f-founding-spots':'founding-spots','f-regular-price':'regular-price',
+    'f-stat-1-num':'stat-1-num','f-stat-1-label':'stat-1-label',
+    'f-stat-2-num':'stat-2-num','f-stat-2-label':'stat-2-label',
+    'f-stat-3-num':'stat-3-num','f-stat-3-label':'stat-3-label',
+    'f-stat-4-num':'stat-4-num','f-stat-4-label':'stat-4-label',
+    'f-how-eyebrow':'how-eyebrow','f-how-heading':'how-heading','f-how-body':'how-body',
+    'f-step-1-title':'step-1-title','f-step-1-desc':'step-1-desc',
+    'f-step-2-title':'step-2-title','f-step-2-desc':'step-2-desc',
+    'f-step-3-title':'step-3-title','f-step-3-desc':'step-3-desc',
+    'f-step-4-title':'step-4-title','f-step-4-desc':'step-4-desc',
+    'f-includes-eyebrow':'includes-eyebrow','f-includes-heading':'includes-heading','f-includes-body':'includes-body',
+    'f-inc-1-title':'inc-1-title','f-inc-1-desc':'inc-1-desc',
+    'f-inc-2-title':'inc-2-title','f-inc-2-desc':'inc-2-desc',
+    'f-inc-3-title':'inc-3-title','f-inc-3-desc':'inc-3-desc',
+    'f-inc-4-title':'inc-4-title','f-inc-4-desc':'inc-4-desc',
+    'f-inc-5-title':'inc-5-title','f-inc-5-desc':'inc-5-desc',
+    'f-inc-6-title':'inc-6-title','f-inc-6-desc':'inc-6-desc',
+    'f-for-eyebrow':'for-eyebrow','f-for-heading':'for-heading','f-for-body':'for-body',
+    'f-for-1-title':'for-1-title','f-for-1-desc':'for-1-desc',
+    'f-for-2-title':'for-2-title','f-for-2-desc':'for-2-desc',
+    'f-for-3-title':'for-3-title','f-for-3-desc':'for-3-desc',
+    'f-for-4-title':'for-4-title','f-for-4-desc':'for-4-desc',
+    'f-t1-text':'t1-text','f-t1-name':'t1-name','f-t1-role':'t1-role',
+    'f-t2-text':'t2-text','f-t2-name':'t2-name','f-t2-role':'t2-role',
+    'f-t3-text':'t3-text','f-t3-name':'t3-name','f-t3-role':'t3-role',
+    'f-pricing-eyebrow':'pricing-eyebrow','f-pricing-heading':'pricing-heading','f-pricing-body':'pricing-body',
+    'f-pricing-badge':'pricing-badge','f-price-amount':'price-amount','f-price-note':'price-note',
+    'f-pricing-cta-btn':'pricing-cta-btn','f-spots-remaining':'spots-remaining',
+    'f-pf-1':'pf-1','f-pf-2':'pf-2','f-pf-3':'pf-3','f-pf-4':'pf-4','f-pf-5':'pf-5','f-pf-6':'pf-6',
+    'f-about-eyebrow':'about-eyebrow','f-about-name':'about-name','f-about-title-line':'about-title-line',
+    'f-about-body-1':'about-body-1','f-about-body-2':'about-body-2',
+    'f-about-cred-1':'about-cred-1','f-about-cred-2':'about-cred-2','f-about-cred-3':'about-cred-3',
+    'f-about-cred-4':'about-cred-4','f-about-cred-5':'about-cred-5',
+    'f-footer-brand':'footer-brand','f-cta-eyebrow':'cta-eyebrow',
+    'f-cta-heading':'cta-heading','f-cta-body':'cta-body','f-cta-btn':'cta-btn',
   };
 
-  // ── Dynamic includes items ──
   const includesData = [
     ['inc-1','Weekly video feedback','One submission per week, returned with detailed personal notes within 48 hours.'],
     ['inc-2','Monthly live masterclass','A deep dive into one topic every month — technique, auditions, performance — with open Q&A.'],
@@ -1096,78 +878,47 @@
 
   function buildDynamic() {
     const inc = document.getElementById('includes-items');
-    includesData.forEach(([id, title, desc], i) => {
-      inc.innerHTML += `<div class="edit-card">
-        <div class="edit-card-header" onclick="toggleCard(this)">
-          <span class="card-label">Include ${i+1}</span><span class="card-chevron">⌄</span>
-        </div>
-        <div class="edit-card-body">
-          <div class="field"><label class="field-label">Title</label><input type="text" id="f-${id}-title" value="${title}"></div>
-          <div class="field"><label class="field-label">Description</label><textarea id="f-${id}-desc">${desc}</textarea></div>
-        </div>
-      </div>`;
+    includesData.forEach(([id,title,desc],i) => {
+      inc.innerHTML += `<div class="edit-card"><div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Include ${i+1}</span><span class="card-chevron">⌄</span></div><div class="edit-card-body"><div class="field"><label class="field-label">Title</label><input type="text" id="f-${id}-title" value="${title}"></div><div class="field"><label class="field-label">Description</label><textarea id="f-${id}-desc">${desc}</textarea></div></div></div>`;
     });
     const forC = document.getElementById('for-items');
-    forData.forEach(([id, title, desc], i) => {
-      forC.innerHTML += `<div class="edit-card">
-        <div class="edit-card-header" onclick="toggleCard(this)">
-          <span class="card-label">Audience ${i+1}</span><span class="card-chevron">⌄</span>
-        </div>
-        <div class="edit-card-body">
-          <div class="field"><label class="field-label">Title</label><input type="text" id="f-${id}-title" value="${title}"></div>
-          <div class="field"><label class="field-label">Description</label><textarea id="f-${id}-desc">${desc}</textarea></div>
-        </div>
-      </div>`;
+    forData.forEach(([id,title,desc],i) => {
+      forC.innerHTML += `<div class="edit-card"><div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Audience ${i+1}</span><span class="card-chevron">⌄</span></div><div class="edit-card-body"><div class="field"><label class="field-label">Title</label><input type="text" id="f-${id}-title" value="${title}"></div><div class="field"><label class="field-label">Description</label><textarea id="f-${id}-desc">${desc}</textarea></div></div></div>`;
     });
   }
   buildDynamic();
 
-  // ── Load saved admin state (separate key from original admin) ──
   function loadSaved() {
-    const saved = localStorage.getItem('tpl3-admin');
+    const saved = localStorage.getItem('tpl2-admin');
     if (!saved) return;
     try {
       const data = JSON.parse(saved);
-      Object.entries(data).forEach(([id, val]) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val;
-      });
+      Object.entries(data).forEach(([id,val]) => { const el = document.getElementById(id); if (el) el.value = val; });
       if (data['photo-data']) showPhotoPreview(data['photo-data']);
     } catch(e) {}
   }
   loadSaved();
 
-  // ── Save all ──
   function saveAll() {
     const adminData = {};
-    document.querySelectorAll('input[type=text], textarea').forEach(el => {
-      if (el.id && el.id.startsWith('f-')) adminData[el.id] = el.value;
-    });
-    const photoData = localStorage.getItem('tpl3-photo');
+    document.querySelectorAll('input[type=text], textarea').forEach(el => { if (el.id && el.id.startsWith('f-')) adminData[el.id] = el.value; });
+    const photoData = localStorage.getItem('tpl2-photo');
     if (photoData) adminData['photo-data'] = photoData;
-    localStorage.setItem('tpl3-admin', JSON.stringify(adminData));
+    localStorage.setItem('tpl2-admin', JSON.stringify(adminData));
 
-    // Build site content object — uses SEPARATE key tpl3-content
     const siteContent = {};
-    Object.entries(fieldMap).forEach(([fid, sid]) => {
-      const el = document.getElementById(fid);
-      if (el) siteContent[sid] = el.value;
-    });
-    // Footer links stored as href values
-    ['footer-tiktok','footer-instagram','footer-contact','footer-savs-link'].forEach(id => {
-      const el = document.getElementById('f-' + id);
-      if (el) siteContent[id + '-href'] = el.value;
-    });
+    Object.entries(fieldMap).forEach(([fid,sid]) => { const el = document.getElementById(fid); if (el) siteContent[sid] = el.value; });
+    ['footer-tiktok','footer-instagram','footer-contact','footer-savs-link'].forEach(id => { const el = document.getElementById('f-'+id); if (el) siteContent[id+'-href'] = el.value; });
     const skoolEl = document.getElementById('f-skool-link');
     if (skoolEl) siteContent['skool-link'] = skoolEl.value;
     if (photoData) siteContent['about-photo'] = photoData;
-    localStorage.setItem('tpl3-content', JSON.stringify(siteContent));
+    localStorage.setItem('tpl2-content', JSON.stringify(siteContent));
 
     const status = document.getElementById('save-status');
     status.textContent = 'All changes saved ✓';
     status.className = 'save-status saved';
     setTimeout(() => { status.textContent = 'Unsaved changes'; status.className = 'save-status'; }, 3000);
-    showToast('Changes saved to index3.html');
+    showToast('Changes saved');
   }
 
   function showToast(msg) {
@@ -1177,11 +928,11 @@
     setTimeout(() => t.classList.remove('show'), 2800);
   }
 
-  function switchPanel(el, id) {
+  function switchPanel(el,id) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + id).classList.add('active');
+    document.getElementById('panel-'+id).classList.add('active');
   }
 
   function toggleCard(header) {
@@ -1192,14 +943,9 @@
   }
 
   function handlePhoto(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+    const file = event.target.files[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = e => {
-      const data = e.target.result;
-      localStorage.setItem('tpl3-photo', data);
-      showPhotoPreview(data);
-    };
+    reader.onload = e => { localStorage.setItem('tpl2-photo', e.target.result); showPhotoPreview(e.target.result); };
     reader.readAsDataURL(file);
   }
 
@@ -1214,75 +960,56 @@
 
   function testLink() {
     const url = document.getElementById('f-skool-link').value;
-    if (url && url !== '#') window.open(url, '_blank');
+    if (url && url !== '#') window.open(url,'_blank');
     else showToast('Add your Skool URL first');
   }
 
   function openPreview() {
     saveAll();
     document.getElementById('preview-modal').classList.add('open');
-    document.getElementById('preview-frame').src = 'index3.html?' + Date.now();
+    document.getElementById('preview-frame').src = 'index.html?' + Date.now();
   }
 
-  function closePreview() {
-    document.getElementById('preview-modal').classList.remove('open');
-  }
+  function closePreview() { document.getElementById('preview-modal').classList.remove('open'); }
 
-  // ── Download: fetches index3.html, injects baked-in content ──
   function downloadHTML() {
-    fetch('index3.html')
-      .then(r => r.text())
-      .then(html => {
-        const siteContent = {};
-        Object.entries(fieldMap).forEach(([fid, sid]) => {
-          const el = document.getElementById(fid);
-          if (el) siteContent[sid] = el.value;
-        });
-        const photoData = localStorage.getItem('tpl3-photo');
-        if (photoData) siteContent['about-photo'] = photoData;
-        const skoolLink = document.getElementById('f-skool-link').value;
+    fetch('index.html').then(r => r.text()).then(html => {
+      const siteContent = {};
+      Object.entries(fieldMap).forEach(([fid,sid]) => { const el = document.getElementById(fid); if (el) siteContent[sid] = el.value; });
+      const photoData = localStorage.getItem('tpl2-photo');
+      if (photoData) siteContent['about-photo'] = photoData;
+      const skoolLink = document.getElementById('f-skool-link').value;
 
-        const injection = `<script>
+      const injection = `<script>
   (function(){
     const data = ${JSON.stringify(siteContent)};
     document.addEventListener('DOMContentLoaded', function() {
-      Object.entries(data).forEach(([id, value]) => {
-        const el = document.getElementById(id);
-        if (!el) return;
+      Object.entries(data).forEach(([id,value]) => {
+        const el = document.getElementById(id); if (!el) return;
         if (id === 'about-photo' && value) {
           el.src = value; el.style.display = 'block';
-          const ph = document.getElementById('photo-placeholder');
-          if (ph) ph.style.display = 'none';
+          const ph = document.getElementById('photo-placeholder'); if (ph) ph.style.display = 'none';
         } else { el.innerHTML = value; }
       });
-      // Footer links
       ['footer-tiktok','footer-instagram','footer-contact','footer-savs-link'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el && data[id + '-href']) el.href = data[id + '-href'];
+        const el = document.getElementById(id); if (el && data[id+'-href']) el.href = data[id+'-href'];
       });
-      // Skool link on pricing CTA
       const ctaBtn = document.getElementById('pricing-cta-btn');
-      if (ctaBtn && data['skool-link']) {
-        ctaBtn.onclick = function(){ window.open(data['skool-link'],'_blank'); };
-      }
+      if (ctaBtn && data['skool-link']) ctaBtn.onclick = function(){ window.open(data['skool-link'],'_blank'); };
     });
   })();
 <\/script>`;
 
-        const finalHTML = html.replace(/<script>\s*function loadContent[\s\S]*?<\/script>/, injection);
-        const blob = new Blob([finalHTML], {type: 'text/html'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'index3.html'; a.click();
-        URL.revokeObjectURL(url);
-        showToast('index3.html downloaded — ready to deploy');
-      })
-      .catch(() => {
-        showToast('Open both files from the same folder to enable download');
-      });
+      const finalHTML = html.replace(/<script>\s*function loadContent[\s\S]*?<\/script>/, injection);
+      const blob = new Blob([finalHTML], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'index.html'; a.click();
+      URL.revokeObjectURL(url);
+      showToast('index.html downloaded — ready to deploy');
+    }).catch(() => showToast('Open both files from the same folder to enable download'));
   }
 
-  // Mark unsaved on any change
   document.querySelectorAll('input, textarea').forEach(el => {
     el.addEventListener('input', () => {
       document.getElementById('save-status').textContent = 'Unsaved changes';
@@ -1290,107 +1017,50 @@
     });
   });
 
-  // ══════════════════════════════════════════════════════
-  //  PASSWORD GATE
-  //  SHA-256 hash of the password is stored here.
-  //  To change the password:
-  //    1. Go to: https://emn178.github.io/online-tools/sha256.html
-  //    2. Type your new password and copy the hash
-  //    3. Replace the PASSWORD_HASH value below
-  // ══════════════════════════════════════════════════════
-
+  // ── PASSWORD GATE ──
   // Default password: PerformersLab2025!
-  // Change this hash when you set your own password (see instructions above)
-  const PASSWORD_HASH = '6748802a46fc1ac1de168126fffaca8743c08b9680514a69cdc29ff9456db878';
+  // To change: get SHA-256 hash at https://emn178.github.io/online-tools/sha256.html
+  // Replace the hash string below with your new one
+  const PASSWORD_HASH = '3e5768bd1ca46bd9e1f3a89e4296e925bcffef7b174a1f6353ca8ad672d1d9ad';
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_MS = 15 * 60 * 1000;
+  const SESSION_KEY = 'tpl2-auth-session';
+  const LOCKOUT_KEY = 'tpl2-lockout';
+  const ATTEMPTS_KEY = 'tpl2-attempts';
 
-  const MAX_ATTEMPTS  = 5;
-  const LOCKOUT_MS    = 15 * 60 * 1000; // 15 minutes
-  const SESSION_KEY   = 'tpl3-auth-session';
-  const LOCKOUT_KEY   = 'tpl3-lockout';
-  const ATTEMPTS_KEY  = 'tpl3-attempts';
-
-  // ── SHA-256 via Web Crypto (built into every modern browser) ──
   async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray  = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
   }
+  function generateToken() { const a = new Uint8Array(32); crypto.getRandomValues(a); return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+  function isSessionValid() { return !!sessionStorage.getItem(SESSION_KEY); }
+  function grantSession() { sessionStorage.setItem(SESSION_KEY, generateToken()); }
+  function getLockout() { const d = localStorage.getItem(LOCKOUT_KEY); return d ? JSON.parse(d) : null; }
+  function setLockout() { localStorage.setItem(LOCKOUT_KEY, JSON.stringify({until: Date.now()+LOCKOUT_MS})); localStorage.removeItem(ATTEMPTS_KEY); }
+  function clearLockout() { localStorage.removeItem(LOCKOUT_KEY); localStorage.removeItem(ATTEMPTS_KEY); }
+  function getAttempts() { return parseInt(localStorage.getItem(ATTEMPTS_KEY)||'0',10); }
+  function incrementAttempts() { const n = getAttempts()+1; localStorage.setItem(ATTEMPTS_KEY,n); return n; }
+  function remainingLockoutMinutes() { const l = getLockout(); if (!l) return 0; const ms = l.until-Date.now(); return ms>0?Math.ceil(ms/60000):0; }
 
-  // ── Session token: random string stored in sessionStorage ──
-  // Expires when the browser tab/window is closed.
-  function generateToken() {
-    const arr = new Uint8Array(32);
-    crypto.getRandomValues(arr);
-    return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
-  }
-
-  function isSessionValid() {
-    return !!sessionStorage.getItem(SESSION_KEY);
-  }
-
-  function grantSession() {
-    sessionStorage.setItem(SESSION_KEY, generateToken());
-  }
-
-  // ── Lockout helpers ──
-  function getLockout() {
-    const data = localStorage.getItem(LOCKOUT_KEY);
-    return data ? JSON.parse(data) : null;
-  }
-
-  function setLockout() {
-    localStorage.setItem(LOCKOUT_KEY, JSON.stringify({ until: Date.now() + LOCKOUT_MS }));
-    localStorage.removeItem(ATTEMPTS_KEY);
-  }
-
-  function clearLockout() {
-    localStorage.removeItem(LOCKOUT_KEY);
-    localStorage.removeItem(ATTEMPTS_KEY);
-  }
-
-  function getAttempts() {
-    return parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10);
-  }
-
-  function incrementAttempts() {
-    const n = getAttempts() + 1;
-    localStorage.setItem(ATTEMPTS_KEY, n);
-    return n;
-  }
-
-  function remainingLockoutMinutes() {
-    const lockout = getLockout();
-    if (!lockout) return 0;
-    const ms = lockout.until - Date.now();
-    return ms > 0 ? Math.ceil(ms / 60000) : 0;
-  }
-
-  // ── UI helpers ──
   function showLocked(msg, attemptsLeft) {
-    const errEl  = document.getElementById('lock-error');
-    const attEl  = document.getElementById('lock-attempts');
-    const input  = document.getElementById('lock-input');
-    errEl.textContent = msg || '';
+    const errEl = document.getElementById('lock-error');
+    const attEl = document.getElementById('lock-attempts');
+    const input = document.getElementById('lock-input');
+    errEl.textContent = msg||'';
     input.classList.add('error');
-    setTimeout(() => input.classList.remove('error'), 400);
-    if (attemptsLeft !== undefined && attemptsLeft > 0) {
-      attEl.innerHTML = `<span>${attemptsLeft}</span> attempt${attemptsLeft !== 1 ? 's' : ''} remaining before lockout`;
-    }
+    setTimeout(()=>input.classList.remove('error'),400);
+    if (attemptsLeft!==undefined && attemptsLeft>0)
+      attEl.innerHTML = `<span>${attemptsLeft}</span> attempt${attemptsLeft!==1?'s':''} remaining before lockout`;
   }
 
   function showLockoutBanner(minutes) {
-    const box = document.getElementById('lock-lockout-box');
+    document.getElementById('lock-lockout-box').innerHTML = `<div class="lock-lockout">Too many failed attempts.<br>Try again in <strong>${minutes} minute${minutes!==1?'s':''}</strong>.</div>`;
     document.getElementById('lock-error').textContent = '';
     document.getElementById('lock-attempts').textContent = '';
-    box.innerHTML = `<div class="lock-lockout">
-      Too many failed attempts.<br>
-      Try again in <strong>${minutes} minute${minutes !== 1 ? 's' : ''}</strong>.
-    </div>`;
     document.getElementById('lock-input').disabled = true;
     document.querySelector('.lock-btn').disabled = true;
-    // Refresh countdown every minute
-    setTimeout(() => location.reload(), minutes * 60 * 1000);
+    setTimeout(()=>location.reload(), minutes*60*1000);
   }
 
   function unlock() {
@@ -1401,78 +1071,33 @@
 
   function toggleVisible() {
     const input = document.getElementById('lock-input');
-    const btn   = document.getElementById('lock-toggle-btn');
-    if (input.type === 'password') {
-      input.type = 'text';
-      btn.textContent = '🙈';
-    } else {
-      input.type = 'password';
-      btn.textContent = '👁';
-    }
+    const btn = document.getElementById('lock-toggle-btn');
+    if (input.type==='password') { input.type='text'; btn.textContent='🙈'; }
+    else { input.type='password'; btn.textContent='👁'; }
     input.focus();
   }
 
   async function attemptUnlock() {
-    // Check lockout first
     const lockout = getLockout();
-    if (lockout) {
-      const mins = remainingLockoutMinutes();
-      if (mins > 0) { showLockoutBanner(mins); return; }
-      else clearLockout();
-    }
-
-    const input    = document.getElementById('lock-input');
+    if (lockout) { const mins = remainingLockoutMinutes(); if (mins>0) { showLockoutBanner(mins); return; } else clearLockout(); }
+    const input = document.getElementById('lock-input');
     const password = input.value;
-
-    if (!password) {
-      showLocked('Please enter a password.');
-      input.focus();
-      return;
-    }
-
+    if (!password) { showLocked('Please enter a password.'); input.focus(); return; }
     const hash = await sha256(password);
-
-    if (hash === PASSWORD_HASH) {
-      grantSession();
-      unlock();
-    } else {
+    if (hash === PASSWORD_HASH) { grantSession(); unlock(); }
+    else {
       const attempts = incrementAttempts();
       const remaining = MAX_ATTEMPTS - attempts;
-      if (remaining <= 0) {
-        setLockout();
-        showLockoutBanner(15);
-      } else {
-        showLocked('Incorrect password.', remaining);
-        input.value = '';
-        input.focus();
-      }
+      if (remaining<=0) { setLockout(); showLockoutBanner(15); }
+      else { showLocked('Incorrect password.', remaining); input.value=''; input.focus(); }
     }
   }
 
-  // ── Boot: check if already authenticated this session ──
   (function boot() {
-    // Check active lockout first
     const lockout = getLockout();
-    if (lockout) {
-      const mins = remainingLockoutMinutes();
-      if (mins > 0) {
-        // Show lock screen with lockout banner immediately
-        showLockoutBanner(mins);
-        return;
-      } else {
-        clearLockout();
-      }
-    }
-    // Check valid session token (survives page refresh, not tab close)
-    if (isSessionValid()) {
-      unlock();
-      return;
-    }
-    // Otherwise show lock screen and focus input
-    setTimeout(() => {
-      const input = document.getElementById('lock-input');
-      if (input) input.focus();
-    }, 100);
+    if (lockout) { const mins = remainingLockoutMinutes(); if (mins>0) { showLockoutBanner(mins); return; } else clearLockout(); }
+    if (isSessionValid()) { unlock(); return; }
+    setTimeout(()=>{ const i = document.getElementById('lock-input'); if(i) i.focus(); },100);
   })();
 </script>
 </body>
