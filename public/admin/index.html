@@ -38,14 +38,13 @@
 
   /* ── ADMIN NAV ── */
   #admin-nav {
-    display: none;
+    display: flex;
     justify-content: space-between; align-items: center;
     padding: 0 1.5rem; height: 48px;
     background: var(--bg);
     border-bottom: 0.5px solid var(--border-gold);
     font-family: 'Raleway', sans-serif;
   }
-  #admin-nav.visible { display: flex; }
   .admin-nav-title {
     font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
     color: var(--text);
@@ -60,90 +59,8 @@
   }
   .admin-signout-btn:hover { color: var(--gold); border-color: var(--border-gold); }
 
-  /* ── LOCK SCREEN ── */
-  #lock-screen {
-    position: fixed; inset: 0; z-index: 9999;
-    background: #070707;
-    display: flex; align-items: center; justify-content: center;
-  }
-  #lock-screen::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse 70% 50% at 50% -10%, rgba(201,169,110,0.14) 0%, transparent 60%);
-    pointer-events: none;
-  }
-  .lock-box {
-    position: relative; z-index: 1;
-    width: 100%; max-width: 380px;
-    background: var(--bg-2);
-    border: 0.5px solid var(--border-gold);
-    border-radius: 6px; padding: 2.5rem; text-align: center;
-  }
-  .lock-box::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    border-radius: 6px 6px 0 0;
-  }
-  .lock-icon { font-size: 30px; margin-bottom: 1.25rem; opacity: 0.6; }
-  .lock-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px; font-weight: 500; color: var(--text);
-    margin-bottom: 0.2rem; letter-spacing: 0.04em;
-  }
-  .lock-title span { color: var(--gold); }
-  .lock-subtitle {
-    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--text-dim); font-weight: 500; margin-bottom: 2rem;
-  }
-  .lock-subtitle a { color: var(--gold); opacity: 0.7; text-decoration: none; }
-  .lock-input-wrap { position: relative; margin-bottom: 1rem; }
-  .lock-input {
-    width: 100%; background: var(--bg-3);
-    border: 0.5px solid var(--border-mid);
-    color: var(--text); padding: 12px 44px 12px 14px;
-    border-radius: 3px; font-size: 14px;
-    font-family: 'Raleway', sans-serif; font-weight: 400;
-    outline: none; transition: border-color 0.2s;
-    letter-spacing: 0.06em;
-  }
-  .lock-input:focus { border-color: var(--gold); background: var(--bg-4); }
-  .lock-input.error { border-color: #e05c5c; animation: shake 0.35s ease; }
-  .lock-toggle {
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer;
-    color: var(--text-dim); font-size: 15px; padding: 4px;
-    transition: color 0.2s;
-  }
-  .lock-toggle:hover { color: var(--text-muted); }
-  .lock-btn {
-    width: 100%; background: var(--gold); color: #070707;
-    border: none; padding: 13px; border-radius: 2px;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
-    text-transform: uppercase; cursor: pointer;
-    font-family: 'Raleway', sans-serif; transition: all 0.2s;
-    margin-bottom: 1rem;
-  }
-  .lock-btn:hover { background: var(--gold-light); }
-  .lock-error { font-size: 12px; color: #e05c5c; font-weight: 500; min-height: 18px; margin-bottom: 0.5rem; }
-  .lock-attempts { font-size: 11px; color: var(--text-dim); font-weight: 300; }
-  .lock-attempts span { color: var(--gold); }
-  .lock-lockout {
-    background: rgba(224,92,92,0.08); border: 0.5px solid rgba(224,92,92,0.3);
-    border-radius: 3px; padding: 10px 14px; margin-top: 1rem;
-    font-size: 12px; color: #e05c5c; line-height: 1.5;
-  }
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    20% { transform: translateX(-8px); }
-    40% { transform: translateX(8px); }
-    60% { transform: translateX(-5px); }
-    80% { transform: translateX(5px); }
-  }
-
   /* ── LAYOUT ── */
-  .app { display: none; min-height: 100vh; }
-  .app.unlocked { display: flex; }
+  .app { display: flex; min-height: 100vh; }
 
   /* ── SIDEBAR ── */
   .sidebar {
@@ -410,23 +327,6 @@
 </head>
 <body>
 
-<!-- ══ LOCK SCREEN ══ -->
-<div id="lock-screen">
-  <div class="lock-box">
-    <div class="lock-icon">🔒</div>
-    <div class="lock-title">The Performer's <span>Lab</span></div>
-    <div class="lock-subtitle">by <a href="https://www.alittlesoundadvice.com" target="_blank">Sound Advice Vocal Studio</a> · Admin Editor</div>
-    <div class="lock-input-wrap">
-      <input class="lock-input" id="lock-input" type="password" placeholder="Enter password"
-        autocomplete="current-password" onkeydown="if(event.key==='Enter')attemptUnlock()">
-      <button class="lock-toggle" onclick="toggleVisible()" id="lock-toggle-btn">👁</button>
-    </div>
-    <div class="lock-error" id="lock-error"></div>
-    <button class="lock-btn" onclick="attemptUnlock()">Unlock Editor →</button>
-    <div class="lock-attempts" id="lock-attempts"></div>
-    <div id="lock-lockout-box"></div>
-  </div>
-</div>
 
 <nav id="admin-nav">
   <span class="admin-nav-title">The Performer's <span>Lab</span> · Admin</span>
@@ -1046,89 +946,6 @@
     });
   });
 
-  // ── PASSWORD GATE ──
-  // Default password: PerformersLab2025!
-  // To change: get SHA-256 hash at https://emn178.github.io/online-tools/sha256.html
-  // Replace the hash string below with your new one
-  const PASSWORD_HASH = '3e5768bd1ca46bd9e1f3a89e4296e925bcffef7b174a1f6353ca8ad672d1d9ad';
-  const MAX_ATTEMPTS = 5;
-  const LOCKOUT_MS = 15 * 60 * 1000;
-  const SESSION_KEY = 'tpl2-auth-session';
-  const LOCKOUT_KEY = 'tpl2-lockout';
-  const ATTEMPTS_KEY = 'tpl2-attempts';
-
-  async function sha256(message) {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
-  }
-  function generateToken() { const a = new Uint8Array(32); crypto.getRandomValues(a); return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-  function isSessionValid() { return !!sessionStorage.getItem(SESSION_KEY); }
-  function grantSession() { sessionStorage.setItem(SESSION_KEY, generateToken()); }
-  function getLockout() { const d = localStorage.getItem(LOCKOUT_KEY); return d ? JSON.parse(d) : null; }
-  function setLockout() { localStorage.setItem(LOCKOUT_KEY, JSON.stringify({until: Date.now()+LOCKOUT_MS})); localStorage.removeItem(ATTEMPTS_KEY); }
-  function clearLockout() { localStorage.removeItem(LOCKOUT_KEY); localStorage.removeItem(ATTEMPTS_KEY); }
-  function getAttempts() { return parseInt(localStorage.getItem(ATTEMPTS_KEY)||'0',10); }
-  function incrementAttempts() { const n = getAttempts()+1; localStorage.setItem(ATTEMPTS_KEY,n); return n; }
-  function remainingLockoutMinutes() { const l = getLockout(); if (!l) return 0; const ms = l.until-Date.now(); return ms>0?Math.ceil(ms/60000):0; }
-
-  function showLocked(msg, attemptsLeft) {
-    const errEl = document.getElementById('lock-error');
-    const attEl = document.getElementById('lock-attempts');
-    const input = document.getElementById('lock-input');
-    errEl.textContent = msg||'';
-    input.classList.add('error');
-    setTimeout(()=>input.classList.remove('error'),400);
-    if (attemptsLeft!==undefined && attemptsLeft>0)
-      attEl.innerHTML = `<span>${attemptsLeft}</span> attempt${attemptsLeft!==1?'s':''} remaining before lockout`;
-  }
-
-  function showLockoutBanner(minutes) {
-    document.getElementById('lock-lockout-box').innerHTML = `<div class="lock-lockout">Too many failed attempts.<br>Try again in <strong>${minutes} minute${minutes!==1?'s':''}</strong>.</div>`;
-    document.getElementById('lock-error').textContent = '';
-    document.getElementById('lock-attempts').textContent = '';
-    document.getElementById('lock-input').disabled = true;
-    document.querySelector('.lock-btn').disabled = true;
-    setTimeout(()=>location.reload(), minutes*60*1000);
-  }
-
-  function unlock() {
-    document.getElementById('lock-screen').style.display = 'none';
-    document.getElementById('admin-nav').classList.add('visible');
-    document.getElementById('app-shell').classList.add('unlocked');
-    clearLockout();
-  }
-
-  function toggleVisible() {
-    const input = document.getElementById('lock-input');
-    const btn = document.getElementById('lock-toggle-btn');
-    if (input.type==='password') { input.type='text'; btn.textContent='🙈'; }
-    else { input.type='password'; btn.textContent='👁'; }
-    input.focus();
-  }
-
-  async function attemptUnlock() {
-    const lockout = getLockout();
-    if (lockout) { const mins = remainingLockoutMinutes(); if (mins>0) { showLockoutBanner(mins); return; } else clearLockout(); }
-    const input = document.getElementById('lock-input');
-    const password = input.value;
-    if (!password) { showLocked('Please enter a password.'); input.focus(); return; }
-    const hash = await sha256(password);
-    if (hash === PASSWORD_HASH) { grantSession(); unlock(); }
-    else {
-      const attempts = incrementAttempts();
-      const remaining = MAX_ATTEMPTS - attempts;
-      if (remaining<=0) { setLockout(); showLockoutBanner(15); }
-      else { showLocked('Incorrect password.', remaining); input.value=''; input.focus(); }
-    }
-  }
-
-  (function boot() {
-    const lockout = getLockout();
-    if (lockout) { const mins = remainingLockoutMinutes(); if (mins>0) { showLockoutBanner(mins); return; } else clearLockout(); }
-    if (isSessionValid()) { unlock(); return; }
-    setTimeout(()=>{ const i = document.getElementById('lock-input'); if(i) i.focus(); },100);
-  })();
 </script>
 
 <script type="module">
