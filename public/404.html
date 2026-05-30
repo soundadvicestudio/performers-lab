@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page Not Found — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold:        #c9a96e;
+    --gold-light:  #d4b87e;
+    --bg:          #070707;
+    --text:        #f0ede6;
+    --text-muted:  rgba(240,237,230,0.55);
+    --text-dim:    rgba(240,237,230,0.28);
+    --border:      rgba(240,237,230,0.08);
+    --border-mid:  rgba(240,237,230,0.14);
+    --border-gold: rgba(201,169,110,0.22);
+  }
+  body {
+    font-family: 'Raleway', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  /* ── ATMOSPHERE ── */
+  .bg-glow {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% -5%, rgba(201,169,110,0.16) 0%, transparent 58%),
+      radial-gradient(ellipse 35% 25% at 15% 90%, rgba(201,169,110,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 35% 25% at 85% 85%, rgba(201,169,110,0.04) 0%, transparent 60%);
+  }
+  .bg-grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+
+  /* ── CONTENT ── */
+  .stage {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 2rem;
+  }
+
+  /* logo */
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 500; letter-spacing: 0.08em;
+    color: var(--text); margin-bottom: 3.5rem;
+    opacity: 0; animation: fadeUp 0.7s 0.1s forwards;
+  }
+  .logo span { color: var(--gold); }
+
+  /* divider */
+  .rule {
+    width: 36px; height: 0.5px; background: var(--border-gold);
+    margin: 0 auto 2rem;
+    opacity: 0; animation: fadeUp 0.7s 0.2s forwards;
+  }
+
+  /* 404 */
+  .four-oh-four {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(96px, 18vw, 180px);
+    font-weight: 300; line-height: 1; color: var(--gold);
+    letter-spacing: -0.02em;
+    opacity: 0; animation: fadeUp 0.8s 0.3s forwards;
+  }
+
+  /* message */
+  .message {
+    font-size: 16px; color: var(--text-muted); font-weight: 300;
+    max-width: 400px; line-height: 1.8; margin: 1.75rem 0 2.5rem;
+    opacity: 0; animation: fadeUp 0.8s 0.5s forwards;
+  }
+
+  /* buttons */
+  .actions {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center;
+    opacity: 0; animation: fadeUp 0.8s 0.68s forwards;
+  }
+  .btn-primary {
+    background: var(--gold); color: #070707;
+    border: none; padding: 14px 34px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    font-family: 'Raleway', sans-serif; text-decoration: none;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent; color: var(--text-muted);
+    border: 0.5px solid var(--border-mid);
+    padding: 14px 34px; border-radius: 2px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.14em;
+    text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    font-family: 'Raleway', sans-serif; text-decoration: none;
+    display: inline-block;
+  }
+  .btn-ghost:hover { border-color: rgba(240,237,230,0.35); color: var(--text); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-grain"></div>
+
+<div class="stage">
+  <div class="logo">The Performer's <span>Lab</span></div>
+  <div class="rule"></div>
+  <div class="four-oh-four">404</div>
+  <p class="message">This page doesn't exist — but you're one click away from one that does.</p>
+  <div class="actions">
+    <a href="/" class="btn-primary">Go home</a>
+    <a href="/app/login.html" class="btn-ghost">Sign in</a>
+  </div>
+</div>
+</body>
+</html>
