@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.1);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── NAV ── */
+  .app-nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 2.5rem; height: 56px;
+    background: rgba(7,7,7,0.96); backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-brand { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 400; color: var(--text); letter-spacing: 0.04em; }
+  .nav-brand span { color: var(--gold); }
+  .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+  .nav-greeting { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .nav-greeting strong { color: var(--text-muted); font-weight: 500; }
+  .nav-signout {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-dim); background: none; border: none; cursor: pointer;
+    font-family: 'Raleway', sans-serif; font-weight: 600; transition: color 0.2s;
+  }
+  .nav-signout:hover { color: var(--gold); }
+
+  /* ── MAIN ── */
+  .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+
+  /* ── BACK LINK ── */
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); text-decoration: none; margin-bottom: 2rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--gold); }
+  .back-link::before { content: '←'; font-size: 13px; }
+
+  /* ── PAGE HEADING ── */
+  .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 2.5rem; }
+  .page-heading em { font-style: italic; color: var(--gold); font-weight: 300; }
+
+  /* ── EDIT CARD ── */
+  .edit-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 2rem; margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .edit-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .card-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 1.75rem;
+  }
+
+  /* ── PHOTO ── */
+  .profile-layout { display: flex; gap: 2.5rem; align-items: flex-start; }
+  .photo-col { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+  .photo-avatar {
+    width: 96px; height: 96px; border-radius: 50%;
+    background: var(--bg-3); border: 0.5px solid var(--border-gold);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+    font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; color: var(--gold);
+  }
+  .photo-avatar img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .photo-avatar img.loaded { display: block; }
+  .photo-change {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); background: none; border: none; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: color 0.2s; padding: 0;
+  }
+  .photo-change:hover { color: var(--gold); }
+  #photo-file { display: none; }
+  .photo-hint { font-size: 10px; color: var(--text-dim); font-weight: 300; text-align: center; line-height: 1.5; }
+
+  /* ── FORM FIELDS ── */
+  .fields-col { flex: 1; min-width: 0; }
+  .field { margin-bottom: 1.25rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+  }
+  .field-label .optional { color: var(--text-dim); font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 10px; opacity: 0.7; }
+  input[type="text"].field-input, textarea.field-textarea {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 10px 13px; border-radius: 3px;
+    font-size: 14px; font-family: 'Raleway', sans-serif; font-weight: 300;
+    outline: none; transition: border-color 0.2s; resize: vertical;
+  }
+  input[type="text"].field-input:focus, textarea.field-textarea:focus { border-color: var(--gold); background: var(--bg-4); }
+  textarea.field-textarea { min-height: 90px; line-height: 1.65; }
+
+  /* ── SAVE ROW ── */
+  .save-row { display: flex; align-items: center; gap: 1.25rem; margin-top: 1.75rem; }
+  .btn-gold {
+    background: var(--gold); color: #070707; border: none;
+    padding: 11px 28px; border-radius: 2px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s; flex-shrink: 0;
+  }
+  .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-gold:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .save-msg { font-size: 12px; font-weight: 500; }
+  .save-msg.success { color: var(--green); }
+  .save-msg.error { color: var(--red); }
+  .save-msg.saving { color: var(--text-dim); }
+
+  /* ── INFO GRID ── */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem; }
+  .info-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 1.75rem;
+  }
+  .info-row { margin-bottom: 1.25rem; }
+  .info-row:last-child { margin-bottom: 0; }
+  .info-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 4px;
+  }
+  .info-value { font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.4; }
+  .info-value.prominent { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--text); }
+  .status-badge {
+    display: inline-block;
+    background: var(--green-dim); color: var(--green);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 2px; border: 0.5px solid rgba(76,175,132,0.25);
+  }
+  .status-badge.pending { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); }
+  .status-badge.cancelled { background: var(--red-dim); color: var(--red); border-color: rgba(224,92,92,0.25); }
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif; font-size: 44px; font-weight: 300;
+    color: var(--gold); line-height: 1; margin-bottom: 6px;
+  }
+  .stat-label { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+
+  @media (max-width: 640px) {
+    .app-nav { padding: 0 1.25rem; }
+    .main { padding: 2rem 1.25rem; }
+    .nav-greeting { display: none; }
+    .profile-layout { flex-direction: column; align-items: stretch; }
+    .photo-col { flex-direction: row; align-items: center; gap: 1.25rem; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <nav class="app-nav">
+    <div class="nav-brand">The Performer's <span>Lab</span></div>
+    <div class="nav-right">
+      <div class="nav-greeting">Signed in as <strong id="nav-name">—</strong></div>
+      <button class="nav-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <a href="/app/dashboard.html" class="back-link">Back to dashboard</a>
+
+    <div class="page-eyebrow">Your Account</div>
+    <div class="page-heading">Edit <em>profile</em></div>
+
+    <!-- Edit card -->
+    <div class="edit-card">
+      <div class="card-title">Profile information</div>
+      <div class="profile-layout">
+
+        <!-- Photo -->
+        <div class="photo-col">
+          <div class="photo-avatar" id="photo-avatar">
+            <img id="photo-img" alt="Profile photo">
+            <span id="photo-initial">—</span>
+          </div>
+          <button class="photo-change" onclick="document.getElementById('photo-file').click()">Change photo</button>
+          <input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp">
+          <div class="photo-hint">JPG, PNG or WebP<br>Recommended 400×400px</div>
+        </div>
+
+        <!-- Fields -->
+        <div class="fields-col">
+          <div class="field">
+            <label class="field-label" for="input-name">Display name</label>
+            <input type="text" class="field-input" id="input-name" placeholder="Your name" maxlength="60">
+          </div>
+          <div class="field">
+            <label class="field-label" for="input-bio">Bio <span class="optional">(optional)</span></label>
+            <textarea class="field-textarea" id="input-bio" placeholder="A short bio visible to other members…" maxlength="400"></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="input-location">Location <span class="optional">(optional)</span></label>
+            <input type="text" class="field-input" id="input-location" placeholder="City, State" maxlength="80">
+          </div>
+        </div>
+      </div>
+
+      <div class="save-row">
+        <button class="btn-gold" id="save-btn" onclick="saveProfile()">Save changes</button>
+        <span class="save-msg" id="save-msg"></span>
+      </div>
+    </div>
+
+    <!-- Membership + Stats -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="card-title">Membership</div>
+        <div class="info-row">
+          <div class="info-label">Plan</div>
+          <div class="info-value prominent" id="info-plan">—</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Status</div>
+          <div id="info-status-wrap"><span class="info-value">—</span></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Member since</div>
+          <div class="info-value" id="info-since">—</div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="card-title">Activity</div>
+        <div class="stat-num" id="stat-submissions">—</div>
+        <div class="stat-label">total submissions</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  let currentUserId = null;
+  let currentPhotoUrl = null;
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    currentUserId = session.user.id;
+
+    // Run profile, membership, and submission count queries in parallel
+    const [profileRes, membershipRes, countRes] = await Promise.all([
+      supabase.from('profiles')
+        .select('display_name, bio, location, photo_url, is_admin')
+        .eq('user_id', currentUserId)
+        .single(),
+      supabase.from('memberships')
+        .select('plan, status, created_at')
+        .eq('user_id', currentUserId)
+        .single(),
+      supabase.from('submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('member_id', currentUserId),
+    ]);
+
+    const profile = profileRes.data;
+    if (profile?.is_admin) { window.location.href = '/admin'; return; }
+
+    // Populate nav + form
+    const name = profile?.display_name || session.user.email.split('@')[0];
+    document.getElementById('nav-name').textContent = name;
+    document.getElementById('input-name').value = profile?.display_name || '';
+    document.getElementById('input-bio').value = profile?.bio || '';
+    document.getElementById('input-location').value = profile?.location || '';
+
+    // Photo
+    currentPhotoUrl = profile?.photo_url || null;
+    setPhotoPreview(currentPhotoUrl, name);
+
+    // Wire up file picker
+    document.getElementById('photo-file').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = ev => setPhotoPreview(ev.target.result, name, true);
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Membership
+    const membership = membershipRes.data;
+    if (membership) {
+      document.getElementById('info-plan').textContent =
+        membership.plan === 'founding' ? 'Founding Member' : 'Standard Member';
+      document.getElementById('info-status-wrap').innerHTML =
+        `<span class="status-badge${membership.status !== 'active' ? ' pending' : ''}${membership.status === 'cancelled' ? ' cancelled' : ''}">${membership.status}</span>`;
+      document.getElementById('info-since').textContent =
+        new Date(membership.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    } else {
+      document.getElementById('info-plan').textContent = 'No active membership';
+    }
+
+    // Submission count
+    document.getElementById('stat-submissions').textContent = countRes.count ?? 0;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  function setPhotoPreview(src, name, isPending) {
+    const img = document.getElementById('photo-img');
+    const initial = document.getElementById('photo-initial');
+    if (src) {
+      img.src = src;
+      img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
+      img.onerror = () => { img.classList.remove('loaded'); initial.style.display = ''; };
+    } else {
+      img.classList.remove('loaded');
+      initial.style.display = '';
+      initial.textContent = name ? name[0].toUpperCase() : '?';
+    }
+  }
+
+  async function uploadPhoto(file) {
+    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${currentUserId}/avatar.${ext}`;
+    const { error } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (error) {
+      // Bucket not found or storage not configured
+      if (error.statusCode === '404' || error.message?.toLowerCase().includes('bucket')) {
+        return { error: "Photo uploads aren't available yet — the storage bucket hasn't been created." };
+      }
+      return { error: `Upload failed: ${error.message}` };
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    return { url: urlData.publicUrl };
+  }
+
+  window.saveProfile = async function() {
+    const name = document.getElementById('input-name').value.trim();
+    const bio  = document.getElementById('input-bio').value.trim();
+    const loc  = document.getElementById('input-location').value.trim();
+
+    if (!name) { showMsg('Display name is required.', 'error'); return; }
+
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    showMsg('Saving…', 'saving');
+
+    // Upload new photo if one was selected
+    let photoUrl = currentPhotoUrl;
+    const fileInput = document.getElementById('photo-file');
+    if (fileInput.files[0]) {
+      const result = await uploadPhoto(fileInput.files[0]);
+      if (result.error) { showMsg(result.error, 'error'); btn.disabled = false; return; }
+      photoUrl = result.url;
+      fileInput.value = '';
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: name, bio: bio || null, location: loc || null, photo_url: photoUrl })
+      .eq('user_id', currentUserId);
+
+    btn.disabled = false;
+    if (error) { showMsg('Could not save: ' + error.message, 'error'); return; }
+
+    currentPhotoUrl = photoUrl;
+    document.getElementById('nav-name').textContent = name;
+    showMsg('Changes saved ✓', 'success');
+  };
+
+  function showMsg(text, type) {
+    const el = document.getElementById('save-msg');
+    el.textContent = text;
+    el.className = `save-msg ${type}`;
+  }
+
+  window.signOut = async function() {
+    await supabase.auth.signOut();
+    window.location.href = '/app/login.html';
+  };
+
+  init();
+</script>
+</body>
+</html>
