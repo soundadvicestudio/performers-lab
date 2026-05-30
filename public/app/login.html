@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.15);
+    --red: #e05c5c; --green: #4caf84;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 2rem; position: relative; overflow: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% -10%, rgba(201,169,110,0.13) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .card {
+    position: relative; z-index: 1; width: 100%; max-width: 400px;
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 8px; padding: 2.75rem 2.5rem;
+    animation: fadeUp 0.6s ease forwards;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    border-radius: 8px 8px 0 0;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .card-logo { text-align: center; margin-bottom: 2rem; }
+  .card-logo-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.04em; line-height: 1; margin-bottom: 3px; }
+  .card-logo-name span { color: var(--gold); }
+  .card-logo-sub { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); font-weight: 500; }
+  .card-logo-sub a { color: var(--gold); opacity: 0.7; text-decoration: none; }
+  .card-rule { width: 32px; height: 0.5px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.25rem auto; }
+  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; color: var(--text); text-align: center; line-height: 1.1; margin-bottom: 0.4rem; }
+  .card-title em { font-style: italic; color: var(--gold); font-weight: 300; }
+  .card-desc { font-size: 13px; color: var(--text-muted); text-align: center; font-weight: 300; line-height: 1.6; margin-bottom: 2rem; }
+  .field { margin-bottom: 1.1rem; }
+  .field-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .field-input {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 11px 14px; border-radius: 3px; font-size: 14px;
+    font-family: 'Raleway', sans-serif; font-weight: 300;
+    transition: border-color 0.2s; outline: none; -webkit-appearance: none;
+  }
+  .field-input:focus { border-color: var(--gold); background: var(--bg-4); }
+  .field-input.error { border-color: var(--red); }
+  .field-input-wrap { position: relative; }
+  .field-input-wrap .field-input { padding-right: 42px; }
+  .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-dim); font-size: 14px; padding: 4px; transition: color 0.2s; line-height: 1; }
+  .pw-toggle:hover { color: var(--text-muted); }
+  .forgot-link { display: block; text-align: right; font-size: 11px; color: var(--gold); opacity: 0.75; text-decoration: none; margin-top: 5px; transition: opacity 0.2s; }
+  .forgot-link:hover { opacity: 1; }
+  .submit-btn {
+    width: 100%; background: var(--gold); color: #070707;
+    border: none; padding: 13px; border-radius: 3px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s; margin-top: 0.5rem;
+  }
+  .submit-btn:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .banner { border-radius: 3px; padding: 11px 14px; margin-bottom: 1.25rem; font-size: 13px; font-weight: 400; line-height: 1.5; display: none; }
+  .banner.error { background: rgba(224,92,92,0.1); border: 0.5px solid rgba(224,92,92,0.3); color: var(--red); }
+  .banner.success { background: rgba(76,175,132,0.1); border: 0.5px solid rgba(76,175,132,0.3); color: var(--green); }
+  .banner.show { display: block; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 1.5rem 0; color: var(--text-dim); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+  .card-footer { text-align: center; margin-top: 1.5rem; font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .card-footer a { color: var(--gold); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+  .card-footer a:hover { color: var(--gold-light); }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(7,7,7,0.3); border-top-color: #070707; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-logo">
+    <div class="card-logo-name">The Performer's <span>Lab</span></div>
+    <div class="card-logo-sub">by <a href="https://www.alittlesoundadvice.com" target="_blank">Sound Advice Vocal Studio</a></div>
+  </div>
+  <div class="card-rule"></div>
+  <div class="card-title">Welcome <em>back.</em></div>
+  <p class="card-desc">Sign in to access your feedback, community, and upcoming Lab Sessions.</p>
+
+  <div class="banner error" id="error-banner"></div>
+  <div class="banner success" id="success-banner"></div>
+
+  <form id="login-form" autocomplete="on" novalidate>
+    <div class="field">
+      <label class="field-label" for="email">Email address</label>
+      <input class="field-input" type="email" id="email" name="email"
+        placeholder="you@example.com" autocomplete="email" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="password">Password</label>
+      <div class="field-input-wrap">
+        <input class="field-input" type="password" id="password" name="password"
+          placeholder="Your password" autocomplete="current-password" required>
+        <button type="button" class="pw-toggle" onclick="togglePw()">👁</button>
+      </div>
+      <a class="forgot-link" href="/app/reset.html">Forgot password?</a>
+    </div>
+    <button class="submit-btn" type="submit" id="submit-btn">Sign in →</button>
+  </form>
+
+  <div class="divider">or</div>
+  <div class="card-footer">
+    Not a member yet? <a href="/app/signup.html">Join the Lab</a>
+  </div>
+  <div class="card-footer" style="margin-top:0.75rem;">
+    <a href="/">← Back to performers-lab.com</a>
+  </div>
+</div>
+
+<script src="/api/env"></script>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  const SUPABASE_URL  = window.__ENV__?.SUPABASE_URL  || '';
+  const SUPABASE_ANON = window.__ENV__?.SUPABASE_ANON_KEY || '';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // Redirect if already logged in
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) window.location.href = '/app/dashboard.html';
+
+  window.togglePw = function() {
+    const input = document.getElementById('password');
+    const btn = document.querySelector('.pw-toggle');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    btn.textContent = input.type === 'password' ? '👁' : '🙈';
+  };
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorBanner = document.getElementById('error-banner');
+    const btn = document.getElementById('submit-btn');
+    errorBanner.classList.remove('show');
+
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) { showError('Please enter your email and password.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Signing in…';
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      const msg = error.message.includes('Invalid login') ? 'Incorrect email or password.' : error.message;
+      showError(msg);
+      btn.disabled = false;
+      btn.innerHTML = 'Sign in →';
+      return;
+    }
+
+    // Check if admin — redirect accordingly
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('user_id', data.user.id)
+      .single();
+
+    if (profile?.is_admin) {
+      window.location.href = '/admin';
+    } else {
+      window.location.href = '/app/dashboard.html';
+    }
+  });
+
+  function showError(msg) {
+    const banner = document.getElementById('error-banner');
+    banner.textContent = msg;
+    banner.classList.add('show');
+  }
+</script>
+</body>
+</html>

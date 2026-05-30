@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verifying your account — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08);
+    --red: #e05c5c; --green: #4caf84;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 2rem; position: relative;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% -10%, rgba(201,169,110,0.13) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .card {
+    position: relative; z-index: 1; width: 100%; max-width: 420px;
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 8px; padding: 3rem 2.5rem; text-align: center;
+    animation: fadeUp 0.6s ease forwards;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    border-radius: 8px 8px 0 0;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+  .status-icon { font-size: 40px; margin-bottom: 1.25rem; display: block; }
+  .card-logo-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 400; color: var(--text-dim); letter-spacing: 0.04em; margin-bottom: 2rem; }
+  .card-logo-name span { color: var(--gold); }
+  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; color: var(--text); line-height: 1.15; margin-bottom: 0.75rem; }
+  .card-title em { font-style: italic; color: var(--gold); font-weight: 300; }
+  .card-desc { font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.7; margin-bottom: 2rem; }
+  .btn {
+    display: inline-block; background: var(--gold); color: #070707;
+    border: none; padding: 13px 32px; border-radius: 3px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s; text-decoration: none;
+  }
+  .btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-ghost {
+    display: inline-block; background: transparent; color: var(--text-muted);
+    border: 0.5px solid rgba(240,237,230,0.15); padding: 13px 32px; border-radius: 3px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+    text-decoration: none; margin-top: 0.75rem; display: block;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: rgba(240,237,230,0.3); }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(201,169,110,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* State screens */
+  .screen { display: none; }
+  .screen.active { display: block; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-logo-name">The Performer's <span>Lab</span></div>
+
+  <!-- Verifying state -->
+  <div class="screen active" id="screen-verifying">
+    <span class="status-icon"><span class="spinner"></span></span>
+    <div class="card-title">Verifying your <em>account…</em></div>
+    <p class="card-desc">Just a moment while we confirm your email address.</p>
+  </div>
+
+  <!-- Success state -->
+  <div class="screen" id="screen-success">
+    <span class="status-icon">🎤</span>
+    <div class="card-title">You're <em>in.</em></div>
+    <p class="card-desc">Your account is verified and active. Welcome to The Performer's Lab — your first feedback session is waiting.</p>
+    <a class="btn" href="/app/dashboard.html">Go to your dashboard →</a>
+  </div>
+
+  <!-- Already verified state -->
+  <div class="screen" id="screen-already">
+    <span class="status-icon">✓</span>
+    <div class="card-title">Already <em>verified.</em></div>
+    <p class="card-desc">Your account is already active. Sign in to access your dashboard.</p>
+    <a class="btn" href="/app/login.html">Sign in →</a>
+  </div>
+
+  <!-- Error state -->
+  <div class="screen" id="screen-error">
+    <span class="status-icon">⚠️</span>
+    <div class="card-title">Link <em>expired.</em></div>
+    <p class="card-desc">This verification link has expired or already been used. Sign up again to get a new link.</p>
+    <a class="btn" href="/app/signup.html">Sign up again →</a>
+    <a class="btn-ghost" href="/app/login.html">Try signing in instead</a>
+  </div>
+</div>
+
+<script src="/api/env"></script>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  const SUPABASE_URL  = window.__ENV__?.SUPABASE_URL  || '';
+  const SUPABASE_ANON = window.__ENV__?.SUPABASE_ANON_KEY || '';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // Supabase sends the user back here with a token in the URL hash
+  // The JS client handles the exchange automatically on getSession()
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  if (session) {
+    show('screen-success');
+    // Redirect to dashboard after 2 seconds
+    setTimeout(() => window.location.href = '/app/dashboard.html', 2000);
+  } else {
+    // Check for error in URL params
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace('#',''));
+    const errorCode = params.get('error_code') || hashParams.get('error_code');
+
+    if (errorCode === 'already_confirmed') {
+      show('screen-already');
+    } else {
+      show('screen-error');
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING SCREEN ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── NAV ── */
+  .app-nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 2.5rem; height: 56px;
+    background: rgba(7,7,7,0.96); backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-brand { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 400; color: var(--text); letter-spacing: 0.04em; }
+  .nav-brand span { color: var(--gold); }
+  .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+  .nav-greeting { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .nav-greeting strong { color: var(--text-muted); font-weight: 500; }
+  .nav-signout {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-dim); background: none; border: none; cursor: pointer;
+    font-family: 'Raleway', sans-serif; font-weight: 600; transition: color 0.2s;
+  }
+  .nav-signout:hover { color: var(--gold); }
+
+  /* ── MAIN ── */
+  .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+  .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 2.5rem; }
+  .page-heading em { font-style: italic; color: var(--gold); font-weight: 300; }
+
+  /* ── CARDS GRID ── */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+  .dash-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 1.75rem;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: pointer; text-decoration: none; display: block; color: inherit;
+  }
+  .dash-card:hover { border-color: var(--border-gold); transform: translateY(-2px); }
+  .dash-card-icon { font-size: 24px; margin-bottom: 1rem; }
+  .dash-card-title { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .dash-card-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; font-weight: 300; }
+  .dash-card-cta { font-size: 11px; color: var(--gold); font-weight: 600; letter-spacing: 0.08em; margin-top: 1rem; display: block; }
+
+  /* ── STATUS CARD ── */
+  .status-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 1.75rem;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem;
+  }
+  .status-left { display: flex; flex-direction: column; gap: 4px; }
+  .status-plan { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+  .status-value { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); }
+  .status-badge {
+    background: var(--green-dim); color: var(--green);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 2px; border: 0.5px solid rgba(76,175,132,0.25);
+  }
+  .status-badge.pending { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); }
+
+  /* ── UPCOMING EVENT ── */
+  .section-label { font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-dim); font-weight: 700; margin-bottom: 1rem; }
+  .event-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 6px; padding: 1.5rem; position: relative; overflow: hidden;
+    margin-bottom: 2.5rem;
+  }
+  .event-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .event-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--text); margin-bottom: 4px; }
+  .event-date { font-size: 12px; color: var(--gold); font-weight: 500; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .event-desc { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.6; }
+  .event-empty { font-size: 13px; color: var(--text-dim); font-weight: 300; font-style: italic; }
+
+  /* ── SUBMISSION PROMPT ── */
+  .submit-prompt {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 2rem; text-align: center;
+  }
+  .submit-prompt-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--text); margin-bottom: 0.5rem; }
+  .submit-prompt-title em { font-style: italic; color: var(--gold); }
+  .submit-prompt-desc { font-size: 13px; color: var(--text-muted); font-weight: 300; margin-bottom: 1.5rem; line-height: 1.6; }
+  .btn-gold {
+    display: inline-block; background: var(--gold); color: #070707;
+    border: none; padding: 12px 28px; border-radius: 2px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s; text-decoration: none;
+  }
+  .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .submitted-note { font-size: 12px; color: var(--green); font-weight: 500; }
+
+  @media (max-width: 600px) {
+    .app-nav { padding: 0 1.25rem; }
+    .main { padding: 2rem 1.25rem; }
+    .nav-greeting { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <nav class="app-nav">
+    <div class="nav-brand">The Performer's <span>Lab</span></div>
+    <div class="nav-right">
+      <div class="nav-greeting">Welcome back, <strong id="nav-name">—</strong></div>
+      <button class="nav-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-eyebrow">Member Dashboard</div>
+    <div class="page-heading">Good to see you, <em id="dash-name">—</em></div>
+
+    <!-- Membership status -->
+    <div class="status-card">
+      <div class="status-left">
+        <div class="status-plan">Membership plan</div>
+        <div class="status-value" id="plan-display">—</div>
+      </div>
+      <div class="status-badge" id="status-badge">Active</div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="cards-grid">
+      <a class="dash-card" href="/app/submit.html">
+        <div class="dash-card-icon">🎤</div>
+        <div class="dash-card-title">Submit this week's video</div>
+        <div class="dash-card-desc">Upload your performance and get detailed feedback within 48 hours.</div>
+        <span class="dash-card-cta">Submit now →</span>
+      </a>
+      <a class="dash-card" href="/app/community.html">
+        <div class="dash-card-icon">💬</div>
+        <div class="dash-card-title">Community</div>
+        <div class="dash-card-desc">Connect with fellow performers, ask questions, and share your wins.</div>
+        <span class="dash-card-cta">Open community →</span>
+      </a>
+      <a class="dash-card" href="/app/resources.html">
+        <div class="dash-card-icon">📚</div>
+        <div class="dash-card-title">Resource library</div>
+        <div class="dash-card-desc">Warm-up routines, audition prep guides, and coaching materials.</div>
+        <span class="dash-card-cta">Browse resources →</span>
+      </a>
+      <a class="dash-card" href="/app/profile.html">
+        <div class="dash-card-icon">👤</div>
+        <div class="dash-card-title">Your profile</div>
+        <div class="dash-card-desc">Update your display name, photo, bio, and submission history.</div>
+        <span class="dash-card-cta">Edit profile →</span>
+      </a>
+    </div>
+
+    <!-- Upcoming Lab Session -->
+    <div class="section-label">Upcoming Lab Session</div>
+    <div class="event-card" id="event-card">
+      <div class="event-empty" id="event-empty">No upcoming sessions scheduled yet. Check back soon.</div>
+      <div id="event-details" style="display:none;">
+        <div class="event-title" id="event-title">—</div>
+        <div class="event-date" id="event-date">—</div>
+        <div class="event-desc" id="event-desc">—</div>
+      </div>
+    </div>
+
+    <!-- Weekly submission prompt -->
+    <div class="section-label">This week's submission</div>
+    <div class="submit-prompt" id="submit-prompt">
+      <div class="submit-prompt-title">Ready to submit your <em>video</em>?</div>
+      <p class="submit-prompt-desc">You haven't submitted this week yet. Record your performance, fill out the intake form, and get detailed feedback within 48 hours.</p>
+      <a class="btn-gold" href="/app/submit.html">Submit this week →</a>
+    </div>
+  </main>
+</div>
+
+<script src="/api/env"></script>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  const SUPABASE_URL  = window.__ENV__?.SUPABASE_URL  || '';
+  const SUPABASE_ANON = window.__ENV__?.SUPABASE_ANON_KEY || '';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  async function init() {
+    // Gate: require active session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    const user = session.user;
+
+    // Load profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, is_admin')
+      .eq('user_id', user.id)
+      .single();
+
+    // Redirect admin to admin dashboard
+    if (profile?.is_admin) { window.location.href = '/admin'; return; }
+
+    const name = profile?.display_name || user.email.split('@')[0];
+    document.getElementById('nav-name').textContent = name;
+    document.getElementById('dash-name').textContent = name;
+
+    // Load membership
+    const { data: membership } = await supabase
+      .from('memberships')
+      .select('plan, status')
+      .eq('user_id', user.id)
+      .single();
+
+    if (membership) {
+      const planLabel = membership.plan === 'founding' ? 'Founding Member — $40/mo' : 'Standard Member — $60/mo';
+      document.getElementById('plan-display').textContent = planLabel;
+      const badge = document.getElementById('status-badge');
+      badge.textContent = membership.status === 'active' ? 'Active' : membership.status;
+      if (membership.status !== 'active') badge.classList.add('pending');
+    }
+
+    // Load next upcoming event
+    const { data: events } = await supabase
+      .from('events')
+      .select('title, topic, description, starts_at')
+      .eq('status', 'upcoming')
+      .order('starts_at', { ascending: true })
+      .limit(1);
+
+    if (events && events.length > 0) {
+      const ev = events[0];
+      document.getElementById('event-empty').style.display = 'none';
+      document.getElementById('event-details').style.display = 'block';
+      document.getElementById('event-title').textContent = ev.title;
+      document.getElementById('event-date').textContent = new Date(ev.starts_at).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short' });
+      document.getElementById('event-desc').textContent = ev.description || ev.topic || '';
+    }
+
+    // Check this week's submission
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    weekStart.setHours(0,0,0,0);
+
+    const { data: submissions } = await supabase
+      .from('submissions')
+      .select('id, status')
+      .eq('member_id', user.id)
+      .gte('submitted_at', weekStart.toISOString())
+      .limit(1);
+
+    if (submissions && submissions.length > 0) {
+      const sub = submissions[0];
+      const prompt = document.getElementById('submit-prompt');
+      prompt.innerHTML = `
+        <div class="submit-prompt-title">Submission <em>received.</em></div>
+        <p class="submit-prompt-desc">Your video for this week has been submitted. Status: <strong style="color:var(--gold)">${sub.status}</strong>. You'll be notified when your feedback is ready.</p>
+        <span class="submitted-note">✓ Submitted this week</span>
+      `;
+    }
+
+    // Show app, hide loading
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  window.signOut = async function() {
+    await supabase.auth.signOut();
+    window.location.href = '/app/login.html';
+  };
+
+  init();
+</script>
+</body>
+</html>
