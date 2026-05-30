@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Performer's Lab — Admin Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e;
+    --gold-dim: rgba(201,169,110,0.15);
+    --border-gold: rgba(201,169,110,0.3);
+    --bg: #0a0a0a;
+    --bg-2: #111111;
+    --bg-3: #181818;
+    --bg-4: #1f1f1f;
+    --text: #f0ede6;
+    --text-muted: rgba(240,237,230,0.6);
+    --text-dim: rgba(240,237,230,0.35);
+    --border: rgba(240,237,230,0.1);
+    --green: #4caf84;
+    --green-dim: rgba(76,175,132,0.15);
+    --red: #e05c5c;
+    --red-dim: rgba(224,92,92,0.12);
+  }
+  body {
+    font-family: 'Raleway', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* LAYOUT */
+  .app { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    background: var(--bg-2);
+    border-right: 0.5px solid var(--border);
+    padding: 0;
+    position: sticky; top: 0; height: 100vh;
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .sidebar-logo {
+    padding: 1.5rem 1.25rem 1.25rem;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.04em; color: var(--text);
+  }
+  .sidebar-logo span { color: var(--gold); display: block; font-size: 10px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-top: 2px; }
+  .sidebar-nav { padding: 0.75rem 0; flex: 1; }
+  .nav-section { padding: 0.75rem 1.25rem 0.25rem; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0.6rem 1.25rem; cursor: pointer;
+    font-size: 13px; color: var(--text-muted);
+    transition: all 0.15s; border-left: 2px solid transparent;
+    font-weight: 400;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(240,237,230,0.04); }
+  .nav-item.active { color: var(--gold); border-left-color: var(--gold); background: var(--gold-dim); }
+  .nav-item svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  .sidebar-footer {
+    padding: 1rem 1.25rem;
+    border-top: 0.5px solid var(--border);
+  }
+  .preview-btn {
+    width: 100%; background: transparent;
+    border: 0.5px solid var(--border-gold); color: var(--gold);
+    padding: 8px; border-radius: 4px; font-size: 11px;
+    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif;
+    transition: all 0.2s;
+  }
+  .preview-btn:hover { background: var(--gold-dim); }
+
+  /* MAIN */
+  .main { flex: 1; overflow-y: auto; }
+
+  /* TOP BAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.9rem 2rem;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .topbar-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .topbar-title span { color: var(--text-dim); font-weight: 300; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .save-status { font-size: 11px; color: var(--text-dim); letter-spacing: 0.06em; }
+  .save-status.saved { color: var(--green); }
+  .save-btn {
+    background: var(--gold); color: #080808;
+    border: none; padding: 8px 20px; border-radius: 3px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .save-btn:hover { background: #d4b87e; }
+  .export-btn {
+    background: transparent; color: var(--text-muted);
+    border: 0.5px solid var(--border); padding: 8px 16px; border-radius: 3px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .export-btn:hover { color: var(--text); border-color: rgba(240,237,230,0.3); }
+
+  /* CONTENT */
+  .content { padding: 2rem; max-width: 780px; }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .panel-title {
+    font-size: 18px; font-weight: 500; color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+  .panel-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 2rem; font-weight: 300; }
+
+  /* CARDS */
+  .edit-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 8px; margin-bottom: 1.25rem; overflow: hidden;
+  }
+  .edit-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 0.5px solid var(--border);
+    cursor: pointer; user-select: none;
+  }
+  .edit-card-header:hover { background: rgba(240,237,230,0.02); }
+  .card-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+  .card-chevron {
+    transition: transform 0.2s; color: var(--text-dim); font-size: 16px;
+  }
+  .card-chevron.open { transform: rotate(180deg); }
+  .edit-card-body { padding: 1.25rem; display: none; }
+  .edit-card-body.open { display: block; }
+
+  /* FIELDS */
+  .field { margin-bottom: 1.25rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    display: block; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 6px;
+  }
+  .field-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-weight: 300; }
+  input[type="text"], textarea {
+    width: 100%; background: var(--bg-3);
+    border: 0.5px solid var(--border);
+    color: var(--text); padding: 9px 12px;
+    border-radius: 4px; font-size: 13px;
+    font-family: 'Raleway', sans-serif; font-weight: 300;
+    transition: border-color 0.2s; resize: vertical;
+    outline: none;
+  }
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--gold); background: var(--bg-4);
+  }
+  textarea { min-height: 80px; line-height: 1.6; }
+
+  /* PHOTO UPLOAD */
+  .photo-upload-area {
+    border: 1px dashed var(--border);
+    border-radius: 6px; padding: 2rem;
+    text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--bg-3);
+  }
+  .photo-upload-area:hover { border-color: var(--border-gold); background: var(--bg-4); }
+  .photo-upload-area.has-photo { border-style: solid; border-color: var(--border-gold); }
+  .photo-preview {
+    width: 80px; height: 80px; border-radius: 50%;
+    object-fit: cover; margin: 0 auto 12px;
+    display: none; border: 0.5px solid var(--border-gold);
+  }
+  .photo-preview.show { display: block; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
+  .upload-text { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .upload-text strong { color: var(--gold); font-weight: 500; }
+  #photo-file { display: none; }
+
+  /* SKOOL LINK */
+  .link-field { display: flex; gap: 8px; }
+  .link-field input { flex: 1; }
+  .link-test {
+    background: var(--bg-3); border: 0.5px solid var(--border);
+    color: var(--text-muted); padding: 9px 14px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer; white-space: nowrap;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .link-test:hover { color: var(--text); border-color: rgba(240,237,230,0.3); }
+
+  /* SOCIAL LINKS */
+  .social-field { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .social-badge {
+    background: var(--gold-dim); color: var(--gold);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 3px;
+    width: 80px; text-align: center; flex-shrink: 0;
+    border: 0.5px solid var(--border-gold);
+  }
+  .social-field input { flex: 1; }
+
+  /* GRID FIELDS */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* COLOR PREVIEW */
+  .color-preview-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .color-swatch {
+    width: 24px; height: 24px; border-radius: 50%;
+    cursor: pointer; border: 2px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .color-swatch.selected { border-color: white; }
+
+  /* NOTIFICATION */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--bg-3); border: 0.5px solid var(--border-gold);
+    color: var(--text); padding: 12px 20px; border-radius: 6px;
+    font-size: 13px; font-weight: 500;
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s; z-index: 1000;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+  /* STEP GRID */
+  .step-grid { display: grid; gap: 1px; }
+
+  /* PREVIEW IFRAME */
+  .preview-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 500;
+    align-items: center; justify-content: center;
+  }
+  .preview-modal.open { display: flex; }
+  .preview-wrap {
+    width: 90vw; height: 90vh;
+    background: #fff; border-radius: 8px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .preview-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.75rem 1rem; background: #1a1a1a; flex-shrink: 0;
+  }
+  .preview-bar span { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .close-preview {
+    background: transparent; border: 0.5px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6); padding: 5px 14px;
+    border-radius: 3px; cursor: pointer; font-size: 11px;
+    font-family: 'Raleway', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .preview-frame { flex: 1; border: none; width: 100%; }
+
+  /* EXPORT PANEL */
+  .export-area {
+    background: var(--bg-3); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 1.25rem;
+    font-family: monospace; font-size: 11px; color: var(--text-muted);
+    max-height: 300px; overflow-y: auto; white-space: pre-wrap;
+    word-break: break-all; line-height: 1.5;
+  }
+  .export-actions { display: flex; gap: 10px; margin-top: 12px; }
+  .action-btn {
+    background: var(--bg-3); border: 0.5px solid var(--border);
+    color: var(--text-muted); padding: 8px 16px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .action-btn:hover { color: var(--text); border-color: rgba(240,237,230,0.3); }
+  .action-btn.primary {
+    background: var(--gold); color: #080808; border-color: var(--gold);
+  }
+  .action-btn.primary:hover { background: #d4b87e; }
+
+  /* DEPLOY STEPS */
+  .deploy-step {
+    display: flex; gap: 14px; padding: 1.25rem;
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; margin-bottom: 12px;
+  }
+  .deploy-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--gold-dim); border: 0.5px solid var(--border-gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--gold); flex-shrink: 0;
+  }
+  .deploy-content h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .deploy-content p { font-size: 12px; color: var(--text-dim); font-weight: 300; line-height: 1.6; }
+  .deploy-content code {
+    display: inline-block; background: var(--bg-4);
+    border: 0.5px solid var(--border); padding: 2px 8px;
+    border-radius: 3px; font-family: monospace; font-size: 11px;
+    color: var(--gold); margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      Admin Editor
+      <span>The Performer's Lab</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Sections</div>
+      <div class="nav-item active" data-panel="hero" onclick="switchPanel(this,'hero')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Hero
+      </div>
+      <div class="nav-item" data-panel="stats" onclick="switchPanel(this,'stats')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Stats Bar
+      </div>
+      <div class="nav-item" data-panel="how" onclick="switchPanel(this,'how')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        How It Works
+      </div>
+      <div class="nav-item" data-panel="includes" onclick="switchPanel(this,'includes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        What's Included
+      </div>
+      <div class="nav-item" data-panel="for" onclick="switchPanel(this,'for')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Who It's For
+      </div>
+      <div class="nav-item" data-panel="pricing" onclick="switchPanel(this,'pricing')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Pricing
+      </div>
+      <div class="nav-item" data-panel="about" onclick="switchPanel(this,'about')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        About You
+      </div>
+      <div class="nav-item" data-panel="footer" onclick="switchPanel(this,'footer')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+        Links & Footer
+      </div>
+      <div class="nav-section" style="margin-top:0.5rem;">Tools</div>
+      <div class="nav-item" data-panel="deploy" onclick="switchPanel(this,'deploy')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        Deploy Guide
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="preview-btn" onclick="openPreview()">Preview Site ↗</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">The Performer's Lab <span>/ Site Editor</span></div>
+      <div class="topbar-actions">
+        <span class="save-status" id="save-status">Unsaved changes</span>
+        <button class="export-btn" onclick="switchPanel(document.querySelector('[data-panel=deploy]'),'deploy')">Export HTML</button>
+        <button class="save-btn" onclick="saveAll()">Save Changes</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- HERO PANEL -->
+      <div class="panel active" id="panel-hero">
+        <div class="panel-title">Hero Section</div>
+        <div class="panel-desc">The first thing visitors see. Make it count.</div>
+
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Headline & Subtext</span>
+            <span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="field">
+              <label class="field-label">Eyebrow (above headline)</label>
+              <input type="text" id="f-hero-eyebrow" value="Sound Advice Studio">
+            </div>
+            <div class="field">
+              <label class="field-label">Main Headline</label>
+              <input type="text" id="f-hero-headline" value="Your voice deserves &lt;em&gt;consistent&lt;/em&gt; attention.">
+              <div class="field-hint">Wrap a word in &lt;em&gt;&lt;/em&gt; to make it italic and gold.</div>
+            </div>
+            <div class="field">
+              <label class="field-label">Subheadline</label>
+              <textarea id="f-hero-sub">Weekly personalized performance feedback and monthly live masterclasses — for serious singers and performers across America.</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Buttons & Pricing Note</span>
+            <span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="two-col">
+              <div class="field">
+                <label class="field-label">Primary Button Text</label>
+                <input type="text" id="f-hero-cta-primary" value="Claim your founding spot">
+              </div>
+              <div class="field">
+                <label class="field-label">Secondary Button Text</label>
+                <input type="text" id="f-hero-cta-secondary" value="See how it works">
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Founding Price Display</label>
+              <input type="text" id="f-founding-price" value="$40/mo">
+            </div>
+            <div class="field">
+              <label class="field-label">Founding Spots Count</label>
+              <input type="text" id="f-founding-spots" value="20 spots">
+            </div>
+            <div class="field">
+              <label class="field-label">Regular Price (after founding)</label>
+              <input type="text" id="f-regular-price" value="$60">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS PANEL -->
+      <div class="panel" id="panel-stats">
+        <div class="panel-title">Stats Bar</div>
+        <div class="panel-desc">The four key numbers that communicate your offer at a glance.</div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Four Stats</span>
+            <span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="two-col">
+              <div class="field"><label class="field-label">Stat 1 Number</label><input type="text" id="f-stat-1-num" value="4×"></div>
+              <div class="field"><label class="field-label">Stat 1 Label</label><input type="text" id="f-stat-1-label" value="Feedback sessions per month"></div>
+            </div>
+            <div class="two-col">
+              <div class="field"><label class="field-label">Stat 2 Number</label><input type="text" id="f-stat-2-num" value="48hr"></div>
+              <div class="field"><label class="field-label">Stat 2 Label</label><input type="text" id="f-stat-2-label" value="Turnaround on every video"></div>
+            </div>
+            <div class="two-col">
+              <div class="field"><label class="field-label">Stat 3 Number</label><input type="text" id="f-stat-3-num" value="1×"></div>
+              <div class="field"><label class="field-label">Stat 3 Label</label><input type="text" id="f-stat-3-label" value="Live masterclass monthly"></div>
+            </div>
+            <div class="two-col">
+              <div class="field"><label class="field-label">Stat 4 Number</label><input type="text" id="f-stat-4-num" value="$60"></div>
+              <div class="field"><label class="field-label">Stat 4 Label</label><input type="text" id="f-stat-4-label" value="Price of one voice lesson"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOW IT WORKS PANEL -->
+      <div class="panel" id="panel-how">
+        <div class="panel-title">How It Works</div>
+        <div class="panel-desc">The four steps that walk visitors through your process.</div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Section Header</span>
+            <span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-how-eyebrow" value="How it works"></div>
+            <div class="field"><label class="field-label">Heading</label><input type="text" id="f-how-heading" value="Simple. Consistent. &lt;em&gt;Effective.&lt;/em&gt;"></div>
+            <div class="field"><label class="field-label">Body</label><textarea id="f-how-body">Four steps, every week, no commute required.</textarea></div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Step 1</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Title</label><input type="text" id="f-step-1-title" value="Record yourself"></div>
+            <div class="field"><label class="field-label">Description</label><textarea id="f-step-1-desc">Film your performance on your phone. Audition song, a piece you're working on, anything you want a second opinion on.</textarea></div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Step 2</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Title</label><input type="text" id="f-step-2-title" value="Submit your video"></div>
+            <div class="field"><label class="field-label">Description</label><textarea id="f-step-2-desc">Fill out a short intake form — what you're proud of, what you're working on, what you want me to focus on.</textarea></div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Step 3</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Title</label><input type="text" id="f-step-3-title" value="Get real feedback"></div>
+            <div class="field"><label class="field-label">Description</label><textarea id="f-step-3-desc">Within 48 hours you receive detailed, personalized feedback. Specific. Actionable. Not "great job."</textarea></div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Step 4</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Title</label><input type="text" id="f-step-4-title" value="Grow every week"></div>
+            <div class="field"><label class="field-label">Description</label><textarea id="f-step-4-desc">Practice the notes. Submit again next week. Watch yourself become a stronger performer — with the receipts to prove it.</textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INCLUDES PANEL -->
+      <div class="panel" id="panel-includes">
+        <div class="panel-title">What's Included</div>
+        <div class="panel-desc">The six things members get with their membership.</div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Section Header</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-includes-eyebrow" value="What's included"></div>
+            <div class="field"><label class="field-label">Heading</label><input type="text" id="f-includes-heading" value="Everything a working performer needs."></div>
+            <div class="field"><label class="field-label">Body</label><textarea id="f-includes-body">One membership. All of this. Nothing held back.</textarea></div>
+          </div>
+        </div>
+        <div id="includes-items">
+        </div>
+      </div>
+
+      <!-- FOR WHO PANEL -->
+      <div class="panel" id="panel-for">
+        <div class="panel-title">Who It's For</div>
+        <div class="panel-desc">The four audience types you serve.</div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Section Header</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-for-eyebrow" value="Who it's for"></div>
+            <div class="field"><label class="field-label">Heading</label><input type="text" id="f-for-heading" value="Built for performers who are &lt;em&gt;serious&lt;/em&gt; about growing."></div>
+            <div class="field"><label class="field-label">Body</label><textarea id="f-for-body">Not for passive learners. For people who want to do the work and watch themselves improve week over week.</textarea></div>
+          </div>
+        </div>
+        <div id="for-items"></div>
+      </div>
+
+      <!-- PRICING PANEL -->
+      <div class="panel" id="panel-pricing">
+        <div class="panel-title">Pricing Section</div>
+        <div class="panel-desc">Your membership card — the most important section on the page.</div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Section Header</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-pricing-eyebrow" value="Membership"></div>
+            <div class="field"><label class="field-label">Heading</label><input type="text" id="f-pricing-heading" value="One price. Everything included."></div>
+            <div class="field"><label class="field-label">Body</label><textarea id="f-pricing-body">No tiers. No upsells. No surprises. Just coaching.</textarea></div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Price Card</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="field"><label class="field-label">Badge Label</label><input type="text" id="f-pricing-badge" value="Founding member rate"></div>
+            <div class="two-col">
+              <div class="field"><label class="field-label">Price Amount</label><input type="text" id="f-price-amount" value="$40"></div>
+              <div class="field"><label class="field-label">Spots Remaining</label><input type="text" id="f-spots-remaining" value="20 founding spots"></div>
+            </div>
+            <div class="field"><label class="field-label">Price Note (below amount)</label><input type="text" id="f-price-note" value="Locks in forever. Price goes to $60 when founding spots are gone."></div>
+            <div class="field"><label class="field-label">CTA Button Text</label><input type="text" id="f-pricing-cta-btn" value="Claim your founding spot →"></div>
+            <div class="field">
+              <label class="field-label">Skool Community Link</label>
+              <div class="link-field">
+                <input type="text" id="f-skool-link" placeholder="https://www.skool.com/your-community">
+                <button class="link-test" onclick="testLink()">Test ↗</button>
+              </div>
+              <div class="field-hint">This is where the Join button sends people. Paste your Skool community URL here.</div>
+            </div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Feature List</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Feature 1</label><input type="text" id="f-pf-1" value="Weekly video feedback — 4 sessions per month"></div>
+            <div class="field"><label class="field-label">Feature 2</label><input type="text" id="f-pf-2" value="48-hour turnaround on every submission"></div>
+            <div class="field"><label class="field-label">Feature 3</label><input type="text" id="f-pf-3" value="Monthly live masterclass with open Q&A"></div>
+            <div class="field"><label class="field-label">Feature 4</label><input type="text" id="f-pf-4" value="Full masterclass archive — rewatch anytime"></div>
+            <div class="field"><label class="field-label">Feature 5</label><input type="text" id="f-pf-5" value="Resource library — warm-ups, audition prep & more"></div>
+            <div class="field"><label class="field-label">Feature 6</label><input type="text" id="f-pf-6" value="Community of serious performers across the US"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABOUT PANEL -->
+      <div class="panel" id="panel-about">
+        <div class="panel-title">About You</div>
+        <div class="panel-desc">Your bio section. Upload your headshot and tell your story.</div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Your Photo</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="photo-upload-area" id="upload-area" onclick="document.getElementById('photo-file').click()">
+              <img class="photo-preview" id="photo-preview-img">
+              <div class="upload-icon">🎤</div>
+              <div class="upload-text"><strong>Click to upload your headshot</strong><br>JPG or PNG recommended · Will display on site</div>
+            </div>
+            <input type="file" id="photo-file" accept="image/*" onchange="handlePhoto(event)">
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Bio Text</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="field"><label class="field-label">Eyebrow</label><input type="text" id="f-about-eyebrow" value="Your coach"></div>
+            <div class="field"><label class="field-label">Heading</label><input type="text" id="f-about-heading" value="A vocal coach and music director in your corner every week."></div>
+            <div class="field"><label class="field-label">Bio Paragraph 1</label><textarea id="f-about-body-1">I've spent years in rehearsal rooms and in the wings — coaching singers, directing music, and watching what separates performers who grow from those who plateau.</textarea></div>
+            <div class="field"><label class="field-label">Bio Paragraph 2</label><textarea id="f-about-body-2">The Performer's Lab exists because consistent, specific feedback is the single most reliable driver of growth — and it shouldn't require weekly private lesson budgets to access it.</textarea></div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Credentials</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Credential 1</label><input type="text" id="f-about-cred-1" value="Vocal Coach"></div>
+            <div class="field"><label class="field-label">Credential 2</label><input type="text" id="f-about-cred-2" value="Music Director"></div>
+            <div class="field"><label class="field-label">Credential 3</label><input type="text" id="f-about-cred-3" value="Sound Advice Studio"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER PANEL -->
+      <div class="panel" id="panel-footer">
+        <div class="panel-title">Links & Footer</div>
+        <div class="panel-desc">Social links and footer branding.</div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Social Links</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="social-field">
+              <div class="social-badge">TikTok</div>
+              <input type="text" id="f-footer-tiktok" placeholder="https://tiktok.com/@soundadvicestudio" value="#">
+            </div>
+            <div class="social-field">
+              <div class="social-badge">Instagram</div>
+              <input type="text" id="f-footer-instagram" placeholder="https://instagram.com/soundadvicestudio" value="#">
+            </div>
+            <div class="social-field">
+              <div class="social-badge">Contact</div>
+              <input type="text" id="f-footer-contact" placeholder="mailto:your@email.com" value="#">
+            </div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Footer Brand</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Footer Text</label><input type="text" id="f-footer-brand" value="The Performer's Lab · Sound Advice Studio"></div>
+          </div>
+        </div>
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">CTA Section</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">CTA Eyebrow</label><input type="text" id="f-cta-eyebrow" value="Ready to grow?"></div>
+            <div class="field"><label class="field-label">CTA Heading</label><input type="text" id="f-cta-heading" value="Your voice has more in it.&lt;br&gt;&lt;em&gt;Let's find it.&lt;/em&gt;"></div>
+            <div class="field"><label class="field-label">CTA Body</label><textarea id="f-cta-body">20 founding spots at $40/mo. When they're gone, they're gone permanently.</textarea></div>
+            <div class="field"><label class="field-label">CTA Button</label><input type="text" id="f-cta-btn" value="Join the Performer's Lab"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEPLOY PANEL -->
+      <div class="panel" id="panel-deploy">
+        <div class="panel-title">Export & Deploy</div>
+        <div class="panel-desc">Download your site and get it live today.</div>
+
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Download Your Site</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:1.25rem; font-weight:300;">Click the button below to download your complete website as a single HTML file with all your edits applied. This is the file you upload to GitHub or Vercel.</p>
+            <button class="action-btn primary" onclick="downloadHTML()">Download index.html</button>
+          </div>
+        </div>
+
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Deploy to GitHub Pages (Free)</span><span class="card-chevron open">⌄</span>
+          </div>
+          <div class="edit-card-body open">
+            <div class="deploy-step">
+              <div class="deploy-num">1</div>
+              <div class="deploy-content">
+                <h4>Create a GitHub account</h4>
+                <p>Go to github.com and sign up for a free account if you don't have one.</p>
+              </div>
+            </div>
+            <div class="deploy-step">
+              <div class="deploy-num">2</div>
+              <div class="deploy-content">
+                <h4>Create a new repository</h4>
+                <p>Click the + icon → New repository. Name it <code>performers-lab</code>. Set it to Public. Click Create repository.</p>
+              </div>
+            </div>
+            <div class="deploy-step">
+              <div class="deploy-num">3</div>
+              <div class="deploy-content">
+                <h4>Upload your file</h4>
+                <p>Click "uploading an existing file", drag your downloaded index.html in, and click Commit changes.</p>
+              </div>
+            </div>
+            <div class="deploy-step">
+              <div class="deploy-num">4</div>
+              <div class="deploy-content">
+                <h4>Enable GitHub Pages</h4>
+                <p>Go to Settings → Pages → Source → select main branch → Save. Your site is live at <code>yourusername.github.io/performers-lab</code> within 2 minutes.</p>
+              </div>
+            </div>
+            <div class="deploy-step">
+              <div class="deploy-num">5</div>
+              <div class="deploy-content">
+                <h4>Connect your domain (optional)</h4>
+                <p>Buy <code>theperformerslab.com</code> at Namecheap (~$12/yr). In GitHub Pages settings, add your custom domain. In Namecheap DNS, add a CNAME record pointing to <code>yourusername.github.io</code>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Deploy to Vercel (Also Free)</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="deploy-step">
+              <div class="deploy-num">1</div>
+              <div class="deploy-content">
+                <h4>Complete GitHub steps 1–4 above first</h4>
+                <p>Vercel connects to your GitHub repository, so set that up first.</p>
+              </div>
+            </div>
+            <div class="deploy-step">
+              <div class="deploy-num">2</div>
+              <div class="deploy-content">
+                <h4>Sign up at Vercel.com</h4>
+                <p>Go to vercel.com → Sign up with GitHub. This links your accounts.</p>
+              </div>
+            </div>
+            <div class="deploy-step">
+              <div class="deploy-num">3</div>
+              <div class="deploy-content">
+                <h4>Import your repository</h4>
+                <p>Click Add New → Project → select your performers-lab repository → Deploy. Done in 60 seconds.</p>
+              </div>
+            </div>
+            <div class="deploy-step">
+              <div class="deploy-num">4</div>
+              <div class="deploy-content">
+                <h4>Connect your domain</h4>
+                <p>In Vercel project settings → Domains → add your custom domain. Vercel gives you step-by-step DNS instructions for Namecheap.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <span id="toast-msg">Changes saved</span>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="preview-modal" id="preview-modal">
+  <div class="preview-wrap">
+    <div class="preview-bar">
+      <span>Preview — The Performer's Lab</span>
+      <button class="close-preview" onclick="closePreview()">Close</button>
+    </div>
+    <iframe class="preview-frame" id="preview-frame"></iframe>
+  </div>
+</div>
+
+<script>
+  // Field to element ID mapping
+  const fieldMap = {
+    'f-hero-eyebrow': 'hero-eyebrow',
+    'f-hero-headline': 'hero-headline',
+    'f-hero-sub': 'hero-sub',
+    'f-hero-cta-primary': 'hero-cta-primary',
+    'f-hero-cta-secondary': 'hero-cta-secondary',
+    'f-founding-price': 'founding-price',
+    'f-founding-spots': 'founding-spots',
+    'f-regular-price': 'regular-price',
+    'f-stat-1-num': 'stat-1-num',
+    'f-stat-1-label': 'stat-1-label',
+    'f-stat-2-num': 'stat-2-num',
+    'f-stat-2-label': 'stat-2-label',
+    'f-stat-3-num': 'stat-3-num',
+    'f-stat-3-label': 'stat-3-label',
+    'f-stat-4-num': 'stat-4-num',
+    'f-stat-4-label': 'stat-4-label',
+    'f-how-eyebrow': 'how-eyebrow',
+    'f-how-heading': 'how-heading',
+    'f-how-body': 'how-body',
+    'f-step-1-title': 'step-1-title',
+    'f-step-1-desc': 'step-1-desc',
+    'f-step-2-title': 'step-2-title',
+    'f-step-2-desc': 'step-2-desc',
+    'f-step-3-title': 'step-3-title',
+    'f-step-3-desc': 'step-3-desc',
+    'f-step-4-title': 'step-4-title',
+    'f-step-4-desc': 'step-4-desc',
+    'f-includes-eyebrow': 'includes-eyebrow',
+    'f-includes-heading': 'includes-heading',
+    'f-includes-body': 'includes-body',
+    'f-inc-1-title': 'inc-1-title',
+    'f-inc-1-desc': 'inc-1-desc',
+    'f-inc-2-title': 'inc-2-title',
+    'f-inc-2-desc': 'inc-2-desc',
+    'f-inc-3-title': 'inc-3-title',
+    'f-inc-3-desc': 'inc-3-desc',
+    'f-inc-4-title': 'inc-4-title',
+    'f-inc-4-desc': 'inc-4-desc',
+    'f-inc-5-title': 'inc-5-title',
+    'f-inc-5-desc': 'inc-5-desc',
+    'f-inc-6-title': 'inc-6-title',
+    'f-inc-6-desc': 'inc-6-desc',
+    'f-for-eyebrow': 'for-eyebrow',
+    'f-for-heading': 'for-heading',
+    'f-for-body': 'for-body',
+    'f-for-1-title': 'for-1-title',
+    'f-for-1-desc': 'for-1-desc',
+    'f-for-2-title': 'for-2-title',
+    'f-for-2-desc': 'for-2-desc',
+    'f-for-3-title': 'for-3-title',
+    'f-for-3-desc': 'for-3-desc',
+    'f-for-4-title': 'for-4-title',
+    'f-for-4-desc': 'for-4-desc',
+    'f-pricing-eyebrow': 'pricing-eyebrow',
+    'f-pricing-heading': 'pricing-heading',
+    'f-pricing-body': 'pricing-body',
+    'f-pricing-badge': 'pricing-badge',
+    'f-price-amount': 'price-amount',
+    'f-price-note': 'price-note',
+    'f-pricing-cta-btn': 'pricing-cta-btn',
+    'f-spots-remaining': 'spots-remaining',
+    'f-pf-1': 'pf-1',
+    'f-pf-2': 'pf-2',
+    'f-pf-3': 'pf-3',
+    'f-pf-4': 'pf-4',
+    'f-pf-5': 'pf-5',
+    'f-pf-6': 'pf-6',
+    'f-about-eyebrow': 'about-eyebrow',
+    'f-about-heading': 'about-heading',
+    'f-about-body-1': 'about-body-1',
+    'f-about-body-2': 'about-body-2',
+    'f-about-cred-1': 'about-cred-1',
+    'f-about-cred-2': 'about-cred-2',
+    'f-about-cred-3': 'about-cred-3',
+    'f-footer-brand': 'footer-brand',
+    'f-footer-tiktok': 'footer-tiktok',
+    'f-footer-instagram': 'footer-instagram',
+    'f-footer-contact': 'footer-contact',
+    'f-cta-eyebrow': 'cta-eyebrow',
+    'f-cta-heading': 'cta-heading',
+    'f-cta-body': 'cta-body',
+    'f-cta-btn': 'cta-btn',
+  };
+
+  // Build dynamic includes cards
+  const includesData = [
+    ['inc-1','Weekly video feedback','One submission per week, returned with detailed personal notes within 48 hours.'],
+    ['inc-2','Monthly live masterclass','A deep dive into one topic every month — technique, auditions, performance — with open Q&A.'],
+    ['inc-3','Community of serious performers','Connect with singers working toward the same goals, all across the country.'],
+    ['inc-4','Resource library','Warm-up routines, audition prep guides, rep resources — growing every month.'],
+    ['inc-5','Masterclass archive','Every Lab Session recorded and stored. Rewatch anything, anytime.'],
+    ['inc-6','Anywhere in the world','Based in the US or abroad — your location has never mattered less for great coaching.'],
+  ];
+  const forData = [
+    ['for-1','High school performers','Preparing for auditions, competitions, or college programs and ready to get serious.'],
+    ['for-2','Musical theatre singers','Building the technique and performance skills that get you cast and keep you working.'],
+    ['for-3','Adult vocalists','Returning to performing or building your craft without the cost of weekly lessons.'],
+    ['for-4','Singers everywhere','Primarily serving performers across the US — and open to serious singers worldwide.'],
+  ];
+
+  function buildDynamic() {
+    const container = document.getElementById('includes-items');
+    includesData.forEach(([id, title, desc], i) => {
+      container.innerHTML += `
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Include ${i+1}</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Title</label><input type="text" id="f-${id}-title" value="${title}"></div>
+            <div class="field"><label class="field-label">Description</label><textarea id="f-${id}-desc">${desc}</textarea></div>
+          </div>
+        </div>`;
+    });
+    const forContainer = document.getElementById('for-items');
+    forData.forEach(([id, title, desc], i) => {
+      forContainer.innerHTML += `
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)">
+            <span class="card-label">Audience ${i+1}</span><span class="card-chevron">⌄</span>
+          </div>
+          <div class="edit-card-body">
+            <div class="field"><label class="field-label">Title</label><input type="text" id="f-${id}-title" value="${title}"></div>
+            <div class="field"><label class="field-label">Description</label><textarea id="f-${id}-desc">${desc}</textarea></div>
+          </div>
+        </div>`;
+    });
+  }
+  buildDynamic();
+
+  // Load saved values
+  function loadSaved() {
+    const saved = localStorage.getItem('tpl-admin');
+    if (!saved) return;
+    try {
+      const data = JSON.parse(saved);
+      Object.entries(data).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      });
+      if (data['photo-data']) {
+        showPhotoPreview(data['photo-data']);
+      }
+    } catch(e) {}
+  }
+  loadSaved();
+
+  // Save all
+  function saveAll() {
+    const data = {};
+    document.querySelectorAll('input[type=text], textarea').forEach(el => {
+      if (el.id && el.id.startsWith('f-')) data[el.id] = el.value;
+    });
+    const photoData = localStorage.getItem('tpl-photo');
+    if (photoData) data['photo-data'] = photoData;
+    localStorage.setItem('tpl-admin', JSON.stringify(data));
+
+    // Also save content for site
+    const siteContent = {};
+    Object.entries(fieldMap).forEach(([fid, sid]) => {
+      const el = document.getElementById(fid);
+      if (el) siteContent[sid] = el.value;
+    });
+    // Handle footer links (href values)
+    ['footer-tiktok','footer-instagram','footer-contact'].forEach(id => {
+      const el = document.getElementById('f-' + id);
+      if (el) siteContent[id + '-href'] = el.value;
+    });
+    if (photoData) siteContent['about-photo'] = photoData;
+    localStorage.setItem('tpl-content', JSON.stringify(siteContent));
+
+    const status = document.getElementById('save-status');
+    status.textContent = 'All changes saved ✓';
+    status.className = 'save-status saved';
+    setTimeout(() => { status.textContent = 'Unsaved changes'; status.className = 'save-status'; }, 3000);
+    showToast('Changes saved to your site');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  function switchPanel(el, id) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+  }
+
+  function toggleCard(header) {
+    const body = header.nextElementSibling;
+    const chevron = header.querySelector('.card-chevron');
+    body.classList.toggle('open');
+    chevron.classList.toggle('open');
+  }
+
+  function handlePhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const data = e.target.result;
+      localStorage.setItem('tpl-photo', data);
+      showPhotoPreview(data);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function showPhotoPreview(src) {
+    const img = document.getElementById('photo-preview-img');
+    img.src = src; img.classList.add('show');
+    const area = document.getElementById('upload-area');
+    area.classList.add('has-photo');
+    area.querySelector('.upload-icon').style.display = 'none';
+    area.querySelector('.upload-text').innerHTML = '<strong>Click to replace photo</strong>';
+  }
+
+  function testLink() {
+    const url = document.getElementById('f-skool-link').value;
+    if (url && url !== '#') window.open(url, '_blank');
+    else showToast('Add your Skool URL first');
+  }
+
+  function openPreview() {
+    saveAll();
+    const modal = document.getElementById('preview-modal');
+    modal.classList.add('open');
+    // Load preview - in real deployment this would load index.html
+    const frame = document.getElementById('preview-frame');
+    frame.src = 'index.html?' + Date.now();
+  }
+
+  function closePreview() {
+    document.getElementById('preview-modal').classList.remove('open');
+  }
+
+  function downloadHTML() {
+    // Fetch the index.html content and inject current values
+    fetch('index.html')
+      .then(r => r.text())
+      .then(html => {
+        // Inject saved content as inline script
+        const siteContent = {};
+        Object.entries(fieldMap).forEach(([fid, sid]) => {
+          const el = document.getElementById(fid);
+          if (el) siteContent[sid] = el.value;
+        });
+        const photoData = localStorage.getItem('tpl-photo');
+        if (photoData) siteContent['about-photo'] = photoData;
+
+        // Replace the loadContent script with inline data
+        const injection = `<script>
+  (function(){
+    const data = ${JSON.stringify(siteContent)};
+    document.addEventListener('DOMContentLoaded', function() {
+      Object.entries(data).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'about-photo' && value) {
+          el.src = value; el.style.display = 'block';
+          const ph = document.getElementById('photo-placeholder');
+          if (ph) ph.style.display = 'none';
+        } else { el.innerHTML = value; }
+      });
+      // Footer links
+      ['footer-tiktok','footer-instagram','footer-contact'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && data[id]) el.href = data[id];
+      });
+      // Skool link
+      const ctaBtn = document.getElementById('pricing-cta-btn');
+      if (ctaBtn && data['skool-link']) {
+        ctaBtn.onclick = function(){ window.open(data['skool-link'],'_blank'); };
+      }
+    });
+  })();
+<\/script>`;
+
+        const finalHTML = html.replace(/<script>\s*\/\/ Load saved content[\s\S]*?<\/script>/, injection);
+        const blob = new Blob([finalHTML], {type: 'text/html'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'index.html'; a.click();
+        URL.revokeObjectURL(url);
+        showToast('index.html downloaded — ready to deploy');
+      })
+      .catch(() => {
+        showToast('Open both files from the same folder to enable download');
+      });
+  }
+
+  // Mark unsaved on any change
+  document.querySelectorAll('input, textarea').forEach(el => {
+    el.addEventListener('input', () => {
+      document.getElementById('save-status').textContent = 'Unsaved changes';
+      document.getElementById('save-status').className = 'save-status';
+    });
+  });
+</script>
+</body>
+</html>
