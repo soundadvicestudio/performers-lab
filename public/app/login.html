@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>if(window.location.hostname==='www.performers-lab.com'){window.location.replace('https://performers-lab.com'+window.location.pathname+window.location.search);}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign In — The Performer's Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -130,7 +131,15 @@
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
 
   // Redirect if already logged in
   const { data: { session } } = await supabase.auth.getSession();
