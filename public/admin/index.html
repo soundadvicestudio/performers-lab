@@ -36,6 +36,30 @@
     line-height: 1.6;
   }
 
+  /* ── ADMIN NAV ── */
+  #admin-nav {
+    display: none;
+    justify-content: space-between; align-items: center;
+    padding: 0 1.5rem; height: 48px;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border-gold);
+    font-family: 'Raleway', sans-serif;
+  }
+  #admin-nav.visible { display: flex; }
+  .admin-nav-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    color: var(--text);
+  }
+  .admin-nav-title span { color: var(--gold); }
+  .admin-signout-btn {
+    background: transparent; border: 0.5px solid var(--border-mid);
+    color: var(--text-muted); padding: 6px 14px; border-radius: 2px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .admin-signout-btn:hover { color: var(--gold); border-color: var(--border-gold); }
+
   /* ── LOCK SCREEN ── */
   #lock-screen {
     position: fixed; inset: 0; z-index: 9999;
@@ -403,6 +427,11 @@
     <div id="lock-lockout-box"></div>
   </div>
 </div>
+
+<nav id="admin-nav">
+  <span class="admin-nav-title">The Performer's <span>Lab</span> · Admin</span>
+  <button class="admin-signout-btn" onclick="adminSignOut()">Sign Out</button>
+</nav>
 
 <div class="app" id="app-shell">
 
@@ -1065,6 +1094,7 @@
 
   function unlock() {
     document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('admin-nav').classList.add('visible');
     document.getElementById('app-shell').classList.add('unlocked');
     clearLockout();
   }
@@ -1099,6 +1129,27 @@
     if (isSessionValid()) { unlock(); return; }
     setTimeout(()=>{ const i = document.getElementById('lock-input'); if(i) i.focus(); },100);
   })();
+</script>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  const sbClient = createClient(
+    'https://gunkzxyefspmvytiwcwy.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg',
+    {
+      auth: {
+        storageKey: 'sb-performers-lab-auth',
+        storage: window.localStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      }
+    }
+  );
+  window.adminSignOut = async function() {
+    await sbClient.auth.signOut();
+    window.location.href = '/app/login.html';
+  };
 </script>
 </body>
 </html>
