@@ -45,10 +45,16 @@
     border-bottom: 0.5px solid var(--border-gold);
     font-family: 'Raleway', sans-serif;
   }
+  .admin-nav-left { display: flex; align-items: center; gap: 1.25rem; }
   .admin-nav-title {
     font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
     color: var(--text);
   }
+  .admin-back-link {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); text-decoration: none; transition: color 0.2s;
+  }
+  .admin-back-link:hover { color: var(--gold); }
   .admin-nav-title span { color: var(--gold); }
   .admin-signout-btn {
     background: transparent; border: 0.5px solid var(--border-mid);
@@ -329,7 +335,10 @@
 
 
 <nav id="admin-nav">
-  <span class="admin-nav-title">The Performer's <span>Lab</span> · Admin</span>
+  <div class="admin-nav-left">
+    <span class="admin-nav-title">The Performer's <span>Lab</span> · Admin</span>
+    <a href="/app/dashboard.html" class="admin-back-link">← Dashboard</a>
+  </div>
   <button class="admin-signout-btn" onclick="adminSignOut()">Sign Out</button>
 </nav>
 

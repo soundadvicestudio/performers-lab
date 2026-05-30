@@ -50,6 +50,14 @@
     font-family: 'Raleway', sans-serif; font-weight: 600; transition: color 0.2s;
   }
   .nav-signout:hover { color: var(--gold); }
+  .nav-admin-btn {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold); border: 0.5px solid var(--border-gold);
+    padding: 5px 12px; border-radius: 2px;
+    font-family: 'Raleway', sans-serif; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .nav-admin-btn:hover { background: var(--gold-dim); border-color: var(--gold); }
 
   /* ── MAIN ── */
   .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
@@ -142,6 +150,7 @@
     <div class="nav-brand">The Performer's <span>Lab</span></div>
     <div class="nav-right">
       <div class="nav-greeting">Welcome back, <strong id="nav-name">—</strong></div>
+      <a href="/admin" class="nav-admin-btn" id="nav-admin-btn" style="display:none;">Admin Panel</a>
       <button class="nav-signout" onclick="signOut()">Sign out</button>
     </div>
   </nav>
@@ -236,10 +245,7 @@
       .eq('user_id', user.id)
       .single();
 
-    console.log('[performers-lab] dashboard profile query:', { userId: user.id, profile, profileError });
-
-    // Redirect admin to admin dashboard
-    if (profile?.is_admin) { window.location.href = '/admin'; return; }
+    if (profile?.is_admin) { document.getElementById('nav-admin-btn').style.display = ''; }
 
     const name = profile?.display_name || user.email.split('@')[0];
     document.getElementById('nav-name').textContent = name;

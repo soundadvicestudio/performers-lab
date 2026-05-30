@@ -175,20 +175,7 @@
       return;
     }
 
-    // Check if admin — redirect accordingly
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('user_id', data.user.id)
-      .single();
-
-    console.log('[performers-lab] login profile query:', { userId: data.user.id, profile, profileError });
-
-    if (profile?.is_admin) {
-      window.location.href = '/admin';
-    } else {
-      window.location.href = '/app/dashboard.html';
-    }
+    window.location.href = '/app/dashboard.html';
   });
 
   function showError(msg) {
