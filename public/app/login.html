@@ -169,11 +169,13 @@
     }
 
     // Check if admin — redirect accordingly
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('is_admin')
       .eq('user_id', data.user.id)
       .single();
+
+    console.log('[performers-lab] login profile query:', { userId: data.user.id, profile, profileError });
 
     if (profile?.is_admin) {
       window.location.href = '/admin';

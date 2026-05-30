@@ -223,11 +223,13 @@
     const user = session.user;
 
     // Load profile
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('display_name, is_admin')
       .eq('user_id', user.id)
       .single();
+
+    console.log('[performers-lab] dashboard profile query:', { userId: user.id, profile, profileError });
 
     // Redirect admin to admin dashboard
     if (profile?.is_admin) { window.location.href = '/admin'; return; }
