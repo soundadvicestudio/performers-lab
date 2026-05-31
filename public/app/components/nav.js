@@ -39,6 +39,20 @@ function injectStyles() {
       color: var(--text-dim); text-decoration: none; transition: color 0.2s;
     }
     .nav-link:hover { color: var(--text); }
+    .nav-bell {
+      position: relative; display: flex; align-items: center;
+      color: var(--text-dim); text-decoration: none; transition: color 0.2s;
+      line-height: 1;
+    }
+    .nav-bell:hover { color: var(--text-muted); }
+    .nav-notif-count {
+      position: absolute; top: -5px; right: -7px;
+      background: var(--gold); color: #fff;
+      font-size: 8px; font-weight: 700; letter-spacing: 0; line-height: 1;
+      min-width: 14px; height: 14px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 3px; font-family: 'Raleway', sans-serif;
+    }
     @media (max-width: 600px) {
       .app-nav { padding: 0 1.25rem; }
       .nav-greeting { display: none; }
@@ -69,6 +83,10 @@ export function initNav(supabase, { userName, isAdmin }) {
         <div class="nav-greeting">Signed in as <strong id="nav-name">${escapeHtml(userName)}</strong></div>
         <a href="/app/profile.html" class="nav-link">Edit Profile</a>
         <a href="/app/membership.html" class="nav-link">Membership</a>
+        <a href="/app/notifications.html" class="nav-bell" aria-label="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span id="nav-notif-count" class="nav-notif-count" style="display:none;"></span>
+        </a>
         <a href="/admin" class="nav-admin-btn"${isAdmin ? '' : ' style="display:none;"'}>Admin Panel</a>
         <button class="nav-signout" id="nav-signout-btn">Sign out</button>
       </div>
