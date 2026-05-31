@@ -96,6 +96,7 @@
 
 <div id="app" style="display:none;">
   <div id="app-nav"></div>
+  <div id="app-subnav"></div>
 
   <main class="main">
     <div class="success-icon">✓</div>
@@ -117,6 +118,7 @@
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
   import { initFooter } from './components/footer.js';
   import { applyTheme } from './components/theme.js';
 
@@ -187,6 +189,7 @@
     const name = profile?.display_name || session.user.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initSubnav(null);
     initFooter();
 
     document.getElementById('loading').style.display = 'none';

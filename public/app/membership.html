@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Membership — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.1);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+  .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 2.5rem; }
+
+  /* ── MEMBERSHIP CARD ── */
+  .membership-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 2rem; margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .membership-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.75rem; }
+  .card-label { font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.5rem; }
+  .plan-name { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 4px; }
+  .plan-price { font-size: 13px; color: var(--text-muted); font-weight: 300; letter-spacing: 0.02em; }
+  .status-badge {
+    display: inline-flex; align-items: center;
+    background: var(--green-dim); color: var(--green);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 2px; border: 0.5px solid rgba(76,175,132,0.25);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .status-badge.past-due { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); }
+  .status-badge.cancelled { background: var(--red-dim); color: var(--red); border-color: rgba(224,92,92,0.25); }
+  .card-meta { display: flex; gap: 2.5rem; flex-wrap: wrap; }
+  .meta-item {}
+  .meta-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+  .meta-value { font-size: 14px; color: var(--text-muted); font-weight: 300; }
+
+  /* ── FOUNDING INFO BOX ── */
+  .founding-box {
+    background: var(--gold-dim); border: 0.5px solid var(--border-gold);
+    border-radius: 6px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .founding-box::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .founding-box-label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .founding-box-text { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.7; }
+  .founding-box-text strong { color: var(--text); font-weight: 500; }
+
+  /* ── POLICY NOTE ── */
+  .policy-note {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+  }
+  .policy-note-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.4rem; }
+  .policy-note-text { font-size: 13px; color: var(--text-dim); font-weight: 300; line-height: 1.65; }
+
+  /* ── ACTIONS ── */
+  .actions { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .btn-portal {
+    background: none; color: var(--gold);
+    border: 0.5px solid var(--border-gold); padding: 12px 24px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-portal:hover { background: var(--gold-dim); border-color: var(--gold); }
+  .btn-portal:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-reactivate {
+    display: inline-block; background: var(--gold); color: #070707;
+    border: none; padding: 12px 28px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s; text-decoration: none;
+  }
+  .btn-reactivate:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .portal-error { font-size: 12px; color: var(--red); font-weight: 500; }
+
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem; }
+    .card-header { flex-direction: column; }
+    .card-meta { gap: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <div class="page-eyebrow">Your Account</div>
+    <div class="page-heading">Membership</div>
+
+    <!-- Membership card -->
+    <div class="membership-card">
+      <div class="card-header">
+        <div>
+          <div class="card-label">Membership plan</div>
+          <div class="plan-name" id="plan-name">—</div>
+          <div class="plan-price" id="plan-price"></div>
+        </div>
+        <div class="status-badge" id="status-badge">Active</div>
+      </div>
+      <div class="card-meta">
+        <div class="meta-item">
+          <div class="meta-label">Member since</div>
+          <div class="meta-value" id="member-since">—</div>
+        </div>
+        <div class="meta-item" id="status-meta-wrap">
+          <div class="meta-label">Status</div>
+          <div class="meta-value" id="status-detail">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Founding member info (conditional) -->
+    <div class="founding-box" id="founding-box" style="display:none;">
+      <div class="founding-box-label">Founding Member</div>
+      <div class="founding-box-text">
+        You are a Founding Member. Your <strong>$40/mo rate is locked in permanently</strong> — it will never increase as long as your membership remains active.
+      </div>
+    </div>
+
+    <!-- Cancellation policy -->
+    <div class="policy-note">
+      <div class="policy-note-label">Cancellation policy</div>
+      <div class="policy-note-text">Cancel anytime — no penalty. Access continues until the end of your current billing period.</div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn-portal" id="btn-portal" style="display:none;">Manage billing &amp; subscription →</button>
+      <a href="/app/checkout.html" class="btn-reactivate" id="btn-reactivate" style="display:none;">Reactivate membership →</a>
+      <div class="portal-error" id="portal-error"></div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  // ── MANAGE BILLING ──
+  document.getElementById('btn-portal').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-portal');
+    const errEl = document.getElementById('portal-error');
+    errEl.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+
+    try {
+      const res  = await fetch('/api/stripe/createPortalSession', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ customerId: btn.dataset.customerId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Could not open billing portal. Please try again.';
+        btn.disabled = false;
+        btn.textContent = 'Manage billing & subscription →';
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      errEl.textContent = 'Connection error. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Manage billing & subscription →';
+    }
+  });
+
+  // ── INIT ──
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    const userId = session.user.id;
+
+    const [profileRes, membershipRes] = await Promise.all([
+      supabase.from('profiles').select('display_name, is_admin, theme').eq('user_id', userId).single(),
+      supabase.from('memberships')
+        .select('plan, status, stripe_customer_id, created_at')
+        .eq('user_id', userId)
+        .single(),
+    ]);
+
+    const profile    = profileRes.data;
+    const membership = membershipRes.data;
+    const name       = profile?.display_name || session.user.email.split('@')[0];
+
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initSubnav(null);
+
+    // ── POPULATE MEMBERSHIP DATA ──
+    if (membership) {
+      const planLabel = membership.plan === 'founding' ? 'Founding Member' : 'Standard Member';
+      const planPrice = membership.plan === 'founding' ? '$40 / month' : '$60 / month';
+      document.getElementById('plan-name').textContent  = planLabel;
+      document.getElementById('plan-price').textContent = planPrice;
+
+      // Status badge
+      const badge = document.getElementById('status-badge');
+      const status = membership.status;
+      if (status === 'active') {
+        badge.textContent  = 'Active';
+        badge.className    = 'status-badge';
+      } else if (status === 'past_due') {
+        badge.textContent  = 'Past Due';
+        badge.className    = 'status-badge past-due';
+      } else if (status === 'cancelled') {
+        badge.textContent  = 'Cancelled';
+        badge.className    = 'status-badge cancelled';
+      } else {
+        badge.textContent  = status || 'Unknown';
+        badge.className    = 'status-badge past-due';
+      }
+
+      document.getElementById('status-detail').textContent = status
+        ? status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')
+        : '—';
+
+      // Member since
+      if (membership.created_at) {
+        document.getElementById('member-since').textContent =
+          new Date(membership.created_at).toLocaleDateString('en-US', {
+            month: 'long', day: 'numeric', year: 'numeric'
+          });
+      }
+
+      // Founding member info box
+      if (membership.plan === 'founding') {
+        document.getElementById('founding-box').style.display = 'block';
+      }
+
+      // Action buttons
+      if (status === 'active' && membership.stripe_customer_id) {
+        const btn = document.getElementById('btn-portal');
+        btn.dataset.customerId = membership.stripe_customer_id;
+        btn.style.display = 'inline-block';
+      } else if (status === 'cancelled' || status === 'past_due') {
+        document.getElementById('btn-reactivate').style.display = 'inline-block';
+      }
+    } else {
+      document.getElementById('plan-name').textContent   = 'No membership';
+      document.getElementById('status-badge').textContent = 'Inactive';
+      document.getElementById('status-badge').className  = 'status-badge past-due';
+      document.getElementById('btn-reactivate').style.display = 'inline-block';
+    }
+
+    initFooter();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display     = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
