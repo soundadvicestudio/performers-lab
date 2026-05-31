@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12); --green-border: rgba(76,175,132,0.25);
+    --green-solid: #4caf50;
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.1); --red-border: rgba(224,92,92,0.25);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MAIN ── */
+  .main { max-width: 720px; margin: 0 auto; padding: 3rem 2rem; }
+  .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 6px; }
+  .page-heading em { font-style: italic; color: var(--gold); font-weight: 300; }
+  .page-subheading { font-size: 14px; color: var(--text-muted); font-weight: 300; margin-bottom: 2.5rem; }
+
+  /* ── ADMIN CARD ── */
+  .admin-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 12px; padding: 3rem 2rem; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .admin-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .admin-card-icon { color: var(--text-dim); margin-bottom: 1.25rem; display: flex; justify-content: center; }
+  .admin-card-heading {
+    font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400;
+    color: var(--text); margin-bottom: 0.75rem;
+  }
+  .admin-card-body { font-size: 14px; color: var(--text-muted); font-weight: 300; margin-bottom: 2rem; line-height: 1.6; }
+  .btn-gold-outline {
+    display: inline-block; background: none; border: 1px solid var(--gold);
+    color: var(--gold); padding: 11px 28px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s; text-decoration: none;
+  }
+  .btn-gold-outline:hover { background: var(--gold-dim); }
+
+  /* ── CLOSED STATE ── */
+  .closed-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 12px; padding: 2.5rem; text-align: center; margin-bottom: 2.5rem;
+  }
+  .closed-icon { color: var(--text-dim); margin-bottom: 1.25rem; display: flex; justify-content: center; }
+  .closed-heading {
+    font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400;
+    color: var(--gold); margin-bottom: 0.75rem;
+  }
+  .closed-body { font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.6; margin-bottom: 1rem; }
+  .closed-reopen { font-size: 13px; color: var(--text-dim); font-weight: 300; margin-bottom: 0.5rem; }
+  .closed-reopen strong { color: var(--text-muted); }
+  .closed-hint { font-size: 12px; color: var(--text-dim); font-style: italic; margin-top: 0.75rem; }
+
+  /* ── STATUS VIEW ── */
+  .status-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 12px; padding: 1.75rem; margin-bottom: 2.5rem;
+    position: relative; overflow: hidden;
+  }
+  .status-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .status-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .status-song { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--text); line-height: 1.2; }
+  .status-artist { font-size: 14px; color: var(--text-muted); font-weight: 300; margin-bottom: 1rem; }
+  .status-meta { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+  .status-meta-row { font-size: 13px; color: var(--text-muted); font-weight: 300; }
+  .status-meta-row strong { color: var(--text); font-weight: 500; }
+  .status-countdown {
+    font-size: 14px; font-weight: 600; color: var(--text-muted);
+    padding: 10px 0; border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border);
+    margin: 1rem 0;
+  }
+  .status-countdown.urgent { color: var(--gold); }
+  .status-labels { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+  .status-label-item { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+  .status-label-item strong { color: var(--text-muted); }
+  .status-video-link {
+    display: inline-block; font-size: 13px; color: var(--gold); font-weight: 500;
+    text-decoration: none; margin-bottom: 1rem;
+    word-break: break-all;
+  }
+  .status-video-link:hover { text-decoration: underline; }
+  .status-footer {
+    padding-top: 1rem; border-top: 0.5px solid var(--border);
+    font-size: 13px;
+  }
+  .status-footer a { color: var(--gold); text-decoration: none; font-weight: 500; }
+  .status-footer a:hover { text-decoration: underline; }
+
+  /* ── STATUS BADGES ── */
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 2px; flex-shrink: 0;
+  }
+  .badge-pending { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
+  .badge-feedback { background: rgba(76,175,80,0.15); color: var(--green-solid); border: 0.5px solid rgba(76,175,80,0.3); }
+
+  /* ── INTAKE FORM ── */
+  .form-section { margin-bottom: 2.5rem; }
+  .form-section-heading {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 1.25rem;
+    padding-bottom: 0.6rem; border-bottom: 0.5px solid var(--border);
+  }
+  .field { margin-bottom: 1.25rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+  }
+  .req-star { color: var(--gold); margin-left: 2px; }
+  .field-input {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 10px 13px; border-radius: 3px;
+    font-size: 14px; font-family: 'Raleway', sans-serif; font-weight: 300;
+    outline: none; transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: var(--gold); background: var(--bg-4); }
+  .field-textarea {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 10px 13px; border-radius: 3px;
+    font-size: 14px; font-family: 'Raleway', sans-serif; font-weight: 300;
+    outline: none; transition: border-color 0.2s; resize: vertical; line-height: 1.65;
+  }
+  .field-textarea:focus { border-color: var(--gold); background: var(--bg-4); }
+  .field-helper { font-size: 11px; color: var(--text-dim); margin-top: 5px; font-weight: 300; line-height: 1.4; }
+  .field-error { font-size: 11px; color: var(--red); margin-top: 4px; display: none; }
+
+  /* ── GOAL CARDS ── */
+  .goal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .goal-card {
+    background: var(--bg-3); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    font-size: 14px; color: var(--text); font-family: 'Raleway', sans-serif;
+    font-weight: 400; user-select: none;
+  }
+  .goal-card:hover { border-color: var(--border-gold); }
+  .goal-card.selected { background: var(--gold-dim); border-color: var(--border-gold); }
+  .goal-card input[type="radio"] { display: none; }
+  .goal-error { font-size: 11px; color: var(--red); margin-top: 6px; display: none; }
+
+  /* ── CONFIDENCE SLIDER ── */
+  .confidence-display {
+    text-align: center; font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem; font-weight: 300; color: var(--gold); line-height: 1;
+    margin-bottom: 10px;
+  }
+  input[type="range"].confidence-slider { width: 100%; accent-color: var(--gold); cursor: pointer; margin-bottom: 6px; }
+  .confidence-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); font-weight: 300; }
+
+  /* ── SUBMIT BUTTON ── */
+  .btn-submit {
+    width: 100%; background: var(--gold); color: #070707;
+    border: none; padding: 14px; border-radius: 3px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-top: 1rem;
+  }
+  .btn-submit:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .btn-spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(7,7,7,0.3); border-top-color: #070707;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  .form-submit-error { font-size: 12px; color: var(--red); margin-top: 8px; text-align: center; }
+
+  /* ── HISTORY ── */
+  .history-heading {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 1rem;
+    padding-bottom: 0.6rem; border-top: 0.5px solid var(--border);
+    padding-top: 2rem; margin-top: 1rem;
+  }
+  .history-empty { font-size: 13px; color: var(--text-dim); font-style: italic; text-align: center; padding: 1.5rem 0; }
+  .history-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 1.25rem 1.5rem;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; margin-bottom: 0.75rem; text-decoration: none; color: inherit;
+    transition: border-color 0.2s;
+  }
+  .history-card:hover { border-color: var(--border-mid); }
+  .history-card-body { flex: 1; min-width: 0; }
+  .history-song { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .history-artist { font-size: 13px; color: var(--text-muted); font-weight: 300; margin-bottom: 4px; }
+  .history-date { font-size: 12px; color: var(--text-dim); font-weight: 300; margin-bottom: 4px; }
+  .history-tags { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .history-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+  .history-view { font-size: 12px; color: var(--gold); font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .history-view:hover { text-decoration: underline; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(8px);
+    background: var(--gold); color: #070707;
+    padding: 10px 24px; border-radius: 4px;
+    font-size: 13px; font-weight: 600; font-family: 'Raleway', sans-serif;
+    opacity: 0; transition: opacity 0.25s, transform 0.25s;
+    z-index: 500; pointer-events: none; white-space: nowrap;
+  }
+  .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem; }
+    .goal-grid { grid-template-columns: 1fr; }
+    .status-labels { flex-direction: column; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <!-- Admin view -->
+    <div id="admin-view" style="display:none;">
+      <div class="admin-card">
+        <div class="admin-card-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/>
+          </svg>
+        </div>
+        <div class="admin-card-heading">Submission Review</div>
+        <div class="admin-card-body">Member submissions are reviewed in the Admin Panel.</div>
+        <a class="btn-gold-outline" href="/admin">Go to Admin Panel →</a>
+      </div>
+    </div>
+
+    <!-- Member view -->
+    <div id="member-view" style="display:none;">
+      <div class="page-eyebrow">Weekly Submission</div>
+      <div class="page-heading">Submit Your <em>Performance</em></div>
+      <div class="page-subheading">Weekly submission · reviewed within 48 hours</div>
+
+      <div id="main-state"></div>
+      <div id="history-section"></div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+  import { relativeTime, startRelativeTimers } from './utils/time.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  let countdownInterval = null;
+  let currentUserId = null;
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+
+  function isProfileComplete(profile) {
+    return !!(
+      profile?.display_name?.trim() &&
+      profile?.birth_year &&
+      profile?.experience?.trim() &&
+      profile?.location?.trim() &&
+      profile?.bio?.trim()
+    );
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 3500);
+  }
+
+  function truncateUrl(url, max = 50) {
+    if (!url || url.length <= max) return url;
+    return url.substring(0, max - 1) + '…';
+  }
+
+  function isValidVideoUrl(url) {
+    return /^https:\/\/(www\.)?youtube\.com\//.test(url) ||
+           /^https:\/\/youtu\.be\//.test(url) ||
+           /^https:\/\/drive\.google\.com\//.test(url);
+  }
+
+  function formatCtDeadline(date) {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'long', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    }).format(date) + ' CT';
+  }
+
+  function formatReopensDate(date) {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'long', month: 'long', day: 'numeric'
+    }).format(date);
+  }
+
+  function statusBadge(status) {
+    if (status === 'Feedback Given') {
+      return `<span class="badge badge-feedback">Feedback Given</span>`;
+    }
+    return `<span class="badge badge-pending">Pending Review</span>`;
+  }
+
+  // ── Chicago window state ───────────────────────────────────────────────
+
+  function getChicagoWindowState() {
+    const now = new Date();
+
+    const ctFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'long'
+    });
+    const ctParts = Object.fromEntries(
+      ctFormatter.formatToParts(now).map(p => [p.type, p.value])
+    );
+
+    const ctYear = parseInt(ctParts.year);
+    const ctMonth = parseInt(ctParts.month);
+    const ctDay = parseInt(ctParts.day);
+    const weekdayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const weekdayIdx = weekdayNames.indexOf(ctParts.weekday);
+
+    // Determine CT UTC offset by comparing UTC hour to CT hour
+    const utcFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC', hour: 'numeric', hour12: false
+    });
+    const ctHourFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago', hour: 'numeric', hour12: false
+    });
+    const utcParts = Object.fromEntries(utcFormatter.formatToParts(now).map(p => [p.type, p.value]));
+    const ctHourParts = Object.fromEntries(ctHourFormatter.formatToParts(now).map(p => [p.type, p.value]));
+
+    let utcH = parseInt(utcParts.hour);
+    let ctH = parseInt(ctHourParts.hour);
+    if (utcH === 24) utcH = 0;
+    if (ctH === 24) ctH = 0;
+    let ctOffset = utcH - ctH;
+    if (ctOffset < 0) ctOffset += 24;
+    if (ctOffset > 12) ctOffset -= 24;
+    // ctOffset: 5 = CDT, 6 = CST
+
+    // Sunday of current CT week (day 0 = Sunday)
+    const sundayDay = ctDay - weekdayIdx;
+
+    // Sunday 12:00am CT → UTC
+    const windowStart = new Date(Date.UTC(ctYear, ctMonth - 1, sundayDay, ctOffset, 0, 0));
+    // Friday 5:00pm CT = +5 days +17 hours from Sunday midnight
+    const windowEnd = new Date(windowStart.getTime() + (5 * 24 + 17) * 3600000);
+    // Next Sunday 12:00am CT
+    const reopensAt = new Date(windowStart.getTime() + 7 * 24 * 3600000);
+
+    const windowOpen = now >= windowStart && now < windowEnd;
+
+    return { windowOpen, windowStart, windowEnd, reopensAt };
+  }
+
+  // ── Countdown helpers ──────────────────────────────────────────────────
+
+  function startCountdown(deadlineMs, displayEl) {
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    function update() {
+      const diff = deadlineMs - Date.now();
+      if (diff <= 0) {
+        displayEl.innerHTML = '<span>Under review</span>';
+        clearInterval(countdownInterval);
+        return;
+      }
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const text = `${hours}h ${minutes}m remaining`;
+      const isUrgent = diff < 24 * 3600000;
+      displayEl.className = `status-countdown${isUrgent ? ' urgent' : ''}`;
+      displayEl.innerHTML = isUrgent
+        ? `<span>⚠ ${text}</span>`
+        : `<span>${text}</span>`;
+    }
+
+    update();
+    countdownInterval = setInterval(update, 60000);
+  }
+
+  // ── Render: closed state ───────────────────────────────────────────────
+
+  function renderClosedState(state) {
+    const reopensStr = formatReopensDate(state.reopensAt);
+    document.getElementById('main-state').innerHTML = `
+      <div class="closed-card">
+        <div class="closed-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <div class="closed-heading">Submissions Closed</div>
+        <div class="closed-body">The submission window is open Sunday through Friday at 5:00 PM Central Time.</div>
+        <div class="closed-reopen">The next window opens <strong>${escapeHtml(reopensStr)}</strong> at 12:00 AM.</div>
+        <div class="closed-hint">Your past submissions are always available below.</div>
+      </div>
+    `;
+  }
+
+  // ── Render: submission status view ────────────────────────────────────
+
+  function renderStatusView(submission) {
+    const deadlineMs = new Date(submission.submitted_at).getTime() + 48 * 3600000;
+    const deadlineDate = new Date(deadlineMs);
+
+    document.getElementById('main-state').innerHTML = `
+      <div class="status-card">
+        <div class="status-header">
+          <div class="status-song">${escapeHtml(submission.song_title)}</div>
+          ${statusBadge(submission.status)}
+        </div>
+        <div class="status-artist">${escapeHtml(submission.show_artist)}</div>
+        <div class="status-meta">
+          <div class="status-meta-row">
+            Submitted: <span data-timestamp="${escapeHtml(submission.submitted_at)}">${relativeTime(submission.submitted_at)}</span>
+          </div>
+          <div class="status-meta-row">
+            Review due by <strong>${escapeHtml(formatCtDeadline(deadlineDate))}</strong>
+          </div>
+        </div>
+        <div id="status-countdown" class="status-countdown"></div>
+        <div class="status-labels">
+          <div class="status-label-item"><strong>Style:</strong> ${escapeHtml(submission.style)}</div>
+          <div class="status-label-item"><strong>Goal:</strong> ${escapeHtml(submission.goal)}</div>
+        </div>
+        <a class="status-video-link" href="${escapeHtml(submission.video_url)}" target="_blank" rel="noopener">
+          Watch video: ${escapeHtml(truncateUrl(submission.video_url))} →
+        </a>
+        <div class="status-footer">
+          <a href="/app/submission.html?id=${escapeHtml(submission.id)}">View full submission and feedback →</a>
+        </div>
+      </div>
+    `;
+
+    const countdownEl = document.getElementById('status-countdown');
+    startCountdown(deadlineMs, countdownEl);
+    startRelativeTimers();
+  }
+
+  // ── Render: intake form ───────────────────────────────────────────────
+
+  function renderIntakeForm() {
+    document.getElementById('main-state').innerHTML = `
+      <form id="submit-form" novalidate>
+        <div class="form-section">
+          <div class="form-section-heading">Song &amp; Performance</div>
+
+          <div class="field">
+            <label class="field-label" for="f-song-title">Song Title<span class="req-star">*</span></label>
+            <input type="text" class="field-input" id="f-song-title" maxlength="120">
+            <div class="field-error" id="error-song-title"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-show-artist">Show or Artist<span class="req-star">*</span></label>
+            <input type="text" class="field-input" id="f-show-artist" placeholder="e.g. Hamilton, Taylor Swift, original" maxlength="120">
+            <div class="field-error" id="error-show-artist"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-style">Style<span class="req-star">*</span></label>
+            <input type="text" class="field-input" id="f-style" placeholder="e.g. Belt, Legit, CCM, Pop, Mix, Classical…" maxlength="120">
+            <div class="field-helper">Describe the style or blend in your own words.</div>
+            <div class="field-error" id="error-style"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-video-url">Video Link<span class="req-star">*</span></label>
+            <input type="text" class="field-input" id="f-video-url" placeholder="YouTube or Google Drive unlisted link">
+            <div class="field-helper">Paste an unlisted YouTube or Google Drive link. Do not submit public videos.</div>
+            <div class="field-error" id="error-video-url"></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-heading">Your Goals</div>
+          <div class="goal-grid" id="goal-grid">
+            <label class="goal-card" data-goal="Audition Prep">
+              <input type="radio" name="goal" value="Audition Prep"> Audition Prep
+            </label>
+            <label class="goal-card" data-goal="Performance Polish">
+              <input type="radio" name="goal" value="Performance Polish"> Performance Polish
+            </label>
+            <label class="goal-card" data-goal="Technique Building">
+              <input type="radio" name="goal" value="Technique Building"> Technique Building
+            </label>
+            <label class="goal-card" data-goal="Just for Fun">
+              <input type="radio" name="goal" value="Just for Fun"> Just for Fun
+            </label>
+          </div>
+          <div class="goal-error" id="error-goal"></div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-heading">Coaching Focus</div>
+
+          <div class="field">
+            <label class="field-label" for="f-proud-of">What are you most proud of in this performance?<span class="req-star">*</span></label>
+            <textarea class="field-textarea" id="f-proud-of" rows="3" placeholder="What felt good? What are you happy with?" maxlength="2000"></textarea>
+            <div class="field-error" id="error-proud-of"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-challenge">What are you most challenged by?<span class="req-star">*</span></label>
+            <textarea class="field-textarea" id="f-challenge" rows="3" placeholder="What felt hard? What would you like help with?" maxlength="2000"></textarea>
+            <div class="field-error" id="error-challenge"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-focus-moments">Specific moments to focus on <span style="color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+            <textarea class="field-textarea" id="f-focus-moments" rows="3" placeholder="e.g. &#39;The belt at 2:14&#39; or &#39;The bridge transition&#39; — timestamps and descriptions welcome" maxlength="1000"></textarea>
+            <div class="field-helper">Optional but helpful.</div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-heading">Confidence Check</div>
+          <div class="field">
+            <label class="field-label">Confidence Rating</label>
+            <div class="confidence-display" id="confidence-display">3</div>
+            <input type="range" class="confidence-slider" id="f-confidence" min="1" max="5" step="1" value="3">
+            <div class="confidence-labels">
+              <span>1 — Not confident</span>
+              <span>5 — Very confident</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-submit-error" id="form-submit-error"></div>
+        <button type="submit" class="btn-submit" id="btn-submit">Submit for Review</button>
+      </form>
+    `;
+
+    attachFormListeners();
+  }
+
+  function attachFormListeners() {
+    // Goal card selection
+    document.querySelectorAll('.goal-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.goal-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        card.querySelector('input[type="radio"]').checked = true;
+      });
+    });
+
+    // Confidence slider display
+    const slider = document.getElementById('f-confidence');
+    const display = document.getElementById('confidence-display');
+    slider.addEventListener('input', () => { display.textContent = slider.value; });
+
+    // Form submit
+    document.getElementById('submit-form').addEventListener('submit', e => {
+      e.preventDefault();
+      handleFormSubmit();
+    });
+  }
+
+  function setFieldError(id, msg) {
+    const el = document.getElementById(`error-${id}`);
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  }
+
+  function clearFormErrors() {
+    ['song-title','show-artist','style','video-url','proud-of','challenge'].forEach(id => setFieldError(id, ''));
+    const goalErr = document.getElementById('error-goal');
+    if (goalErr) { goalErr.textContent = ''; goalErr.style.display = 'none'; }
+    const submitErr = document.getElementById('form-submit-error');
+    if (submitErr) submitErr.textContent = '';
+  }
+
+  async function handleFormSubmit() {
+    clearFormErrors();
+
+    const songTitle = (document.getElementById('f-song-title').value || '').trim();
+    const showArtist = (document.getElementById('f-show-artist').value || '').trim();
+    const style = (document.getElementById('f-style').value || '').trim();
+    const videoUrl = (document.getElementById('f-video-url').value || '').trim();
+    const proudOf = (document.getElementById('f-proud-of').value || '').trim();
+    const challenge = (document.getElementById('f-challenge').value || '').trim();
+    const focusMoments = (document.getElementById('f-focus-moments').value || '').trim();
+    const confidenceRating = parseInt(document.getElementById('f-confidence').value);
+    const selectedGoal = document.querySelector('input[name="goal"]:checked');
+
+    let hasErrors = false;
+
+    if (!songTitle) { setFieldError('song-title', 'Song title is required.'); hasErrors = true; }
+    if (!showArtist) { setFieldError('show-artist', 'Show or artist is required.'); hasErrors = true; }
+    if (!style) { setFieldError('style', 'Style is required.'); hasErrors = true; }
+    if (!videoUrl) {
+      setFieldError('video-url', 'Video link is required.'); hasErrors = true;
+    } else if (!isValidVideoUrl(videoUrl)) {
+      setFieldError('video-url', 'Please enter a valid YouTube or Google Drive link.'); hasErrors = true;
+    }
+    if (!selectedGoal) {
+      const goalErr = document.getElementById('error-goal');
+      goalErr.textContent = 'Please select a goal.'; goalErr.style.display = 'block';
+      hasErrors = true;
+    }
+    if (!proudOf) {
+      setFieldError('proud-of', 'This field is required.'); hasErrors = true;
+    } else if (proudOf.length < 20) {
+      setFieldError('proud-of', 'Please enter at least 20 characters.'); hasErrors = true;
+    }
+    if (!challenge) {
+      setFieldError('challenge', 'This field is required.'); hasErrors = true;
+    } else if (challenge.length < 20) {
+      setFieldError('challenge', 'Please enter at least 20 characters.'); hasErrors = true;
+    }
+
+    if (hasErrors) return;
+
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> Submitting…';
+
+    const { data: newSub, error } = await supabase
+      .from('submissions')
+      .insert({
+        member_id: currentUserId,
+        song_title: songTitle,
+        show_artist: showArtist,
+        style: style,
+        video_url: videoUrl,
+        goal: selectedGoal.value,
+        proud_of: proudOf,
+        challenge: challenge,
+        focus_moments: focusMoments || null,
+        confidence_rating: confidenceRating,
+        status: 'Pending',
+        submitted_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      btn.disabled = false;
+      btn.innerHTML = 'Submit for Review';
+      const submitErr = document.getElementById('form-submit-error');
+      if (submitErr) submitErr.textContent = 'Submission failed. Please try again.';
+      return;
+    }
+
+    renderStatusView(newSub);
+    showToast('Submission received! You\'ll hear from us within 48 hours.');
+    await loadHistory(currentUserId);
+  }
+
+  // ── Render: history ───────────────────────────────────────────────────
+
+  async function loadHistory(userId) {
+    const { data: submissions } = await supabase
+      .from('submissions')
+      .select('id, song_title, show_artist, style, goal, status, submitted_at')
+      .eq('member_id', userId)
+      .order('submitted_at', { ascending: false });
+
+    renderHistory(submissions || []);
+  }
+
+  function renderHistory(submissions) {
+    const section = document.getElementById('history-section');
+
+    let html = '<div class="history-heading">Submission History</div>';
+
+    if (!submissions.length) {
+      html += '<div class="history-empty">No submissions yet. Your performance history will appear here once you make your first submission.</div>';
+    } else {
+      html += submissions.map(sub => `
+        <a class="history-card" href="/app/submission.html?id=${escapeHtml(sub.id)}">
+          <div class="history-card-body">
+            <div class="history-song">${escapeHtml(sub.song_title)}</div>
+            <div class="history-artist">${escapeHtml(sub.show_artist)}</div>
+            <div class="history-date">Submitted <span data-timestamp="${escapeHtml(sub.submitted_at)}">${relativeTime(sub.submitted_at)}</span></div>
+            <div class="history-tags">${escapeHtml(sub.style)} · ${escapeHtml(sub.goal)}</div>
+          </div>
+          <div class="history-right">
+            ${statusBadge(sub.status)}
+            <span class="history-view">View →</span>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    section.innerHTML = html;
+    startRelativeTimers();
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    currentUserId = session.user.id;
+
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience').eq('user_id', currentUserId).single(),
+      supabase.from('memberships').select('status').eq('user_id', currentUserId).single(),
+    ]);
+
+    // Profile completeness gate (admin bypasses)
+    if (!profile?.is_admin && !isProfileComplete(profile)) {
+      window.location.href = '/app/profile.html?onboarding=true';
+      return;
+    }
+
+    // Membership gate (admin bypasses)
+    const hasAccess = profile?.is_admin
+      || membership?.status === 'active'
+      || membership?.status === 'cancelling';
+
+    if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
+
+    const name = profile?.display_name || session.user.email.split('@')[0];
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initSubnav('submit');
+    initFooter();
+
+    // Admin view
+    if (profile?.is_admin) {
+      document.getElementById('admin-view').style.display = 'block';
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      return;
+    }
+
+    // Show member view
+    document.getElementById('member-view').style.display = 'block';
+
+    // Get window state
+    const windowState = getChicagoWindowState();
+
+    if (!windowState.windowOpen) {
+      renderClosedState(windowState);
+      await loadHistory(currentUserId);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      return;
+    }
+
+    // Check for existing submission this window
+    const { data: existing } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('member_id', currentUserId)
+      .gte('submitted_at', windowState.windowStart.toISOString())
+      .lte('submitted_at', windowState.windowEnd.toISOString())
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      renderStatusView(existing);
+    } else {
+      renderIntakeForm();
+    }
+
+    await loadHistory(currentUserId);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>

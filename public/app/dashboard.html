@@ -326,6 +326,16 @@
     return `<div class="cp-avatar">${escapeHtml(getInitial(name))}</div>`;
   }
 
+  function isProfileComplete(profile) {
+    return !!(
+      profile?.display_name?.trim() &&
+      profile?.birth_year &&
+      profile?.experience?.trim() &&
+      profile?.location?.trim() &&
+      profile?.bio?.trim()
+    );
+  }
+
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = '/app/login.html'; return; }
@@ -333,9 +343,15 @@
     const user = session.user;
 
     const [{ data: profile }, { data: membership }] = await Promise.all([
-      supabase.from('profiles').select('display_name, is_admin, theme').eq('user_id', user.id).single(),
+      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience').eq('user_id', user.id).single(),
       supabase.from('memberships').select('plan, status').eq('user_id', user.id).single(),
     ]);
+
+    // Profile completeness gate (admin bypasses)
+    if (!profile?.is_admin && !isProfileComplete(profile)) {
+      window.location.href = '/app/profile.html?onboarding=true';
+      return;
+    }
 
     const hasAccess = profile?.is_admin
       || membership?.status === 'active'

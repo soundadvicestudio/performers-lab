@@ -45,6 +45,17 @@
   .back-link:hover { color: var(--gold); }
   .back-link::before { content: '←'; font-size: 13px; }
 
+  /* ── ONBOARDING BANNER ── */
+  .onboarding-banner {
+    display: flex; align-items: flex-start; gap: 14px;
+    background: var(--gold-dim); border: 1px solid var(--border-gold);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 2rem;
+  }
+  .onboarding-banner-icon { flex-shrink: 0; color: var(--gold); margin-top: 1px; }
+  .onboarding-banner-body { font-size: 14px; color: var(--text); }
+  .onboarding-banner-title { font-weight: 600; margin-bottom: 4px; }
+  .onboarding-banner-desc { font-weight: 300; line-height: 1.5; color: var(--text-muted); }
+
   /* ── PAGE HEADING ── */
   .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
   .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 2.5rem; }
@@ -96,15 +107,24 @@
     display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
   }
-  .field-label .optional { color: var(--text-dim); font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 10px; opacity: 0.7; }
-  input[type="text"].field-input, textarea.field-textarea {
+  .req-star { color: var(--gold); margin-left: 2px; }
+  input[type="text"].field-input,
+  input[type="number"].field-input,
+  textarea.field-textarea {
     width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
     color: var(--text); padding: 10px 13px; border-radius: 3px;
     font-size: 14px; font-family: 'Raleway', sans-serif; font-weight: 300;
     outline: none; transition: border-color 0.2s; resize: vertical;
   }
-  input[type="text"].field-input:focus, textarea.field-textarea:focus { border-color: var(--gold); background: var(--bg-4); }
+  input[type="text"].field-input:focus,
+  input[type="number"].field-input:focus,
+  textarea.field-textarea:focus { border-color: var(--gold); background: var(--bg-4); }
+  input[type="number"].field-input { -moz-appearance: textfield; }
+  input[type="number"].field-input::-webkit-outer-spin-button,
+  input[type="number"].field-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   textarea.field-textarea { min-height: 90px; line-height: 1.65; }
+  .field-helper { font-size: 11px; color: var(--text-dim); margin-top: 5px; font-weight: 300; line-height: 1.45; }
+  .field-error { font-size: 11px; color: var(--red); margin-top: 4px; display: none; }
 
   /* ── SAVE ROW ── */
   .save-row { display: flex; align-items: center; gap: 1.25rem; margin-top: 1.75rem; }
@@ -117,7 +137,6 @@
   .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
   .btn-gold:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
   .save-msg { font-size: 12px; font-weight: 500; }
-  .save-msg.success { color: var(--green); }
   .save-msg.error { color: var(--red); }
   .save-msg.saving { color: var(--text-dim); }
 
@@ -204,6 +223,17 @@
     border-radius: 50%; animation: spin 0.7s linear infinite;
   }
 
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(8px);
+    background: var(--gold); color: #070707;
+    padding: 10px 24px; border-radius: 4px;
+    font-size: 13px; font-weight: 600; font-family: 'Raleway', sans-serif;
+    opacity: 0; transition: opacity 0.25s, transform 0.25s;
+    z-index: 500; pointer-events: none; white-space: nowrap;
+  }
+  .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
   @media (max-width: 640px) {
     .main { padding: 2rem 1.25rem; }
     .profile-layout { flex-direction: column; align-items: stretch; }
@@ -228,6 +258,19 @@
   <main class="main">
     <a href="/app/dashboard.html" class="back-link">Back to dashboard</a>
 
+    <!-- Onboarding banner (shown only when ?onboarding=true) -->
+    <div id="onboarding-banner" class="onboarding-banner" style="display:none;">
+      <div class="onboarding-banner-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </div>
+      <div class="onboarding-banner-body">
+        <div class="onboarding-banner-title">Welcome to The Performer's Lab — let's set up your profile.</div>
+        <div class="onboarding-banner-desc">Fill in the required fields below to access the community.</div>
+      </div>
+    </div>
+
     <div class="page-eyebrow">Your Account</div>
     <div class="page-heading">Edit <em>profile</em></div>
 
@@ -250,16 +293,34 @@
         <!-- Fields -->
         <div class="fields-col">
           <div class="field">
-            <label class="field-label" for="input-name">Display name</label>
+            <label class="field-label" for="input-name">Display name<span class="req-star">*</span></label>
             <input type="text" class="field-input" id="input-name" placeholder="Your name" maxlength="60">
+            <div class="field-error" id="error-name"></div>
           </div>
+
           <div class="field">
-            <label class="field-label" for="input-bio">Bio <span class="optional">(optional)</span></label>
-            <textarea class="field-textarea" id="input-bio" placeholder="A short bio visible to other members…" maxlength="400"></textarea>
+            <label class="field-label" for="input-birth-year">Birth Year<span class="req-star">*</span></label>
+            <input type="number" class="field-input" id="input-birth-year" placeholder="e.g. 1995" min="1920">
+            <div class="field-helper">Used by your coach to tailor feedback to your voice.</div>
+            <div class="field-error" id="error-birth-year"></div>
           </div>
+
           <div class="field">
-            <label class="field-label" for="input-location">Location <span class="optional">(optional)</span></label>
+            <label class="field-label" for="input-experience">Singing Experience<span class="req-star">*</span></label>
+            <textarea class="field-textarea" id="input-experience" rows="3" placeholder="How long have you been singing, and what's your musical background?" maxlength="600"></textarea>
+            <div class="field-error" id="error-experience"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="input-bio">About You<span class="req-star">*</span></label>
+            <textarea class="field-textarea" id="input-bio" placeholder="Tell the community about yourself…" maxlength="400"></textarea>
+            <div class="field-error" id="error-bio"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="input-location">Location<span class="req-star">*</span></label>
             <input type="text" class="field-input" id="input-location" placeholder="City, State" maxlength="80">
+            <div class="field-error" id="error-location"></div>
           </div>
         </div>
       </div>
@@ -321,6 +382,8 @@
   </div>
 </div>
 
+<div id="toast" class="toast"></div>
+
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   import { initNav } from './components/nav.js';
@@ -341,6 +404,8 @@
     }
   });
 
+  const isOnboarding = new URLSearchParams(window.location.search).has('onboarding');
+
   let currentUserId = null;
   let currentPhotoUrl = null;
 
@@ -353,6 +418,16 @@
   let cropLastX = 0;
   let cropLastY = 0;
 
+  function isProfileComplete(profile) {
+    return !!(
+      profile?.display_name?.trim() &&
+      profile?.birth_year &&
+      profile?.experience?.trim() &&
+      profile?.location?.trim() &&
+      profile?.bio?.trim()
+    );
+  }
+
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = '/app/login.html'; return; }
@@ -361,7 +436,7 @@
 
     const [profileRes, membershipRes, countRes] = await Promise.all([
       supabase.from('profiles')
-        .select('display_name, bio, location, photo_url, is_admin, theme')
+        .select('display_name, bio, location, photo_url, is_admin, theme, birth_year, experience')
         .eq('user_id', currentUserId)
         .single(),
       supabase.from('memberships')
@@ -379,9 +454,22 @@
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
     initSubnav(null);
 
+    // Show onboarding banner
+    if (isOnboarding) {
+      document.getElementById('onboarding-banner').style.display = 'flex';
+    }
+
+    // Populate fields
     document.getElementById('input-name').value = profile?.display_name || '';
+    if (profile?.birth_year) {
+      document.getElementById('input-birth-year').value = profile.birth_year;
+    }
+    document.getElementById('input-experience').value = profile?.experience || '';
     document.getElementById('input-bio').value = profile?.bio || '';
     document.getElementById('input-location').value = profile?.location || '';
+
+    // Set max year
+    document.getElementById('input-birth-year').max = new Date().getFullYear() - 10;
 
     currentPhotoUrl = profile?.photo_url || null;
     setPhotoPreview(currentPhotoUrl, name);
@@ -395,7 +483,7 @@
     fileInput.addEventListener('change', e => {
       const file = e.target.files[0];
       if (file) openCropModal(file);
-      fileInput.value = ''; // reset so same file can be re-selected
+      fileInput.value = '';
     });
 
     // Wire save button
@@ -492,14 +580,12 @@
     const viewport = document.getElementById('crop-viewport');
     const slider = document.getElementById('crop-zoom-slider');
 
-    // Zoom slider
     slider.addEventListener('input', e => {
       cropZoom = parseFloat(e.target.value);
       clampPan();
       renderCropPreview();
     });
 
-    // Mouse drag
     viewport.addEventListener('mousedown', e => {
       cropDragging = true;
       cropLastX = e.clientX;
@@ -525,7 +611,6 @@
       }
     });
 
-    // Touch drag
     viewport.addEventListener('touchstart', e => {
       const t = e.touches[0];
       cropDragging = true;
@@ -547,7 +632,6 @@
 
     viewport.addEventListener('touchend', () => { cropDragging = false; }, { passive: true });
 
-    // Buttons
     document.getElementById('btn-cancel-crop').addEventListener('click', closeCropModal);
     document.getElementById('btn-save-crop').addEventListener('click', saveCrop);
   }
@@ -559,7 +643,6 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-spinner"></span> Saving…';
 
-    // Build 300×300 output canvas
     const out = document.createElement('canvas');
     out.width = 300;
     out.height = 300;
@@ -585,14 +668,13 @@
         .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
 
       if (uploadError) {
-        showMsg('Upload failed: ' + uploadError.message, 'error');
+        showSaveMsg('Upload failed: ' + uploadError.message, 'error');
         btn.disabled = false;
         btn.textContent = 'Save Photo';
         return;
       }
 
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-      // Add cache-buster to force reload; store clean URL in DB
       const cleanUrl = urlData.publicUrl;
       const displayUrl = cleanUrl + '?t=' + Date.now();
 
@@ -603,38 +685,96 @@
       currentPhotoUrl = cleanUrl;
       setPhotoPreview(displayUrl, document.getElementById('input-name').value || '');
       closeCropModal();
-      showMsg('Photo saved ✓', 'success');
+      showToast('Photo saved.');
+      btn.disabled = false;
+      btn.textContent = 'Save Photo';
     }, 'image/jpeg', 0.85);
   }
 
-  // ── Profile save (text fields only) ──────────────────────────────────
-  async function saveProfile() {
-    const name = document.getElementById('input-name').value.trim();
-    const bio  = document.getElementById('input-bio').value.trim();
-    const loc  = document.getElementById('input-location').value.trim();
+  // ── Field validation helpers ──────────────────────────────────────────
+  function setError(fieldId, msg) {
+    const el = document.getElementById(`error-${fieldId}`);
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  }
 
-    if (!name) { showMsg('Display name is required.', 'error'); return; }
+  function clearErrors() {
+    ['name', 'birth-year', 'experience', 'bio', 'location'].forEach(id => setError(id, ''));
+  }
+
+  // ── Profile save ──────────────────────────────────────────────────────
+  async function saveProfile() {
+    clearErrors();
+
+    const name = document.getElementById('input-name').value.trim();
+    const birthYearRaw = document.getElementById('input-birth-year').value.trim();
+    const birthYear = parseInt(birthYearRaw) || null;
+    const experience = document.getElementById('input-experience').value.trim();
+    const bio = document.getElementById('input-bio').value.trim();
+    const loc = document.getElementById('input-location').value.trim();
+
+    const maxYear = new Date().getFullYear() - 10;
+    let hasErrors = false;
+
+    if (!name) { setError('name', 'Display name is required.'); hasErrors = true; }
+    if (!birthYearRaw || !birthYear || birthYear < 1920 || birthYear > maxYear) {
+      setError('birth-year', `Enter a year between 1920 and ${maxYear}.`);
+      hasErrors = true;
+    }
+    if (!experience) { setError('experience', 'Singing experience is required.'); hasErrors = true; }
+    if (!bio) { setError('bio', 'About You is required.'); hasErrors = true; }
+    if (!loc) { setError('location', 'Location is required.'); hasErrors = true; }
+
+    if (hasErrors) return;
 
     const btn = document.getElementById('save-btn');
     btn.disabled = true;
-    showMsg('Saving…', 'saving');
+    showSaveMsg('Saving…', 'saving');
 
     const { error } = await supabase
       .from('profiles')
-      .update({ display_name: name, bio: bio || null, location: loc || null, photo_url: currentPhotoUrl })
+      .update({
+        display_name: name,
+        bio: bio || null,
+        location: loc || null,
+        photo_url: currentPhotoUrl,
+        birth_year: birthYear,
+        experience: experience || null
+      })
       .eq('user_id', currentUserId);
 
     btn.disabled = false;
-    if (error) { showMsg('Could not save: ' + error.message, 'error'); return; }
 
-    document.getElementById('nav-name').textContent = name;
-    showMsg('Changes saved ✓', 'success');
+    if (error) {
+      showSaveMsg('Could not save: ' + error.message, 'error');
+      return;
+    }
+
+    showSaveMsg('', '');
+
+    const navNameEl = document.getElementById('nav-name');
+    if (navNameEl) navNameEl.textContent = name;
+
+    if (isOnboarding) {
+      window.location.href = '/app/dashboard.html';
+      return;
+    }
+
+    showToast('Profile saved.');
   }
 
-  function showMsg(text, type) {
+  function showSaveMsg(text, type) {
     const el = document.getElementById('save-msg');
     el.textContent = text;
     el.className = `save-msg ${type}`;
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 3000);
   }
 
   init();

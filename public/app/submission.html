@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submission — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12); --green-border: rgba(76,175,132,0.25);
+    --green-solid: #4caf50;
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.1); --red-border: rgba(224,92,92,0.25);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MAIN ── */
+  .main { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem; }
+
+  /* ── BACK LINK ── */
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 14px; color: var(--gold); text-decoration: none; margin-bottom: 2rem;
+    transition: text-decoration 0.15s;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  /* ── SUBMISSION HEADER ── */
+  .sub-header { margin-bottom: 2rem; }
+  .sub-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 8px; }
+  .sub-song { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; color: var(--gold); line-height: 1.15; }
+  .sub-artist { font-size: 15px; color: var(--text-muted); font-weight: 300; margin-bottom: 10px; }
+  .sub-meta { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 2px; flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .badge-pending { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
+  .badge-feedback { background: rgba(76,175,80,0.15); color: var(--green-solid); border: 0.5px solid rgba(76,175,80,0.3); }
+
+  /* ── TWO-COLUMN LAYOUT ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* ── FEEDBACK COLUMN ── */
+  .feedback-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 12px; padding: 1.75rem;
+    position: relative; overflow: hidden;
+  }
+  .feedback-card.has-feedback { border-color: var(--border-gold); }
+  .feedback-card.has-feedback::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .feedback-heading {
+    font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400;
+    color: var(--gold); margin-bottom: 4px;
+  }
+  .feedback-pending-heading { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .feedback-pending-body { font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.6; }
+  .feedback-divider { border: none; border-top: 0.5px solid var(--border); margin: 1.25rem 0; }
+  .feedback-countdown {
+    font-size: 14px; font-weight: 600; color: var(--text-muted);
+  }
+  .feedback-countdown.urgent { color: var(--gold); }
+
+  .feedback-from { font-size: 13px; color: var(--text-muted); font-weight: 300; margin-bottom: 4px; }
+  .feedback-posted { font-size: 11px; color: var(--text-dim); margin-bottom: 1rem; }
+  .feedback-body {
+    font-size: 14px; color: var(--text); line-height: 1.7;
+  }
+  .feedback-body p { margin-bottom: 0.65em; }
+  .feedback-body p:last-child { margin-bottom: 0; }
+  .feedback-body a { color: var(--gold); text-decoration: underline; }
+  .feedback-body ul, .feedback-body ol { padding-left: 1.4em; margin-bottom: 0.65em; }
+  .feedback-body li { margin-bottom: 0.2em; }
+  .feedback-body strong { font-weight: 700; }
+  .feedback-body em { font-style: italic; }
+
+  /* ── SUBMISSION DETAILS COLUMN ── */
+  .details-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 12px; padding: 1.75rem;
+  }
+  .details-heading { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 1.25rem; letter-spacing: 0.04em; }
+  .detail-row { margin-bottom: 1.25rem; }
+  .detail-row:last-child { margin-bottom: 0; }
+  .detail-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 4px;
+  }
+  .detail-value { font-size: 14px; color: var(--text); font-weight: 300; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .detail-value a { color: var(--gold); text-decoration: none; font-weight: 500; }
+  .detail-value a:hover { text-decoration: underline; }
+  .rating-circles { display: inline-flex; gap: 3px; align-items: center; font-size: 16px; }
+  .rating-label { font-size: 13px; color: var(--text-dim); margin-left: 8px; }
+
+  @media (max-width: 768px) {
+    .main { padding: 2rem 1.25rem; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <a href="/app/submit.html" class="back-link">← Back to Submissions</a>
+    <div id="page-content"></div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+  import { relativeTime, startRelativeTimers } from './utils/time.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  let countdownInterval = null;
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+
+  function isProfileComplete(profile) {
+    return !!(
+      profile?.display_name?.trim() &&
+      profile?.birth_year &&
+      profile?.experience?.trim() &&
+      profile?.location?.trim() &&
+      profile?.bio?.trim()
+    );
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function sanitizeHTML(html) {
+    const ALLOWED = new Set(['b','i','u','strong','em','a','ul','ol','li','p','br']);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    function clean(node) {
+      const toUnwrap = [];
+      for (const child of [...node.childNodes]) {
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const tag = child.tagName.toLowerCase();
+        if (!ALLOWED.has(tag)) { toUnwrap.push(child); continue; }
+        for (const attr of [...child.attributes]) {
+          if (tag === 'a' && attr.name === 'href' && /^(https?:|\/|#)/.test(attr.value)) continue;
+          child.removeAttribute(attr.name);
+        }
+        clean(child);
+      }
+      for (const el of toUnwrap) {
+        while (el.firstChild) node.insertBefore(el.firstChild, el);
+        node.removeChild(el);
+      }
+    }
+    clean(doc.body);
+    return doc.body.innerHTML;
+  }
+
+  function statusBadge(status) {
+    if (status === 'Feedback Given') {
+      return `<span class="badge badge-feedback">Feedback Given</span>`;
+    }
+    return `<span class="badge badge-pending">Pending Review</span>`;
+  }
+
+  function formatCtFull(date) {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    }).format(date) + ' CT';
+  }
+
+  function formatCtDeadline(date) {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'short', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    }).format(date) + ' CT';
+  }
+
+  function ratingCircles(n) {
+    return '<span class="rating-circles">' +
+      Array.from({length: 5}, (_, i) =>
+        `<span style="color:${i < n ? 'var(--gold)' : 'var(--text-dim)'}">${i < n ? '●' : '○'}</span>`
+      ).join('') +
+      `</span><span class="rating-label">${n} / 5</span>`;
+  }
+
+  function startCountdown(deadlineMs, displayEl) {
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    function update() {
+      const diff = deadlineMs - Date.now();
+      if (diff <= 0) {
+        displayEl.innerHTML = 'Under review';
+        displayEl.className = 'feedback-countdown';
+        clearInterval(countdownInterval);
+        return;
+      }
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const text = `Time remaining: ${hours}h ${minutes}m`;
+      const isUrgent = diff < 24 * 3600000;
+      displayEl.className = `feedback-countdown${isUrgent ? ' urgent' : ''}`;
+      displayEl.textContent = isUrgent ? `⚠ ${text}` : text;
+    }
+
+    update();
+    countdownInterval = setInterval(update, 60000);
+  }
+
+  // ── Render page ────────────────────────────────────────────────────────
+
+  function renderPage(submission, feedback, coachProfile, isAdmin) {
+    const deadlineMs = new Date(submission.submitted_at).getTime() + 48 * 3600000;
+    const deadlineDate = new Date(deadlineMs);
+
+    const hasFeedback = submission.status === 'Feedback Given' && feedback;
+
+    // ── Left column: feedback
+    let feedbackHtml = '';
+    if (hasFeedback) {
+      const coachName = coachProfile?.display_name || 'Your Coach';
+      feedbackHtml = `
+        <div class="feedback-card has-feedback">
+          <div class="feedback-heading">Coaching Feedback</div>
+          <div class="feedback-from">From ${escapeHtml(coachName)}</div>
+          <div class="feedback-posted">
+            Posted <span data-timestamp="${escapeHtml(feedback.created_at)}">${relativeTime(feedback.created_at)}</span>
+          </div>
+          <hr class="feedback-divider">
+          <div class="feedback-body">${sanitizeHTML(feedback.content)}</div>
+        </div>
+      `;
+    } else {
+      feedbackHtml = `
+        <div class="feedback-card">
+          <div class="feedback-pending-heading">Feedback Pending</div>
+          <div class="feedback-pending-body">Your coach will post feedback within 48 hours of your submission. You'll receive a notification when it's ready.</div>
+          <hr class="feedback-divider">
+          <div id="countdown-display" class="feedback-countdown"></div>
+        </div>
+      `;
+    }
+
+    // ── Right column: submission details
+    const videoUrl = submission.video_url || '';
+    const truncatedVideo = videoUrl.length > 50 ? videoUrl.substring(0, 49) + '…' : videoUrl;
+    const focusMoments = submission.focus_moments;
+
+    const detailsHtml = `
+      <div class="details-card">
+        <div class="details-heading">Your Submission</div>
+
+        <div class="detail-row">
+          <div class="detail-label">Style</div>
+          <div class="detail-value">${escapeHtml(submission.style)}</div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">Goal</div>
+          <div class="detail-value">${escapeHtml(submission.goal)}</div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">Video Link</div>
+          <div class="detail-value">
+            <a href="${escapeHtml(videoUrl)}" target="_blank" rel="noopener">Watch video: ${escapeHtml(truncatedVideo)} →</a>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">What you were proud of</div>
+          <div class="detail-value">${escapeHtml(submission.proud_of)}</div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">What challenged you</div>
+          <div class="detail-value">${escapeHtml(submission.challenge)}</div>
+        </div>
+
+        ${focusMoments ? `
+        <div class="detail-row">
+          <div class="detail-label">Specific moments</div>
+          <div class="detail-value">${escapeHtml(focusMoments)}</div>
+        </div>
+        ` : ''}
+
+        <div class="detail-row">
+          <div class="detail-label">Confidence Rating</div>
+          <div class="detail-value">${ratingCircles(submission.confidence_rating || 0)}</div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">Submitted</div>
+          <div class="detail-value">${escapeHtml(formatCtFull(new Date(submission.submitted_at)))}</div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('page-content').innerHTML = `
+      <div class="sub-header">
+        <div class="sub-header-top">
+          <div class="sub-song">${escapeHtml(submission.song_title)}</div>
+          ${statusBadge(submission.status)}
+        </div>
+        <div class="sub-artist">${escapeHtml(submission.show_artist)}</div>
+        <div class="sub-meta">
+          Submitted <span data-timestamp="${escapeHtml(submission.submitted_at)}">${relativeTime(submission.submitted_at)}</span>
+          &nbsp;·&nbsp;
+          <span data-timestamp="${escapeHtml(submission.submitted_at)}">${escapeHtml(formatCtFull(new Date(submission.submitted_at)))}</span>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>${feedbackHtml}</div>
+        <div>${detailsHtml}</div>
+      </div>
+    `;
+
+    if (!hasFeedback) {
+      const countdownEl = document.getElementById('countdown-display');
+      if (countdownEl) startCountdown(deadlineMs, countdownEl);
+    }
+
+    startRelativeTimers();
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    const userId = session.user.id;
+
+    // Read ?id= from URL
+    const submissionId = new URLSearchParams(window.location.search).get('id');
+    if (!submissionId) { window.location.href = '/app/submit.html'; return; }
+
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience').eq('user_id', userId).single(),
+      supabase.from('memberships').select('status').eq('user_id', userId).single(),
+    ]);
+
+    // Profile completeness gate (admin bypasses)
+    if (!profile?.is_admin && !isProfileComplete(profile)) {
+      window.location.href = '/app/profile.html?onboarding=true';
+      return;
+    }
+
+    // Membership gate (admin bypasses)
+    const hasAccess = profile?.is_admin
+      || membership?.status === 'active'
+      || membership?.status === 'cancelling';
+
+    if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
+
+    const name = profile?.display_name || session.user.email.split('@')[0];
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initSubnav(null);
+    initFooter();
+
+    // Load submission
+    const { data: submission } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .maybeSingle();
+
+    if (!submission) { window.location.href = '/app/submit.html'; return; }
+
+    // Authorization: only own submissions or admin
+    if (submission.member_id !== userId && !profile?.is_admin) {
+      window.location.href = '/app/submit.html';
+      return;
+    }
+
+    let feedback = null;
+    let coachProfile = null;
+
+    if (submission.status === 'Feedback Given') {
+      const { data: feedbackRow } = await supabase
+        .from('feedback')
+        .select('*')
+        .eq('submission_id', submissionId)
+        .maybeSingle();
+
+      if (feedbackRow) {
+        feedback = feedbackRow;
+
+        // Load coach profile via two-query pattern
+        const { data: coaches } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', [feedbackRow.coach_id]);
+
+        coachProfile = coaches?.[0] || null;
+      }
+    }
+
+    renderPage(submission, feedback, coachProfile, profile?.is_admin);
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
