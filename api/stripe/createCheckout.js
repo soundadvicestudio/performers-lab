@@ -20,6 +20,7 @@ export default async function handler(req, res) {
 
   try {
     let couponId = null;
+    let discountCodeDbId = null;
 
     if (discountCode) {
       const { data: code } = await supabase
@@ -45,7 +46,11 @@ export default async function handler(req, res) {
 
       const coupon = await stripe.coupons.create(couponParams);
       couponId = coupon.id;
+      discountCodeDbId = code.id;
     }
+
+    const metadata = { price_id: priceId };
+    if (discountCodeDbId) metadata.discount_code_id = discountCodeDbId;
 
     const sessionParams = {
       mode: 'subscription',
@@ -54,6 +59,7 @@ export default async function handler(req, res) {
       client_reference_id: userId,
       success_url: 'https://performers-lab.com/app/checkout-success.html?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://performers-lab.com/app/checkout.html',
+      metadata,
     };
 
     if (couponId) {
