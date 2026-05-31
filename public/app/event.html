@@ -33,43 +33,23 @@
   .main { max-width: 1140px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
 
   /* ── TWO-COLUMN LAYOUT ── */
-  .event-layout {
-    display: grid;
-    grid-template-columns: 1fr minmax(300px, 340px);
-    gap: 24px;
-    align-items: start;
-  }
+  .event-layout { display: grid; grid-template-columns: 1fr minmax(300px, 340px); gap: 24px; align-items: start; }
   .event-main { min-width: 0; }
-  .event-sidebar {
-    position: sticky; top: 80px;
-    max-height: calc(100vh - 96px); overflow-y: auto;
-  }
+  .event-sidebar { position: sticky; top: 80px; height: calc(100vh - 96px); overflow: hidden; }
 
   /* ── STATUS BADGES ── */
   @keyframes live-pulse {
     0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76,175,132,0.4); }
     50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(76,175,132,0); }
   }
-  .live-dot {
-    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-    background: var(--green); flex-shrink: 0;
-    animation: live-pulse 1.5s ease-in-out infinite;
-  }
-  .badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    padding: 3px 10px; border-radius: 3px; margin-bottom: 1rem;
-  }
+  .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: live-pulse 1.5s ease-in-out infinite; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 3px; margin-bottom: 1rem; }
   .badge-live { background: var(--green-dim); color: var(--green); border: 0.5px solid rgba(76,175,132,0.3); }
   .badge-upcoming { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
   .badge-completed { background: var(--bg-3); color: var(--text-muted); border: 0.5px solid var(--border-mid); }
 
   /* ── EVENT INFO CARD ── */
-  .event-info-card {
-    background: var(--bg-2); border: 0.5px solid var(--border);
-    border-radius: 10px; padding: 2rem; margin-bottom: 1.5rem;
-    transition: border-color 0.2s;
-  }
+  .event-info-card { background: var(--bg-2); border: 0.5px solid var(--border); border-radius: 10px; padding: 2rem; margin-bottom: 1.5rem; transition: border-color 0.2s; }
   .event-info-card.live { border-color: rgba(76,175,132,0.35); }
   .event-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; color: var(--text); line-height: 1.15; margin-bottom: 6px; }
   .event-topic { font-size: 14px; color: var(--text-muted); font-weight: 300; margin-bottom: 1.25rem; }
@@ -83,11 +63,7 @@
   /* ── RSVP / NOTIFY TOGGLES ── */
   .rsvp-section { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 0.5px solid var(--border); }
   .rsvp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
-  .btn-rsvp, .btn-notify {
-    border-radius: 3px; padding: 8px 18px;
-    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
-  }
+  .btn-rsvp, .btn-notify { border-radius: 3px; padding: 8px 18px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s; }
   .btn-rsvp { background: none; border: 0.5px solid var(--border-gold); color: var(--gold); }
   .btn-rsvp:not(:disabled):hover { background: var(--gold-dim); }
   .btn-rsvp.rsvpd { background: var(--gold); color: var(--bg); border-color: var(--gold); }
@@ -99,69 +75,70 @@
   .btn-notify:disabled { opacity: 0.38; cursor: not-allowed; }
   .rsvp-count { font-size: 12px; color: var(--text-dim); font-weight: 300; }
   .rsvp-hint { font-size: 11px; color: var(--text-dim); font-weight: 300; line-height: 1.5; margin-top: 6px; }
-
-  /* ── CAL LINK ── */
-  .btn-cal {
-    display: inline-block; margin-top: 1rem;
-    font-size: 11px; color: var(--text-dim); font-weight: 500; letter-spacing: 0.06em;
-    background: none; border: none; cursor: pointer;
-    font-family: 'Raleway', sans-serif; padding: 0; transition: color 0.2s;
-  }
+  .btn-cal { display: inline-block; margin-top: 1rem; font-size: 11px; color: var(--text-dim); font-weight: 500; letter-spacing: 0.06em; background: none; border: none; cursor: pointer; font-family: 'Raleway', sans-serif; padding: 0; transition: color 0.2s; }
   .btn-cal:hover { color: var(--gold); }
 
   /* ── EMBED AREA ── */
-  .embed-card {
-    background: var(--bg-2); border: 0.5px solid var(--border);
-    border-radius: 10px; overflow: hidden;
-  }
-  .embed-container {
-    width: 100%; aspect-ratio: 16 / 9;
-    background: var(--bg-2); border-radius: 8px; overflow: hidden;
-  }
-  .embed-placeholder {
-    width: 100%; aspect-ratio: 16 / 9;
-    background: var(--bg-2); border: 0.5px solid var(--border-gold);
-    border-radius: 8px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 0.75rem;
-    padding: 2rem; text-align: center;
-  }
+  .embed-container { width: 100%; aspect-ratio: 16 / 9; background: var(--bg-2); border-radius: 8px; overflow: hidden; }
+  .embed-placeholder { width: 100%; aspect-ratio: 16 / 9; background: var(--bg-2); border: 0.5px solid var(--border-gold); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2rem; text-align: center; }
   .embed-placeholder-icon { color: var(--text-dim); opacity: 0.5; }
   .embed-placeholder-text { font-size: 15px; color: var(--text-muted); font-weight: 300; }
   .embed-placeholder-sub { font-size: 13px; color: var(--text-dim); font-weight: 300; }
-  .embed-ext-link {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: var(--gold); color: var(--bg); border: none;
-    padding: 10px 22px; border-radius: 3px;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-    text-decoration: none; font-family: 'Raleway', sans-serif; transition: background 0.2s;
-    margin: 1.5rem;
-  }
+  .embed-ext-link { display: inline-flex; align-items: center; gap: 6px; background: var(--gold); color: var(--bg); border: none; padding: 10px 22px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; font-family: 'Raleway', sans-serif; transition: background 0.2s; margin: 1.5rem; }
   .embed-ext-link:hover { background: var(--gold-light); }
 
   /* ── CHAT PANEL ── */
-  .chat-panel {
-    background: var(--bg-2); border: 0.5px solid var(--border-gold);
-    border-radius: 10px; overflow: hidden;
-  }
-  .chat-panel-header {
-    padding: 1rem 1.25rem; border-bottom: 0.5px solid var(--border);
-    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--text-muted);
-  }
-  .chat-panel-body {
-    height: 360px; display: flex; align-items: center; justify-content: center;
-  }
-  .chat-loading-text { font-size: 13px; color: var(--text-dim); font-style: italic; }
+  .chat-panel { background: var(--bg-2); border: 0.5px solid var(--border-gold); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; height: 100%; }
+  .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+  .chat-header-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); }
+  .chat-participant-count { font-size: 11px; color: var(--text-dim); font-weight: 300; }
+  #chat-messages { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .chat-empty { text-align: center; padding: 2rem 0; font-size: 13px; color: var(--text-dim); font-style: italic; }
+  .chat-msg { display: flex; align-items: flex-start; gap: 8px; }
+  .chat-msg-avatar { flex-shrink: 0; width: 28px; height: 28px; }
+  .chat-avatar-img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: block; }
+  .chat-avatar-init { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-3); border: 0.5px solid var(--border-mid); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--gold); }
+  .chat-msg-body { flex: 1; min-width: 0; }
+  .chat-msg-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 3px; }
+  .chat-msg-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .chat-badge { padding: 1px 6px; border-radius: 99px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; }
+  .chat-badge-coach { background: var(--gold-dim); color: var(--gold); }
+  .chat-badge-mod { background: var(--bg-3); color: var(--text-muted); }
+  .chat-msg-time { font-size: 10px; color: var(--text-dim); margin-left: auto; font-weight: 300; white-space: nowrap; }
+  .chat-action-icons { display: flex; gap: 3px; margin-left: 4px; opacity: 0; transition: opacity 0.15s; }
+  .chat-msg:hover .chat-action-icons { opacity: 1; }
+  .chat-action-btn { background: none; border: none; cursor: pointer; padding: 2px 3px; color: var(--text-dim); transition: color 0.15s; display: flex; align-items: center; font-family: 'Raleway', sans-serif; }
+  .chat-action-appoint:hover { color: var(--gold); }
+  .chat-action-remove-mod:hover, .chat-action-delete:hover { color: #e05c5c; }
+  .chat-msg-text { font-size: 13px; color: var(--text); font-weight: 300; line-height: 1.5; word-break: break-word; }
+  .chat-confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0 2px; margin-top: 4px; font-size: 12px; color: var(--text-muted); font-weight: 300; border-top: 0.5px solid var(--border); }
+  .chat-confirm-btn { padding: 3px 10px; border-radius: 3px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Raleway', sans-serif; letter-spacing: 0.06em; transition: all 0.15s; }
+  .chat-confirm-gold { background: var(--gold); color: var(--bg); border: none; }
+  .chat-confirm-gold:hover:not(:disabled) { background: var(--gold-light); }
+  .chat-confirm-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+  .chat-confirm-cancel { background: none; border: 0.5px solid var(--border-mid); color: var(--text-muted); }
+  .chat-confirm-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+  .chat-confirm-danger { background: none; border: 0.5px solid rgba(224,92,92,0.4); color: #e05c5c; }
+  .chat-confirm-danger:hover:not(:disabled) { background: rgba(224,92,92,0.06); border-color: rgba(224,92,92,0.7); }
+  .chat-confirm-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+  #chat-readonly-banner { display: none; padding: 14px 16px; text-align: center; font-size: 13px; color: var(--text-muted); font-weight: 300; border-top: 0.5px solid var(--border); flex-shrink: 0; line-height: 1.6; }
+  #chat-readonly-banner a { color: var(--gold); text-decoration: none; }
+  #chat-input-row { display: none; border-top: 0.5px solid var(--border); padding: 10px 12px; flex-shrink: 0; }
+  .chat-input-wrap { display: flex; gap: 8px; }
+  #chat-input { flex: 1; background: var(--bg-3); border: 0.5px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: 'Raleway', sans-serif; font-weight: 300; outline: none; transition: border-color 0.2s; }
+  #chat-input:focus { border-color: var(--gold); }
+  #chat-send-btn { background: var(--gold); color: var(--bg); border: none; border-radius: 6px; padding: 8px 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s; flex-shrink: 0; }
+  #chat-send-btn:hover:not(:disabled) { background: var(--gold-light); }
+  #chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  #chat-error { font-size: 11px; color: #e05c5c; font-weight: 300; display: none; margin-top: 5px; min-height: 14px; }
 
   @media (max-width: 900px) {
     .event-layout { grid-template-columns: 1fr; }
-    .event-sidebar { position: static; }
-    .chat-panel-body { height: 400px; }
+    .event-sidebar { position: static; height: auto; overflow: visible; }
+    .chat-panel { height: 400px; }
     .event-title { font-size: 26px; }
   }
-  @media (max-width: 600px) {
-    .main { padding: 2rem 1.25rem 3rem; }
-  }
+  @media (max-width: 600px) { .main { padding: 2rem 1.25rem 3rem; } }
 </style>
 </head>
 <body>
@@ -179,14 +156,23 @@
 
   <main class="main">
     <div class="event-layout" id="event-layout">
-      <div class="event-main" id="event-main">
-        <!-- Rendered by JS -->
-      </div>
+      <div class="event-main" id="event-main"></div>
       <div class="event-sidebar">
         <div class="chat-panel" id="chat-panel">
-          <div class="chat-panel-header">Session Chat</div>
-          <div class="chat-panel-body">
-            <span class="chat-loading-text">Chat loading…</span>
+          <div class="chat-header">
+            <span class="chat-header-title">Session Chat</span>
+            <span class="chat-participant-count" id="chat-participant-count"></span>
+          </div>
+          <div id="chat-messages"></div>
+          <div id="chat-readonly-banner">
+            This session has ended. <a href="/app/community.html">Continue the conversation in the Community →</a>
+          </div>
+          <div id="chat-input-row">
+            <div class="chat-input-wrap">
+              <input type="text" id="chat-input" placeholder="Say something…" maxlength="500" autocomplete="off">
+              <button id="chat-send-btn">Send</button>
+            </div>
+            <div id="chat-error"></div>
           </div>
         </div>
       </div>
@@ -204,141 +190,187 @@
   import { applyTheme } from './components/theme.js';
   import { relativeTime } from './utils/time.js';
 
+  // ── Profanity filter ────────────────────────────────────────────────────
+  const PROFANITY_LIST = [
+    // Core English profanity
+    'fuck','fuk','fucc','fvck','f4ck','f.ck','phuck','phuk','fucker','fucking','fucked','fucks',
+    'fuckup','motherfucker','motherfucking','mofo','m0f0','clusterfuck','fucktard','f.cktard',
+    'shit','sh1t','shyt','sheit','shite','bullshit','horseshit','dipshit','shitty','shithead',
+    'shitface','apeshit',
+    'ass','a55','a$$','arse','asshole','a55hole','arsehole','dumbass','jackass','asshat',
+    'asswipe','assclown','assbag','buttfuck',
+    'bitch','b1tch','bi7ch','bytch','bitching','bitchy',
+    'bastard','cunt','c.nt','cvnt','kunt','cock','c0ck','cocksucker','cocksucking',
+    'dick','d1ck','dik','dickhead','dickface',
+    'pussy','pu55y','puss1','whore','wh0re','whor3','slut','sl.t','slvt',
+    'damn','crap','piss','p1ss','pissed',
+    'cum','c.m','cumshot','jizz','j1zz',
+    'tits','t1ts','titties','boobs','b00bs','titty',
+    'penis','p3nis','vagina','anus','rectum',
+    'rape','r@pe','raped','raping','rapist','molest','molestation',
+    'douchebag','douche','d0uche','schmuck','scumbag',
+    'pervert','perv','pedophile','pedo','predator',
+    'skank','sk@nk','hoe','h0e','thot','slore','harlot','strumpet','tramp','tart','bimbo',
+    'floozy','trollop','harpy',
+    // Racial and ethnic slurs
+    'nigger','n1gger','nigg3r','nigga','n1gga','nig','n1g',
+    'spic','sp1c','beaner','b3aner','wetback','w3tback',
+    'chink','ch1nk','gook','g00k','jap','j@p','zipperhead','slope',
+    'kike','k1ke','hymie','heeb','yid',
+    'towelhead','raghead','sandnigger','camel.jockey',
+    'coon','c00n','sambo','pickaninny','darky','jungle.bunny','porch.monkey',
+    'spook','spade',
+    'redskin','squaw','injun','halfbreed',
+    'wop','w0p','dago','d@go','guinea','greaser',
+    'mick','paddy','limey','kraut','frog','bohunk',
+    'cracker','honky','h0nky','redneck','white.trash','trailer.trash',
+    'curry.muncher','sand.monkey',
+    // Homophobic slurs
+    'faggot','f@ggot','f4ggot','fag','f@g','fagg',
+    'dyke','d1ke','lesbo',
+    'homo','h0mo','queer','poofter','poof','fairy','pansy','sodomite','bugger',
+    // Transphobic slurs
+    'tranny','tr@nny','tr4nny','shemale','heshe','ladyboy','traps',
+    // Misogynistic
+    'feminazi','femcunt','mangina','whore','cumrag','cumslut',
+    // Ableist
+    'retard','r3tard','retarded','spaz','cripple','gimp','moron','imbecile',
+    // Nazi / extremist
+    'nazi','n@zi','neonazi','hitler','heil','kkk','klan','genocide','holocaust.denial',
+    // Self-harm / threats
+    'kys','killurself','kill.yourself','die.slowly',
+    'suicide.method','bomb.threat','school.shooting',
+    // Sexual content
+    'porn','p0rn','xxx','nude','n.de','n00d','naked','erotic','fetish',
+    'dildo','d1ld0','vibrator','masturbate','masturbation','orgasm','ejaculate',
+    'fornicate','sodomy','incest','bestiality','onlyfans',
+    'sex','s3x','sexual','sexting',
+    // Harassment patterns
+    'doxx','doxing','swat','swatting',
+    // Antisemitic dog-whistles and coded terms
+    'soros','globalist.jew','zionist.conspiracy',
+    // Miscellaneous offensive
+    'crackhead','junkie','druggie',
+  ];
+
+  function containsProfanity(text) {
+    const lower = text.toLowerCase().replace(/\s+/g, ' ').trim();
+    return PROFANITY_LIST.some(word =>
+      new RegExp(`\\b${word.replace(/\./g,'[.\\s]?')}\\b`, 'i').test(lower)
+    );
+  }
+
+  // ── Supabase ────────────────────────────────────────────────────────────
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
     auth: {
-      storageKey: 'sb-performers-lab-auth',
-      storage: window.localStorage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
+      storageKey: 'sb-performers-lab-auth', storage: window.localStorage,
+      autoRefreshToken: true, persistSession: true, detectSessionInUrl: true
     }
   });
 
   const eventId = new URLSearchParams(location.search).get('id');
   if (!eventId) location.href = '/app/events.html';
 
-  function isProfileComplete(profile) {
-    return !!(
-      profile?.display_name?.trim() &&
-      profile?.birth_year &&
-      profile?.experience?.trim() &&
-      profile?.location?.trim() &&
-      profile?.bio?.trim() &&
-      profile?.timezone?.trim()
-    );
-  }
-
-  function escHtml(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function formatCtDate(isoString) {
-    if (!isoString) return '—';
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      weekday: 'long', month: 'long', day: 'numeric',
-      hour: 'numeric', minute: '2-digit', hour12: true,
-    }).format(new Date(isoString)) + ' CT';
-  }
-
-  function formatLocalTime(isoString, tz) {
-    const d = new Date(isoString);
-    const timePart = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true,
-    }).format(d);
-    const shortAbbr = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' })
-      .formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
-    const longName = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'long' })
-      .formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
-    return `${timePart} your time (${longName} · ${shortAbbr})`;
-  }
-
-  function toIcsDate(d) {
-    return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  }
-
-  function slugify(str) {
-    return String(str || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  }
-
-  function extractYouTubeId(url) {
-    try {
-      const u = new URL(url);
-      if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
-      if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('/')[0] || null;
-    } catch (e) {}
-    return null;
-  }
-
-  function convertDriveUrl(url) {
-    return url.replace(/\/view(\?.*)?$/, '/preview');
-  }
-
-  function downloadIcs(evt) {
-    const now = toIcsDate(new Date());
-    const start = toIcsDate(new Date(evt.starts_at));
-    const end = toIcsDate(new Date(new Date(evt.starts_at).getTime() + 90 * 60000));
-    const desc = `${(evt.topic || '').replace(/\n/g,'\\n')}\\n\\n${(evt.description || '').replace(/\n/g,'\\n')}`;
-    const ics = [
-      'BEGIN:VCALENDAR', 'VERSION:2.0',
-      "PRODID:-//The Performer's Lab//EN",
-      'BEGIN:VEVENT',
-      `UID:${evt.id}@performers-lab.com`,
-      `DTSTAMP:${now}`, `DTSTART:${start}`, `DTEND:${end}`,
-      `SUMMARY:${evt.title} — The Performer's Lab`,
-      `DESCRIPTION:${desc}`,
-      `URL:https://performers-lab.com/app/event.html?id=${evt.id}`,
-      'END:VEVENT', 'END:VCALENDAR',
-    ].join('\r\n');
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `performers-lab-${slugify(evt.title)}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  }
-
+  // ── State ───────────────────────────────────────────────────────────────
   let currentUserId = null;
   let userProfile = null;
   let userIsAdmin = false;
   let currentEvent = null;
   let currentRsvp = null;
   let currentRsvpCount = 0;
+  let messages = [];
+  let profileMap = {};
+  let perEventModIds = new Set();
+  let participantIds = new Set();
+  let chatMessagesEl = null;
+  let chatErrorTimeout = null;
 
+  // ── Helpers ─────────────────────────────────────────────────────────────
+  function isProfileComplete(profile) {
+    return !!(profile?.display_name?.trim() && profile?.birth_year &&
+      profile?.experience?.trim() && profile?.location?.trim() &&
+      profile?.bio?.trim() && profile?.timezone?.trim());
+  }
+
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatCtDate(iso) {
+    if (!iso) return '—';
+    return new Intl.DateTimeFormat('en-US',{
+      timeZone:'America/Chicago', weekday:'long', month:'long', day:'numeric',
+      hour:'numeric', minute:'2-digit', hour12:true,
+    }).format(new Date(iso)) + ' CT';
+  }
+
+  function formatLocalTime(iso, tz) {
+    const d = new Date(iso);
+    const timePart = new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit',hour12:true}).format(d);
+    const short = new Intl.DateTimeFormat('en-US',{timeZone:tz,timeZoneName:'short'}).formatToParts(d).find(p=>p.type==='timeZoneName')?.value||'';
+    const long  = new Intl.DateTimeFormat('en-US',{timeZone:tz,timeZoneName:'long'}).formatToParts(d).find(p=>p.type==='timeZoneName')?.value||'';
+    return `${timePart} your time (${long} · ${short})`;
+  }
+
+  function toIcsDate(d) { return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''); }
+  function slugify(s) { return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+
+  function extractYouTubeId(url) {
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
+      if (u.hostname==='youtu.be') return u.pathname.slice(1).split('/')[0]||null;
+    } catch(e) {}
+    return null;
+  }
+
+  function convertDriveUrl(url) { return url.replace(/\/view(\?.*)?$/,'/preview'); }
+
+  function downloadIcs(evt) {
+    const now=toIcsDate(new Date()), start=toIcsDate(new Date(evt.starts_at));
+    const end=toIcsDate(new Date(new Date(evt.starts_at).getTime()+90*60000));
+    const desc=`${(evt.topic||'').replace(/\n/g,'\\n')}\\n\\n${(evt.description||'').replace(/\n/g,'\\n')}`;
+    const ics=['BEGIN:VCALENDAR','VERSION:2.0',"PRODID:-//The Performer's Lab//EN",
+      'BEGIN:VEVENT',`UID:${evt.id}@performers-lab.com`,`DTSTAMP:${now}`,
+      `DTSTART:${start}`,`DTEND:${end}`,`SUMMARY:${evt.title} — The Performer's Lab`,
+      `DESCRIPTION:${desc}`,`URL:https://performers-lab.com/app/event.html?id=${evt.id}`,
+      'END:VEVENT','END:VCALENDAR'].join('\r\n');
+    const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`performers-lab-${slugify(evt.title)}.ics`;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+  }
+
+  // ── Event page rendering ────────────────────────────────────────────────
   function buildStatusBadge(status) {
-    if (status === 'live') return `<div class="badge badge-live"><span class="live-dot"></span>&nbsp;Live Now</div>`;
-    if (status === 'upcoming') return `<div class="badge badge-upcoming">Upcoming</div>`;
+    if (status==='live') return `<div class="badge badge-live"><span class="live-dot"></span>&nbsp;Live Now</div>`;
+    if (status==='upcoming') return `<div class="badge badge-upcoming">Upcoming</div>`;
     return `<div class="badge badge-completed">Completed</div>`;
   }
 
   function buildTimeBlock(event) {
-    if (event.status === 'completed') return '';
-    const tz = userProfile?.timezone;
-    const showLocal = tz && tz !== 'America/Chicago';
+    if (event.status==='completed') return '';
+    const tz=userProfile?.timezone, showLocal=tz&&tz!=='America/Chicago';
     return `<div class="event-time-block" id="event-time-block">
       <div class="time-primary">${formatCtDate(event.starts_at)}</div>
-      ${showLocal ? `<div class="time-local">${escHtml(formatLocalTime(event.starts_at, tz))}</div>` : ''}
+      ${showLocal?`<div class="time-local">${escHtml(formatLocalTime(event.starts_at,tz))}</div>`:''}
     </div>`;
   }
 
   function buildRsvpSection(event) {
-    if (event.status !== 'upcoming') return '';
-    const hasRsvp = !!currentRsvp;
-    const hasNotify = currentRsvp?.notify === true;
+    if (event.status!=='upcoming') return '';
+    const hasRsvp=!!currentRsvp, hasNotify=currentRsvp?.notify===true;
     return `<div class="rsvp-section" id="rsvp-section">
       <div class="rsvp-row">
-        <button class="btn-rsvp${hasRsvp ? ' rsvpd' : ''}" id="btn-rsvp"
-          onclick="window.toggleRsvp()">
-          ${hasRsvp ? "RSVP'd ✓" : 'RSVP'}
+        <button class="btn-rsvp${hasRsvp?' rsvpd':''}" id="btn-rsvp" onclick="window.toggleRsvp()">
+          ${hasRsvp?"RSVP'd ✓":'RSVP'}
         </button>
-        <button class="btn-notify${hasNotify ? ' notified' : ''}" id="btn-notify"
-          ${!hasRsvp ? 'disabled' : ''}
-          onclick="window.toggleNotify()">
-          ${hasNotify ? 'Notified 🔔' : 'Notify Me 🔔'}
+        <button class="btn-notify${hasNotify?' notified':''}" id="btn-notify" ${!hasRsvp?'disabled':''} onclick="window.toggleNotify()">
+          ${hasNotify?'Notified 🔔':'Notify Me 🔔'}
         </button>
         <span class="rsvp-count" id="rsvp-count">${currentRsvpCount} going</span>
       </div>
@@ -348,91 +380,33 @@
   }
 
   function buildEmbed(event) {
-    const status = event.status;
-
-    if (status === 'upcoming') {
+    if (event.status==='upcoming') {
       return `<div class="embed-placeholder">
-        <div class="embed-placeholder-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-          </svg>
-        </div>
+        <div class="embed-placeholder-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
         <div class="embed-placeholder-text">This session hasn't started yet.</div>
         <div class="embed-placeholder-sub">${formatCtDate(event.starts_at)}</div>
       </div>`;
     }
-
-    if (status === 'live') {
-      if (!event.daily_room_url) {
-        return `<div class="embed-placeholder">
-          <div class="embed-placeholder-text">Session starting…</div>
-        </div>`;
-      }
-      let src = event.daily_room_url;
-      if (userIsAdmin) {
-        const token = sessionStorage.getItem(`host_token_${event.id}`);
-        if (token) src = `${event.daily_room_url}?t=${token}`;
-      }
-      return `<div class="embed-container">
-        <iframe
-          id="daily-frame"
-          src="${escHtml(src)}"
-          allow="camera; microphone; fullscreen; display-capture"
-          style="width:100%;height:100%;border:none;"
-        ></iframe>
-      </div>`;
+    if (event.status==='live') {
+      if (!event.daily_room_url) return `<div class="embed-placeholder"><div class="embed-placeholder-text">Session starting…</div></div>`;
+      let src=event.daily_room_url;
+      if (userIsAdmin) { const t=sessionStorage.getItem(`host_token_${event.id}`); if(t) src=`${event.daily_room_url}?t=${t}`; }
+      return `<div class="embed-container"><iframe id="daily-frame" src="${escHtml(src)}" allow="camera; microphone; fullscreen; display-capture" style="width:100%;height:100%;border:none;"></iframe></div>`;
     }
-
-    if (status === 'completed') {
-      if (!event.recording_url) {
-        return `<div class="embed-placeholder">
-          <div class="embed-placeholder-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
-            </svg>
-          </div>
-          <div class="embed-placeholder-text">Recording coming soon.</div>
-        </div>`;
-      }
-
-      const ytId = extractYouTubeId(event.recording_url);
-      if (ytId) {
-        return `<div class="embed-container">
-          <iframe
-            src="https://www.youtube.com/embed/${escHtml(ytId)}"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            style="width:100%;height:100%;border:none;"
-          ></iframe>
-        </div>`;
-      }
-
-      if (event.recording_url.includes('drive.google.com')) {
-        const previewUrl = convertDriveUrl(event.recording_url);
-        return `<div class="embed-container">
-          <iframe
-            src="${escHtml(previewUrl)}"
-            allow="autoplay"
-            allowfullscreen
-            style="width:100%;height:100%;border:none;"
-          ></iframe>
-        </div>`;
-      }
-
-      return `<div class="embed-placeholder">
-        <div class="embed-placeholder-text">Session recording available</div>
-        <a href="${escHtml(event.recording_url)}" class="embed-ext-link" target="_blank" rel="noopener noreferrer">Watch Recording →</a>
-      </div>`;
+    if (event.status==='completed') {
+      if (!event.recording_url) return `<div class="embed-placeholder"><div class="embed-placeholder-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></div><div class="embed-placeholder-text">Recording coming soon.</div></div>`;
+      const ytId=extractYouTubeId(event.recording_url);
+      if (ytId) return `<div class="embed-container"><iframe src="https://www.youtube.com/embed/${escHtml(ytId)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:none;"></iframe></div>`;
+      if (event.recording_url.includes('drive.google.com')) return `<div class="embed-container"><iframe src="${escHtml(convertDriveUrl(event.recording_url))}" allow="autoplay" allowfullscreen style="width:100%;height:100%;border:none;"></iframe></div>`;
+      return `<div class="embed-placeholder"><div class="embed-placeholder-text">Session recording available</div><a href="${escHtml(event.recording_url)}" class="embed-ext-link" target="_blank" rel="noopener noreferrer">Watch Recording →</a></div>`;
     }
-
     return '';
   }
 
   function renderPage() {
-    const event = currentEvent;
-    const mainEl = document.getElementById('event-main');
-    mainEl.innerHTML = `
-      <div class="event-info-card${event.status === 'live' ? ' live' : ''}" id="event-info-card">
+    const event=currentEvent;
+    document.getElementById('event-main').innerHTML=`
+      <div class="event-info-card${event.status==='live'?' live':''}" id="event-info-card">
         <div id="event-status-badge">${buildStatusBadge(event.status)}</div>
         <div class="event-title">${escHtml(event.title)}</div>
         <div class="event-topic">${escHtml(event.topic)}</div>
@@ -440,182 +414,388 @@
         <div class="event-desc">${escHtml(event.description)}</div>
         ${buildRsvpSection(event)}
       </div>
-      <div id="event-embed-area">${buildEmbed(event)}</div>
-    `;
+      <div id="event-embed-area">${buildEmbed(event)}</div>`;
   }
 
   function applyStatusUpdate(updatedEvent) {
-    currentEvent = { ...currentEvent, ...updatedEvent };
-    const event = currentEvent;
-
-    document.title = `${event.title} — The Performer's Lab`;
-
-    const badgeEl = document.getElementById('event-status-badge');
-    if (badgeEl) badgeEl.innerHTML = buildStatusBadge(event.status);
-
-    const card = document.getElementById('event-info-card');
-    if (card) card.classList.toggle('live', event.status === 'live');
-
-    const timeEl = document.getElementById('event-time-block');
-    const newTimeHtml = buildTimeBlock(event);
-    if (timeEl) {
-      timeEl.outerHTML = newTimeHtml;
-    } else {
-      const descEl = document.querySelector('.event-desc');
-      if (descEl && newTimeHtml) descEl.insertAdjacentHTML('beforebegin', newTimeHtml);
-    }
-
-    const rsvpEl = document.getElementById('rsvp-section');
-    if (event.status !== 'upcoming' && rsvpEl) rsvpEl.remove();
-
-    const embedEl = document.getElementById('event-embed-area');
-    if (embedEl) embedEl.innerHTML = buildEmbed(event);
+    currentEvent={...currentEvent,...updatedEvent};
+    const event=currentEvent;
+    document.title=`${event.title} — The Performer's Lab`;
+    const badgeEl=document.getElementById('event-status-badge');
+    if (badgeEl) badgeEl.innerHTML=buildStatusBadge(event.status);
+    const card=document.getElementById('event-info-card');
+    if (card) card.classList.toggle('live',event.status==='live');
+    const timeEl=document.getElementById('event-time-block');
+    const newTime=buildTimeBlock(event);
+    if (timeEl) { if(newTime) timeEl.outerHTML=newTime; else timeEl.remove(); }
+    else { const d=document.querySelector('.event-desc'); if(d&&newTime) d.insertAdjacentHTML('beforebegin',newTime); }
+    const rsvpEl=document.getElementById('rsvp-section');
+    if (event.status!=='upcoming'&&rsvpEl) rsvpEl.remove();
+    const embedEl=document.getElementById('event-embed-area');
+    if (embedEl) embedEl.innerHTML=buildEmbed(event);
+    updateChatStateForStatus(event.status);
   }
 
-  function subscribeToEventUpdates() {
-    const channel = supabase
-      .channel(`event-status-${eventId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'events',
-        filter: `id=eq.${eventId}`,
-      }, (payload) => {
-        applyStatusUpdate(payload.new);
-      })
-      .subscribe();
+  // ── RSVP handlers ───────────────────────────────────────────────────────
+  window.triggerIcsDownload=function(){ if(currentEvent) downloadIcs(currentEvent); };
 
-    window.addEventListener('beforeunload', () => {
-      supabase.removeAllChannels();
+  window.toggleRsvp=async function(){
+    const btn=document.getElementById('btn-rsvp');
+    const notifyBtn=document.getElementById('btn-notify');
+    const countEl=document.getElementById('rsvp-count');
+    if(!btn) return;
+    const hasRsvp=!!currentRsvp;
+    if (hasRsvp) {
+      btn.disabled=true;
+      const {error}=await supabase.from('event_rsvps').delete().eq('event_id',eventId).eq('user_id',currentUserId);
+      btn.disabled=false; if(error) return;
+      currentRsvp=null; currentRsvpCount=Math.max(0,currentRsvpCount-1);
+      btn.className='btn-rsvp'; btn.textContent='RSVP';
+      if(notifyBtn){notifyBtn.disabled=true;notifyBtn.className='btn-notify';notifyBtn.textContent='Notify Me 🔔';}
+      if(countEl) countEl.textContent=`${currentRsvpCount} going`;
+    } else {
+      btn.disabled=true;
+      const {error}=await supabase.from('event_rsvps').upsert({event_id:eventId,user_id:currentUserId,notify:false},{onConflict:'event_id,user_id',ignoreDuplicates:true});
+      btn.disabled=false; if(error) return;
+      currentRsvp={notify:false}; currentRsvpCount+=1;
+      btn.className='btn-rsvp rsvpd'; btn.textContent="RSVP'd ✓";
+      if(notifyBtn) notifyBtn.disabled=false;
+      if(countEl) countEl.textContent=`${currentRsvpCount} going`;
+    }
+  };
+
+  window.toggleNotify=async function(){
+    if(!currentRsvp) return;
+    const btn=document.getElementById('btn-notify');
+    if(!btn||btn.disabled) return;
+    const newNotify=!(currentRsvp.notify===true);
+    btn.disabled=true;
+    const {error}=await supabase.from('event_rsvps').update({notify:newNotify}).eq('event_id',eventId).eq('user_id',currentUserId);
+    btn.disabled=false; if(error) return;
+    currentRsvp.notify=newNotify;
+    btn.className=newNotify?'btn-notify notified':'btn-notify';
+    btn.textContent=newNotify?'Notified 🔔':'Notify Me 🔔';
+  };
+
+  // ── Chat: render ────────────────────────────────────────────────────────
+  function buildAvatar(profile) {
+    if (profile?.photo_url)
+      return `<img class="chat-avatar-img" src="${escHtml(profile.photo_url)}" alt="">`;
+    const init=escHtml((profile?.display_name||'M')[0].toUpperCase());
+    return `<div class="chat-avatar-init">${init}</div>`;
+  }
+
+  function renderMessage(msg, profile, isPerEventMod) {
+    const name=escHtml(profile?.display_name||'Member');
+    const isAuthorAdmin=!!profile?.is_admin;
+    const isAuthorGlobalMod=!!profile?.is_moderator;
+    const isMod=isAuthorGlobalMod||isPerEventMod;
+    const canModerate=userIsAdmin||userProfile?.is_moderator||perEventModIds.has(currentUserId);
+    const safeId=escHtml(msg.id), safeUid=escHtml(msg.user_id);
+
+    const coachBadge=isAuthorAdmin?`<span class="chat-badge chat-badge-coach">Coach</span>`:'';
+    const modBadge=isMod?`<span class="chat-badge chat-badge-mod">Mod</span>`:'';
+
+    let actionIcons='';
+    if (canModerate) {
+      const deleteBtn=`<button class="chat-action-btn chat-action-delete" title="Delete message" onclick="window.deleteMessage('${safeId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>`;
+      let modBtn='';
+      if (userIsAdmin && !isAuthorAdmin && !isAuthorGlobalMod) {
+        if (!isPerEventMod) {
+          modBtn=`<button class="chat-action-btn chat-action-appoint" title="Appoint as moderator" onclick="window.showAppointConfirm('${safeId}','${safeUid}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></button>`;
+        } else {
+          modBtn=`<button class="chat-action-btn chat-action-remove-mod" title="Remove moderator" onclick="window.showRemoveModConfirm('${safeId}','${safeUid}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>`;
+        }
+      }
+      actionIcons=`<div class="chat-action-icons">${modBtn}${deleteBtn}</div>`;
+    }
+
+    return `<div class="chat-msg" data-message-id="${safeId}" data-author-id="${safeUid}">
+      <div class="chat-msg-avatar">${buildAvatar(profile)}</div>
+      <div class="chat-msg-body">
+        <div class="chat-msg-meta">
+          <span class="chat-msg-name">${name}</span>
+          ${coachBadge}${modBadge}
+          <span class="chat-msg-time">${relativeTime(msg.created_at)}</span>
+          ${actionIcons}
+        </div>
+        <div class="chat-msg-text">${escHtml(msg.content)}</div>
+      </div>
+    </div>`;
+  }
+
+  // ── Chat: participant count ─────────────────────────────────────────────
+  function renderParticipantCount() {
+    const el=document.getElementById('chat-participant-count');
+    if (!el) return;
+    const n=participantIds.size;
+    el.textContent=n===0?'':(n===1?'1 in the chat':`${n} in the chat`);
+  }
+
+  function updateParticipantCount(userId) {
+    participantIds.add(userId);
+    renderParticipantCount();
+  }
+
+  // ── Chat: state helpers ─────────────────────────────────────────────────
+  function updateChatStateForStatus(status) {
+    const inputRow=document.getElementById('chat-input-row');
+    const banner=document.getElementById('chat-readonly-banner');
+    if (!inputRow||!banner) return;
+    if (status==='live')       { inputRow.style.display=''; banner.style.display='none'; }
+    else if (status==='completed') { inputRow.style.display='none'; banner.style.display=''; }
+    else                           { inputRow.style.display='none'; banner.style.display='none'; }
+  }
+
+  function showChatError(msg) {
+    const el=document.getElementById('chat-error');
+    if (!el) return;
+    el.textContent=msg; el.style.display='block';
+    clearTimeout(chatErrorTimeout);
+    chatErrorTimeout=setTimeout(()=>{ el.style.display='none'; el.textContent=''; },3000);
+  }
+
+  function clearAllChatConfirms() {
+    document.querySelectorAll('.chat-confirm').forEach(el=>el.remove());
+  }
+
+  function refreshMessagesByUser(userId) {
+    messages.filter(m=>m.user_id===userId).forEach(msg=>{
+      const el=document.querySelector(`[data-message-id="${msg.id}"]`);
+      if (!el) return;
+      const profile=profileMap[userId]||{display_name:'Member',photo_url:null,is_admin:false,is_moderator:false};
+      const isPerEventMod=perEventModIds.has(userId);
+      const wrapper=document.createElement('div');
+      wrapper.innerHTML=renderMessage(msg,profile,isPerEventMod);
+      const newEl=wrapper.firstElementChild;
+      if (newEl) el.replaceWith(newEl);
     });
   }
 
-  window.triggerIcsDownload = function() {
-    if (currentEvent) downloadIcs(currentEvent);
+  // ── Chat: init ──────────────────────────────────────────────────────────
+  function initChat(msgs, mods) {
+    chatMessagesEl=document.getElementById('chat-messages');
+    if (!chatMessagesEl) return;
+
+    (mods||[]).forEach(m=>perEventModIds.add(m.user_id));
+    messages=msgs||[];
+    participantIds=new Set(messages.map(m=>m.user_id));
+    renderParticipantCount();
+
+    if (!messages.length) {
+      const txt=currentEvent.status==='live'?'Be the first to say something.':'No messages yet.';
+      chatMessagesEl.innerHTML=`<div class="chat-empty" id="chat-empty">${txt}</div>`;
+    } else {
+      messages.forEach(msg=>{
+        const profile=profileMap[msg.user_id]||null;
+        const el=document.createElement('div');
+        el.innerHTML=renderMessage(msg,profile,perEventModIds.has(msg.user_id));
+        const child=el.firstElementChild;
+        if (child) chatMessagesEl.appendChild(child);
+      });
+      chatMessagesEl.scrollTop=chatMessagesEl.scrollHeight;
+    }
+
+    updateChatStateForStatus(currentEvent.status);
+
+    const chatInput=document.getElementById('chat-input');
+    const sendBtn=document.getElementById('chat-send-btn');
+    if (chatInput&&sendBtn) {
+      const sendMessage=async()=>{
+        if (currentEvent.status!=='live') return;
+        const content=chatInput.value.trim();
+        if (!content) return;
+        if (containsProfanity(content)) { showChatError('Your message contains restricted content.'); return; }
+        sendBtn.disabled=true;
+        const {error}=await supabase.from('event_messages').insert({event_id:eventId,user_id:currentUserId,content});
+        sendBtn.disabled=false;
+        if (error) { showChatError('Failed to send. Try again.'); return; }
+        chatInput.value='';
+      };
+      sendBtn.addEventListener('click',sendMessage);
+      chatInput.addEventListener('keydown',e=>{
+        if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(); }
+      });
+    }
+  }
+
+  // ── Mod: appoint ───────────────────────────────────────────────────────
+  window.showAppointConfirm=function(msgId, authorId) {
+    clearAllChatConfirms();
+    const msgEl=document.querySelector(`[data-message-id="${msgId}"]`);
+    if (!msgEl) return;
+    const displayName=escHtml(profileMap[authorId]?.display_name||'this member');
+    const confirm=document.createElement('div');
+    confirm.className='chat-confirm';
+    confirm.innerHTML=`<span>Appoint <strong>${displayName}</strong> as session moderator?</span>
+      <button class="chat-confirm-btn chat-confirm-gold" onclick="window.doAppointMod('${escHtml(authorId)}','${escHtml(msgId)}',this)">Appoint</button>
+      <button class="chat-confirm-btn chat-confirm-cancel" onclick="this.closest('.chat-confirm').remove()">Cancel</button>`;
+    msgEl.querySelector('.chat-msg-body')?.appendChild(confirm);
   };
 
-  window.toggleRsvp = async function() {
-    const btn = document.getElementById('btn-rsvp');
-    const notifyBtn = document.getElementById('btn-notify');
-    const countEl = document.getElementById('rsvp-count');
-    if (!btn) return;
+  window.doAppointMod=async function(authorId, triggerMsgId, btn) {
+    btn.disabled=true; btn.textContent='Appointing…';
+    const {error}=await supabase.from('event_moderators').insert({event_id:eventId,user_id:authorId,appointed_by:currentUserId});
+    if (error) {
+      btn.disabled=false; btn.textContent='Appoint';
+      showChatError('Failed to appoint moderator.'); return;
+    }
+    await supabase.from('notifications').insert({
+      user_id:authorId, type:'mod_appointed',
+      title:"You've been appointed as a moderator",
+      body:`Jonathan has appointed you as a moderator for ${currentEvent.title}. You can now delete chat messages during this session.`,
+      link:`/app/event.html?id=${eventId}`, read:false,
+    });
+    perEventModIds.add(authorId);
+    clearAllChatConfirms();
+    refreshMessagesByUser(authorId);
+  };
 
-    const hasRsvp = !!currentRsvp;
-    if (hasRsvp) {
-      btn.disabled = true;
-      const { error } = await supabase
-        .from('event_rsvps')
-        .delete()
-        .eq('event_id', eventId)
-        .eq('user_id', currentUserId);
-      btn.disabled = false;
-      if (error) return;
-      currentRsvp = null;
-      currentRsvpCount = Math.max(0, currentRsvpCount - 1);
-      btn.className = 'btn-rsvp';
-      btn.textContent = 'RSVP';
-      if (notifyBtn) { notifyBtn.disabled = true; notifyBtn.className = 'btn-notify'; notifyBtn.textContent = 'Notify Me 🔔'; }
-      if (countEl) countEl.textContent = `${currentRsvpCount} going`;
+  // ── Mod: remove ─────────────────────────────────────────────────────────
+  window.showRemoveModConfirm=function(msgId, authorId) {
+    clearAllChatConfirms();
+    const msgEl=document.querySelector(`[data-message-id="${msgId}"]`);
+    if (!msgEl) return;
+    const displayName=escHtml(profileMap[authorId]?.display_name||'this member');
+    const confirm=document.createElement('div');
+    confirm.className='chat-confirm';
+    confirm.innerHTML=`<span>Remove <strong>${displayName}</strong> as moderator?</span>
+      <button class="chat-confirm-btn chat-confirm-danger" onclick="window.doRemoveMod('${escHtml(authorId)}',this)">Remove</button>
+      <button class="chat-confirm-btn chat-confirm-cancel" onclick="this.closest('.chat-confirm').remove()">Cancel</button>`;
+    msgEl.querySelector('.chat-msg-body')?.appendChild(confirm);
+  };
+
+  window.doRemoveMod=async function(authorId, btn) {
+    btn.disabled=true; btn.textContent='Removing…';
+    const {error}=await supabase.from('event_moderators').delete().eq('event_id',eventId).eq('user_id',authorId);
+    if (error) {
+      btn.disabled=false; btn.textContent='Remove';
+      showChatError('Failed to remove moderator.'); return;
+    }
+    perEventModIds.delete(authorId);
+    clearAllChatConfirms();
+    refreshMessagesByUser(authorId);
+  };
+
+  // ── Mod: delete message ─────────────────────────────────────────────────
+  window.deleteMessage=async function(msgId) {
+    const el=document.querySelector(`[data-message-id="${msgId}"]`);
+    if (el) { el.style.transition='opacity 0.3s'; el.style.opacity='0'; }
+    const {error}=await supabase.from('event_messages').delete().eq('id',msgId);
+    if (error) {
+      if (el) { el.style.opacity='1'; }
+      showChatError('Failed to delete message.');
     } else {
-      btn.disabled = true;
-      const { error } = await supabase
-        .from('event_rsvps')
-        .upsert({ event_id: eventId, user_id: currentUserId, notify: false }, { onConflict: 'event_id,user_id', ignoreDuplicates: true });
-      btn.disabled = false;
-      if (error) return;
-      currentRsvp = { notify: false };
-      currentRsvpCount += 1;
-      btn.className = 'btn-rsvp rsvpd';
-      btn.textContent = "RSVP'd ✓";
-      if (notifyBtn) notifyBtn.disabled = false;
-      if (countEl) countEl.textContent = `${currentRsvpCount} going`;
+      if (el) setTimeout(()=>{el.remove(); messages=messages.filter(m=>m.id!==msgId);},300);
     }
   };
 
-  window.toggleNotify = async function() {
-    if (!currentRsvp) return;
-    const btn = document.getElementById('btn-notify');
-    if (!btn || btn.disabled) return;
+  // ── Realtime subscriptions ──────────────────────────────────────────────
+  function subscribeToEventUpdates() {
+    supabase.channel(`event-status-${eventId}`)
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'events',filter:`id=eq.${eventId}`},
+        payload=>applyStatusUpdate(payload.new))
+      .subscribe();
+    window.addEventListener('beforeunload',()=>supabase.removeAllChannels());
+  }
 
-    const newNotify = !(currentRsvp.notify === true);
-    btn.disabled = true;
-    const { error } = await supabase
-      .from('event_rsvps')
-      .update({ notify: newNotify })
-      .eq('event_id', eventId)
-      .eq('user_id', currentUserId);
-    btn.disabled = false;
-    if (error) return;
+  function subscribeToChatUpdates() {
+    // A — new messages
+    supabase.channel(`event-messages-${eventId}`)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_messages',filter:`event_id=eq.${eventId}`},
+        async payload=>{
+          const msg=payload.new;
+          if (!profileMap[msg.user_id]) {
+            const {data}=await supabase.from('profiles').select('user_id,display_name,photo_url,is_admin,is_moderator').eq('user_id',msg.user_id).single();
+            if (data) profileMap[data.user_id]=data;
+          }
+          const profile=profileMap[msg.user_id]||{display_name:'Member',photo_url:null,is_admin:false,is_moderator:false};
+          const isPerEventMod=perEventModIds.has(msg.user_id);
+          const html=renderMessage(msg,profile,isPerEventMod);
+          document.getElementById('chat-empty')?.remove();
+          const wrapper=document.createElement('div');
+          wrapper.innerHTML=html;
+          const child=wrapper.firstElementChild;
+          if (child&&chatMessagesEl) chatMessagesEl.appendChild(child);
+          if (chatMessagesEl) chatMessagesEl.scrollTop=chatMessagesEl.scrollHeight;
+          messages.push(msg);
+          updateParticipantCount(msg.user_id);
+        })
+      .subscribe();
 
-    currentRsvp.notify = newNotify;
-    if (newNotify) {
-      btn.className = 'btn-notify notified';
-      btn.textContent = 'Notified 🔔';
-    } else {
-      btn.className = 'btn-notify';
-      btn.textContent = 'Notify Me 🔔';
-    }
-  };
+    // B — deleted messages
+    supabase.channel(`event-messages-delete-${eventId}`)
+      .on('postgres_changes',{event:'DELETE',schema:'public',table:'event_messages',filter:`event_id=eq.${eventId}`},
+        payload=>{
+          const el=document.querySelector(`[data-message-id="${payload.old.id}"]`);
+          if (el) { el.style.transition='opacity 0.3s'; el.style.opacity='0'; setTimeout(()=>el.remove(),300); }
+          messages=messages.filter(m=>m.id!==payload.old.id);
+        })
+      .subscribe();
 
+    // C — moderator changes
+    supabase.channel(`event-mods-${eventId}`)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_moderators',filter:`event_id=eq.${eventId}`},
+        payload=>{ perEventModIds.add(payload.new.user_id); refreshMessagesByUser(payload.new.user_id); })
+      .on('postgres_changes',{event:'DELETE',schema:'public',table:'event_moderators',filter:`event_id=eq.${eventId}`},
+        payload=>{ perEventModIds.delete(payload.old.user_id); refreshMessagesByUser(payload.old.user_id); })
+      .subscribe();
+  }
+
+  // ── Init ────────────────────────────────────────────────────────────────
   async function init() {
     if (!eventId) return;
+    const {data:{session}}=await supabase.auth.getSession();
+    if (!session) { location.href='/app/login.html'; return; }
+    currentUserId=session.user.id;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { location.href = '/app/login.html'; return; }
-    currentUserId = session.user.id;
+    const {data:profile}=await supabase.from('profiles')
+      .select('display_name,is_admin,is_moderator,theme,bio,location,birth_year,experience,timezone')
+      .eq('user_id',currentUserId).single();
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name, is_admin, theme, bio, location, birth_year, experience, timezone')
-      .eq('user_id', currentUserId)
-      .single();
-
-    if (!profile?.is_admin && !isProfileComplete(profile)) {
-      location.href = '/app/profile.html?onboarding=true';
-      return;
-    }
-
+    if (!profile?.is_admin&&!isProfileComplete(profile)) { location.href='/app/profile.html?onboarding=true'; return; }
     if (!profile?.is_admin) {
-      const { data: membership } = await supabase
-        .from('memberships').select('status').eq('user_id', currentUserId).single();
-      const status = membership?.status;
-      if (status !== 'active' && status !== 'cancelling') {
-        location.href = '/app/gate.html';
-        return;
-      }
+      const {data:membership}=await supabase.from('memberships').select('status').eq('user_id',currentUserId).single();
+      if (membership?.status!=='active'&&membership?.status!=='cancelling') { location.href='/app/gate.html'; return; }
     }
 
-    userProfile = profile;
-    userIsAdmin = !!profile?.is_admin;
-
-    applyTheme(profile?.theme || 'gold');
-    initNav(supabase, { userName: profile?.display_name || session.user.email.split('@')[0], isAdmin: profile?.is_admin });
+    userProfile=profile; userIsAdmin=!!profile?.is_admin;
+    applyTheme(profile?.theme||'gold');
+    initNav(supabase,{userName:profile?.display_name||session.user.email.split('@')[0],isAdmin:profile?.is_admin});
     initSubnav('live-lab');
     initFooter();
 
     const [
-      { data: eventData },
-      { data: myRsvpData },
-      { count: rsvpCount },
-    ] = await Promise.all([
-      supabase.from('events').select('*').eq('id', eventId).single(),
-      supabase.from('event_rsvps').select('notify').eq('event_id', eventId).eq('user_id', currentUserId).maybeSingle(),
-      supabase.from('event_rsvps').select('*', { count: 'exact', head: true }).eq('event_id', eventId),
+      {data:eventData},{data:myRsvpData},{count:rsvpCount},
+      {data:chatMsgs},{data:eventMods},
+    ]=await Promise.all([
+      supabase.from('events').select('*').eq('id',eventId).single(),
+      supabase.from('event_rsvps').select('notify').eq('event_id',eventId).eq('user_id',currentUserId).maybeSingle(),
+      supabase.from('event_rsvps').select('*',{count:'exact',head:true}).eq('event_id',eventId),
+      supabase.from('event_messages').select('*').eq('event_id',eventId).order('created_at',{ascending:true}).limit(100),
+      supabase.from('event_moderators').select('*').eq('event_id',eventId),
     ]);
 
-    if (!eventData) { location.href = '/app/events.html'; return; }
+    if (!eventData) { location.href='/app/events.html'; return; }
 
-    currentEvent = eventData;
-    currentRsvp = myRsvpData || null;
-    currentRsvpCount = rsvpCount || 0;
+    // Profile join for chat
+    const authorIds=[...new Set([...(chatMsgs||[]).map(m=>m.user_id),...(eventMods||[]).map(m=>m.user_id)])];
+    if (authorIds.length) {
+      const {data:profiles}=await supabase.from('profiles')
+        .select('user_id,display_name,photo_url,is_admin,is_moderator').in('user_id',authorIds);
+      (profiles||[]).forEach(p=>{ profileMap[p.user_id]=p; });
+    }
 
-    document.title = `${eventData.title} — The Performer's Lab`;
+    currentEvent=eventData; currentRsvp=myRsvpData||null; currentRsvpCount=rsvpCount||0;
+    document.title=`${eventData.title} — The Performer's Lab`;
 
     renderPage();
+    initChat(chatMsgs||[],eventMods||[]);
     subscribeToEventUpdates();
+    subscribeToChatUpdates();
 
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
   }
 
   init();
