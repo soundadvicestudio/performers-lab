@@ -433,6 +433,33 @@
   }
   .btn-remove-video:hover { color: var(--text); }
   .video-validation-msg { font-size: 11px; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
+
+  /* ── MENTION CHIPS ── */
+  .mention-chip {
+    display: inline-block; background: var(--gold-dim); color: var(--gold);
+    border-radius: 4px; padding: 0 5px; font-size: 0.92em; font-weight: 600;
+    cursor: pointer; user-select: none; text-decoration: none;
+  }
+  .mention-chip:hover { background: var(--border-gold); }
+
+  /* ── MENTION DROPDOWN ── */
+  #mention-dropdown {
+    position: absolute; background: var(--bg-2); border: 1px solid var(--border-gold);
+    border-radius: 8px; min-width: 220px; max-height: 200px; overflow-y: auto;
+    z-index: 1000; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .mention-option {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    cursor: pointer; font-family: 'Raleway', sans-serif; font-size: 0.88rem; color: var(--text);
+  }
+  .mention-option:hover, .mention-option.active { background: var(--gold-dim); }
+  .mention-option img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+  .mention-option-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--bg-4); display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--gold); font-family: 'Raleway', sans-serif;
+  }
+  .mention-option-name { color: var(--text); }
 </style>
 </head>
 <body>
@@ -528,6 +555,64 @@
     }
   });
 
+  // ── MentionBlot ────────────────────────────────────────────────────────
+  class MentionBlot extends Quill.import('blots/inline') {
+    static create(value) {
+      const node = super.create();
+      node.setAttribute('data-user-id', value.userId);
+      node.setAttribute('data-display-name', value.displayName);
+      node.setAttribute('contenteditable', 'false');
+      return node;
+    }
+    static value(node) {
+      return { userId: node.dataset.userId, displayName: node.dataset.displayName };
+    }
+  }
+  MentionBlot.blotName = 'mention';
+  MentionBlot.tagName = 'span';
+  MentionBlot.className = 'mention-chip';
+  Quill.register(MentionBlot);
+
+  // Create mention dropdown (appended once to body)
+  const _mentionDropdownEl = document.createElement('div');
+  _mentionDropdownEl.id = 'mention-dropdown';
+  document.body.appendChild(_mentionDropdownEl);
+
+  // Mention chip click → navigate to member profile
+  document.addEventListener('click', e => {
+    const chip = e.target.closest('.mention-chip');
+    if (chip && chip.dataset.userId) {
+      e.preventDefault();
+      window.location.href = `/app/member.html?id=${chip.dataset.userId}`;
+    }
+  });
+
+  // Global keydown handler for dropdown navigation
+  document.addEventListener('keydown', e => {
+    const dropdown = document.getElementById('mention-dropdown');
+    if (!dropdown || dropdown.style.display === 'none') return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      dropdownActiveIndex = Math.min(dropdownActiveIndex + 1, dropdownMembers.length - 1);
+      updateDropdownActive();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      dropdownActiveIndex = Math.max(dropdownActiveIndex - 1, 0);
+      updateDropdownActive();
+    } else if (e.key === 'Enter') {
+      if (!dropdownMembers[dropdownActiveIndex]) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (activeDropdownContext === 'quill') {
+        selectMentionOption(dropdownMembers[dropdownActiveIndex]);
+      } else if (activeDropdownContext?.textarea) {
+        selectCommentMentionOption(dropdownMembers[dropdownActiveIndex], activeDropdownContext.textarea, activeDropdownContext.postId);
+      }
+    } else if (e.key === 'Escape') {
+      hideMentionDropdown();
+    }
+  }, true);
+
   // ── State ──────────────────────────────────────────────────────────────
   let currentUser = null;
   let activeChannelId = null; // null = main feed
@@ -546,10 +631,19 @@
   let videoDebounceTimer = null;
   let postCommentCounts = {}; // postId → total comment count
   let previewCommentsMap = {}; // postId → array of up to 3 recent comments (with profiles)
+  let globalProfileMap = {}; // all loaded profiles keyed by user_id
+  let mentionCount = 0; // current Quill post mention count
+  let isAdminOrMod = false;
+  let commentMentionsMap = {}; // postId → [{userId, displayName}]
+  let _activeUserIds = null; // cached active member user_ids for mention search
+  let mentionSearchTimer = null;
+  let dropdownMembers = [];
+  let dropdownActiveIndex = 0;
+  let activeDropdownContext = null; // 'quill' | { textarea, postId }
 
   // ── Helpers ────────────────────────────────────────────────────────────
   function sanitizeHTML(html) {
-    const ALLOWED = new Set(['b','i','u','strong','em','a','ul','ol','li','p','br']);
+    const ALLOWED = new Set(['b','i','u','strong','em','a','ul','ol','li','p','br','span']);
     const doc = new DOMParser().parseFromString(html, 'text/html');
     function clean(node) {
       const toUnwrap = [];
@@ -557,10 +651,24 @@
         if (child.nodeType !== Node.ELEMENT_NODE) continue;
         const tag = child.tagName.toLowerCase();
         if (!ALLOWED.has(tag)) { toUnwrap.push(child); continue; }
-        // Strip all attributes; allow href on <a> with safe protocol only
-        for (const attr of [...child.attributes]) {
-          if (tag === 'a' && attr.name === 'href' && /^(https?:|\/|#)/.test(attr.value)) continue;
-          child.removeAttribute(attr.name);
+        if (tag === 'span') {
+          // Allow only mention chip spans with required data attrs
+          if (child.classList.contains('mention-chip') && child.dataset.userId && child.dataset.displayName) {
+            for (const attr of [...child.attributes]) {
+              if (!['class','data-user-id','data-display-name','contenteditable'].includes(attr.name)) {
+                child.removeAttribute(attr.name);
+              }
+            }
+          } else {
+            toUnwrap.push(child);
+            continue;
+          }
+        } else {
+          // Strip all attributes; allow href on <a> with safe protocol only
+          for (const attr of [...child.attributes]) {
+            if (tag === 'a' && attr.name === 'href' && /^(https?:|\/|#)/.test(attr.value)) continue;
+            child.removeAttribute(attr.name);
+          }
         }
         clean(child);
       }
@@ -606,6 +714,174 @@
     return tmp.textContent || tmp.innerText || '';
   }
 
+  // ── Mention helpers ────────────────────────────────────────────────────
+  function buildDisplayNameMap(profileMap) {
+    const map = {};
+    Object.values(profileMap).forEach(p => { if (p.display_name) map[p.display_name] = p; });
+    return map;
+  }
+
+  function convertMentions(text, displayNameMap) {
+    if (!text) return '';
+    const escaped = escapeHtml(text);
+    if (!Object.keys(displayNameMap).length) return escaped;
+    return escaped.replace(/@([^\s@]+(?:\s[^\s@]+)*)/g, (match, name) => {
+      const profile = displayNameMap[name];
+      if (profile) {
+        return `<span class="mention-chip" data-user-id="${escapeHtml(profile.user_id)}" data-display-name="${escapeHtml(name)}">${escapeHtml(match)}</span>`;
+      }
+      return match;
+    });
+  }
+
+  async function getActiveUserIds() {
+    if (_activeUserIds !== null) return _activeUserIds;
+    const { data } = await supabase.from('memberships').select('user_id').in('status', ['active', 'cancelling']);
+    _activeUserIds = (data || []).map(r => r.user_id);
+    return _activeUserIds;
+  }
+
+  async function searchMembers(query) {
+    const activeIds = await getActiveUserIds();
+    if (!activeIds.length) return [];
+    const { data } = await supabase
+      .from('profiles').select('user_id, display_name, photo_url')
+      .ilike('display_name', `%${query}%`)
+      .in('user_id', activeIds)
+      .limit(6);
+    return (data || []).map(p => ({ userId: p.user_id, displayName: p.display_name || '', photoUrl: p.photo_url || null }));
+  }
+
+  function renderMentionOptions(members) {
+    return members.map((m, i) => {
+      const avatar = m.photoUrl
+        ? `<img src="${escapeHtml(m.photoUrl)}" alt="${escapeHtml(m.displayName)}">`
+        : `<div class="mention-option-avatar">${escapeHtml((m.displayName || '?')[0].toUpperCase())}</div>`;
+      return `<div class="mention-option${i === 0 ? ' active' : ''}" data-idx="${i}">${avatar}<span class="mention-option-name">${escapeHtml(m.displayName)}</span></div>`;
+    }).join('');
+  }
+
+  function updateDropdownActive() {
+    const dropdown = document.getElementById('mention-dropdown');
+    if (!dropdown) return;
+    dropdown.querySelectorAll('.mention-option').forEach((opt, i) => {
+      opt.classList.toggle('active', i === dropdownActiveIndex);
+    });
+  }
+
+  function hideMentionDropdown() {
+    const dropdown = document.getElementById('mention-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    dropdownMembers = [];
+    dropdownActiveIndex = 0;
+    activeDropdownContext = null;
+    clearTimeout(mentionSearchTimer);
+  }
+
+  function showQuillMentionDropdown(query, cursorIndex) {
+    activeDropdownContext = 'quill';
+    clearTimeout(mentionSearchTimer);
+    mentionSearchTimer = setTimeout(async () => {
+      const members = await searchMembers(query);
+      dropdownMembers = members;
+      dropdownActiveIndex = 0;
+      const dropdown = document.getElementById('mention-dropdown');
+      if (!members.length) { hideMentionDropdown(); return; }
+      dropdown.innerHTML = renderMentionOptions(members);
+      const bounds = quill.getBounds(cursorIndex);
+      const editorRect = quill.container.getBoundingClientRect();
+      dropdown.style.left = `${editorRect.left + bounds.left}px`;
+      dropdown.style.top = `${editorRect.top + bounds.bottom + window.scrollY + 4}px`;
+      dropdown.style.display = 'block';
+      dropdown.querySelectorAll('.mention-option').forEach((opt, i) => {
+        opt.addEventListener('mousedown', e => { e.preventDefault(); selectMentionOption(members[i]); });
+      });
+    }, 200);
+  }
+
+  function selectMentionOption(member) {
+    if (!isAdminOrMod && mentionCount >= 3) {
+      const errEl = document.getElementById('composer-error');
+      if (errEl) {
+        errEl.textContent = 'You can mention up to 3 members per post.';
+        setTimeout(() => { errEl.textContent = ''; }, 3000);
+      }
+      hideMentionDropdown();
+      return;
+    }
+    const sel = quill.getSelection();
+    if (!sel) return;
+    const cursorIndex = sel.index;
+    const textBefore = quill.getText(0, cursorIndex);
+    const atMatch = textBefore.match(/(?:^|\s)@([^\s]*)$/);
+    if (!atMatch) { hideMentionDropdown(); return; }
+    const query = atMatch[1];
+    const atCharPos = textBefore.lastIndexOf('@');
+    const deleteLength = cursorIndex - atCharPos;
+    quill.deleteText(atCharPos, deleteLength);
+    quill.insertEmbed(atCharPos, 'mention', { userId: member.userId, displayName: member.displayName });
+    quill.insertText(atCharPos + 1, ' ');
+    quill.setSelection(atCharPos + 2, 0);
+    mentionCount++;
+    hideMentionDropdown();
+  }
+
+  async function handleCommentMentionInput(textarea, postId) {
+    const val = textarea.value;
+    const cursor = textarea.selectionStart;
+    const textBefore = val.substring(0, cursor);
+    const atMatch = textBefore.match(/(?:^|\s)@([^\s]*)$/);
+    if (!atMatch) { hideMentionDropdown(); return; }
+    const query = atMatch[1];
+    activeDropdownContext = { textarea, postId };
+    clearTimeout(mentionSearchTimer);
+    mentionSearchTimer = setTimeout(async () => {
+      const members = await searchMembers(query);
+      dropdownMembers = members;
+      dropdownActiveIndex = 0;
+      const dropdown = document.getElementById('mention-dropdown');
+      if (!members.length) { hideMentionDropdown(); return; }
+      dropdown.innerHTML = renderMentionOptions(members);
+      const rect = textarea.getBoundingClientRect();
+      dropdown.style.left = `${rect.left + window.scrollX}px`;
+      dropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      dropdown.style.display = 'block';
+      dropdown.querySelectorAll('.mention-option').forEach((opt, i) => {
+        opt.addEventListener('mousedown', e => { e.preventDefault(); selectCommentMentionOption(members[i], textarea, postId); });
+      });
+    }, 200);
+  }
+
+  function selectCommentMentionOption(member, textarea, postId) {
+    const mentions = commentMentionsMap[postId] || [];
+    if (!isAdminOrMod && mentions.length >= 3) {
+      const errEl = document.getElementById(`comment-error-${postId}`);
+      if (errEl) {
+        errEl.textContent = 'You can mention up to 3 members per comment.';
+        errEl.style.display = 'block';
+        setTimeout(() => { errEl.style.display = 'none'; errEl.textContent = ''; }, 3000);
+      }
+      hideMentionDropdown();
+      return;
+    }
+    const val = textarea.value;
+    const cursor = textarea.selectionStart;
+    const textBefore = val.substring(0, cursor);
+    const atMatch = textBefore.match(/(?:^|\s)@([^\s]*)$/);
+    if (!atMatch) { hideMentionDropdown(); return; }
+    const query = atMatch[1];
+    const atPos = textBefore.lastIndexOf('@');
+    textarea.value = val.substring(0, atPos) + '@' + member.displayName + val.substring(cursor);
+    const newCursor = atPos + 1 + member.displayName.length;
+    textarea.setSelectionRange(newCursor, newCursor);
+    textarea.focus();
+    if (!commentMentionsMap[postId]) commentMentionsMap[postId] = [];
+    if (!commentMentionsMap[postId].some(m => m.userId === member.userId)) {
+      commentMentionsMap[postId].push({ userId: member.userId, displayName: member.displayName });
+    }
+    hideMentionDropdown();
+  }
+
   // ── Init ───────────────────────────────────────────────────────────────
   function isProfileComplete(profile) {
     return !!(
@@ -624,7 +900,7 @@
     currentUser = session.user;
 
     const [{ data: profile }, { data: membership }] = await Promise.all([
-      supabase.from('profiles').select('display_name, photo_url, is_admin, theme, bio, location, birth_year, experience, timezone').eq('user_id', currentUser.id).single(),
+      supabase.from('profiles').select('display_name, photo_url, is_admin, is_moderator, theme, bio, location, birth_year, experience, timezone').eq('user_id', currentUser.id).single(),
       supabase.from('memberships').select('status').eq('user_id', currentUser.id).single(),
     ]);
 
@@ -641,6 +917,7 @@
 
     currentUserDisplayName = profile?.display_name || currentUser.email.split('@')[0];
     userTimezone = profile?.timezone || 'America/Chicago';
+    isAdminOrMod = !!(profile?.is_admin || profile?.is_moderator);
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: currentUserDisplayName, isAdmin: profile?.is_admin });
     initSubnav('Community', supabase);
@@ -657,6 +934,7 @@
     renderSidebar();
     await loadFeed();
     subscribeRealtime();
+    subscribeNewPosts();
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -678,6 +956,19 @@
 
     document.getElementById('btn-post').addEventListener('click', submitPost);
     initVideoComposer();
+
+    // Mention autocomplete on text-change
+    quill.on('text-change', () => {
+      const sel = quill.getSelection();
+      if (!sel) { hideMentionDropdown(); return; }
+      const textBefore = quill.getText(0, sel.index);
+      const atMatch = textBefore.match(/(?:^|\s)@([^\s]*)$/);
+      if (atMatch) {
+        showQuillMentionDropdown(atMatch[1], sel.index);
+      } else {
+        hideMentionDropdown();
+      }
+    });
   }
 
   // ── Sidebar toggle (mobile) ────────────────────────────────────────────
@@ -940,6 +1231,9 @@
       for (const c of comments) c.profiles = profileMap[c.author_id] || {};
     }
 
+    // Store profileMap for mention rendering
+    globalProfileMap = profileMap;
+
     feedList.innerHTML = posts.map(post =>
       renderPostCard(post, postCommentCounts[post.id] || 0, previewCommentsMap[post.id] || [])
     ).join('');
@@ -983,9 +1277,10 @@
       <div id="comments-${escapeHtml(postId)}">${commentListHtml}</div>
       ${viewAllLink}
       <div class="comment-composer">
-        <textarea class="comment-input" id="comment-input-${escapeHtml(postId)}" placeholder="Write a comment…" rows="1"></textarea>
+        <textarea class="comment-input" id="comment-input-${escapeHtml(postId)}" placeholder="Write a comment… (use @ to mention)" rows="1"></textarea>
         <button class="btn-comment" id="btn-comment-${escapeHtml(postId)}">Post</button>
       </div>
+      <span class="mention-limit-error" id="comment-error-${escapeHtml(postId)}" style="font-size:11px;color:var(--red);display:none;margin-top:3px;"></span>
     `;
   }
 
@@ -1053,10 +1348,12 @@
   function wireCommentComposer(postId) {
     const textarea = document.getElementById(`comment-input-${postId}`);
     const btn = document.getElementById(`btn-comment-${postId}`);
+    commentMentionsMap[postId] = [];
     if (textarea) {
       textarea.addEventListener('input', () => {
         textarea.style.height = 'auto';
         textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        handleCommentMentionInput(textarea, postId);
       });
       textarea.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(postId); }
@@ -1159,6 +1456,8 @@
   function renderComment(c) {
     const profile = c.profiles || {};
     const name = profile.display_name || 'Member';
+    const displayNameMap = buildDisplayNameMap(globalProfileMap);
+    const commentHtml = sanitizeHTML(convertMentions(c.content, displayNameMap));
     return `
       <div class="comment-item" id="comment-${c.id}">
         ${commentAvatarEl(profile.photo_url, name)}
@@ -1167,7 +1466,7 @@
             <a class="comment-author author-link" href="/app/member.html?id=${escapeHtml(c.author_id)}">${escapeHtml(name)}</a>
             <span class="comment-time" data-timestamp="${escapeHtml(c.created_at)}">${relativeTime(c.created_at)}</span>
           </div>
-          <div class="comment-text">${escapeHtml(c.content)}</div>
+          <div class="comment-text">${commentHtml}</div>
         </div>
       </div>
     `;
@@ -1190,6 +1489,23 @@
     btn.disabled = false;
 
     if (error || !newComment) return;
+
+    // Fire mention notifications
+    const mentions = commentMentionsMap[postId] || [];
+    if (mentions.length > 0) {
+      Promise.all(mentions
+        .filter(m => m.userId !== currentUser.id)
+        .map(m => supabase.from('notifications').insert({
+          user_id: m.userId,
+          type: 'mention',
+          title: 'You were mentioned',
+          body: `${currentUserDisplayName} mentioned you in a comment`,
+          link: `/app/post.html?id=${postId}#comment-${newComment.id}`,
+          read: false,
+        }))
+      );
+      commentMentionsMap[postId] = [];
+    }
 
     const { data: newCommentProfile } = await supabase
       .from('profiles')
@@ -1231,6 +1547,16 @@
       return;
     }
 
+    // Collect mentioned users from Quill delta
+    const delta = quill.getContents();
+    const mentionedUsers = [];
+    delta.ops.forEach(op => {
+      if (op.insert?.mention) {
+        const { userId } = op.insert.mention;
+        if (!mentionedUsers.includes(userId)) mentionedUsers.push(userId);
+      }
+    });
+
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-spinner"></span> Posting…';
 
@@ -1242,19 +1568,33 @@
       video_url: videoUrl || null,
     };
 
-    const { error } = await supabase.from('posts').insert(payload);
+    const { data: newPost, error } = await supabase.from('posts').insert(payload).select('id').single();
 
     btn.disabled = false;
     btn.innerHTML = 'Post';
-
-    // TODO Phase 5: trigger server-side broadcast notification to all active members.
 
     if (error) {
       errorEl.textContent = 'Failed to post. Please try again.';
       return;
     }
 
+    // Fire mention notifications
+    if (newPost && mentionedUsers.length > 0) {
+      Promise.all(mentionedUsers
+        .filter(uid => uid !== currentUser.id)
+        .map(uid => supabase.from('notifications').insert({
+          user_id: uid,
+          type: 'mention',
+          title: 'You were mentioned',
+          body: `${currentUserDisplayName} mentioned you in a post`,
+          link: `/app/post.html?id=${newPost.id}`,
+          read: false,
+        }))
+      );
+    }
+
     quill.setText('');
+    mentionCount = 0;
     resetVideoComposer();
   }
 
@@ -1336,23 +1676,15 @@
   }
 
   // ── Realtime ───────────────────────────────────────────────────────────
+  let newPostsChannel = null;
+
   function subscribeRealtime() {
     if (realtimeChannel) {
       supabase.removeChannel(realtimeChannel);
     }
 
-    const filter = activeChannelId === null
-      ? 'channel_id=is.null'
-      : `channel_id=eq.${activeChannelId}`;
-
     realtimeChannel = supabase
-      .channel(`posts:${activeChannelId ?? 'main'}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'posts',
-        filter,
-      }, payload => handleRealtimeInsert(payload.new))
+      .channel(`posts-delete:${activeChannelId ?? 'main'}`)
       .on('postgres_changes', {
         event: 'DELETE',
         schema: 'public',
@@ -1361,19 +1693,49 @@
       .subscribe();
   }
 
-  async function handleRealtimeInsert(post) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name, photo_url')
-      .eq('user_id', post.author_id)
-      .single();
+  function subscribeNewPosts() {
+    if (newPostsChannel) supabase.removeChannel(newPostsChannel);
+    newPostsChannel = supabase
+      .channel('feed-new-posts')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'posts',
+      }, payload => handleNewPost(payload))
+      .subscribe();
+    window.addEventListener('beforeunload', () => {
+      if (newPostsChannel) supabase.removeChannel(newPostsChannel);
+    }, { once: true });
+  }
 
-    post.profiles = profile || {};
+  async function handleNewPost(payload) {
+    const postId = payload.new?.id;
+    if (!postId) return;
+
+    // Duplicate check
+    if (document.getElementById(`post-${postId}`)) return;
+
+    // Refetch full post record (payload may not include all columns)
+    const { data: post } = await supabase
+      .from('posts')
+      .select('id, author_id, channel_id, content, is_pinned, created_at, post_type, video_url')
+      .eq('id', postId)
+      .single();
+    if (!post) return;
+
+    // JS-level channel filter
+    if (activeChannelId === null && post.channel_id !== null) return;
+    if (activeChannelId !== null && post.channel_id !== activeChannelId) return;
+
+    // Fetch author profile (two-query pattern)
+    const { data: authorProfiles } = await supabase
+      .from('profiles').select('display_name, photo_url').eq('user_id', post.author_id);
+    post.profiles = (authorProfiles || [])[0] || {};
+
     postCommentCounts[post.id] = 0;
     previewCommentsMap[post.id] = [];
 
     const feedList = document.getElementById('feed-list');
-
     const emptyEl = feedList.querySelector('.feed-empty, .feed-loading');
     if (emptyEl) emptyEl.remove();
 
