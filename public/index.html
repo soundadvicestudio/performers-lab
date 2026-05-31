@@ -94,6 +94,13 @@
     font-family: 'Raleway', sans-serif;
   }
   .nav-cta:hover { background: var(--gold-light); }
+  .nav-login {
+    background: transparent; color: var(--gold);
+    border: 0.5px solid rgba(201,169,110,0.45); padding: 8px 18px; border-radius: 2px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    text-decoration: none; transition: all 0.2s; font-family: 'Raleway', sans-serif;
+  }
+  .nav-login:hover { background: rgba(201,169,110,0.1); border-color: var(--gold); }
 
   /* ── HERO ── */
   .hero {
@@ -531,6 +538,7 @@
   @media (max-width: 720px) {
     nav { padding: 1rem 1.5rem; }
     .nav-links { display: none; }
+    .nav-login { display: none; }
     .stat { padding: 1.5rem 1.25rem; max-width: 50%; }
     .stats-bar { flex-wrap: wrap; }
     .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
@@ -555,6 +563,7 @@
     <a href="#about">Your coach</a>
     <a href="#pricing">Pricing</a>
   </div>
+  <a href="/app/login.html" class="nav-login">Member login</a>
   <button class="nav-cta" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Join the lab</button>
 </nav>
 

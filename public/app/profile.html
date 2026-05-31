@@ -32,25 +32,6 @@
   .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── NAV ── */
-  .app-nav {
-    position: sticky; top: 0; z-index: 100;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 0 2.5rem; height: 56px;
-    background: rgba(7,7,7,0.96); backdrop-filter: blur(12px);
-    border-bottom: 0.5px solid var(--border);
-  }
-  .nav-brand { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 400; color: var(--text); letter-spacing: 0.04em; }
-  .nav-brand span { color: var(--gold); }
-  .nav-right { display: flex; align-items: center; gap: 1.5rem; }
-  .nav-greeting { font-size: 12px; color: var(--text-dim); font-weight: 300; }
-  .nav-greeting strong { color: var(--text-muted); font-weight: 500; }
-  .nav-signout {
-    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--text-dim); background: none; border: none; cursor: pointer;
-    font-family: 'Raleway', sans-serif; font-weight: 600; transition: color 0.2s;
-  }
-  .nav-signout:hover { color: var(--gold); }
 
   /* ── MAIN ── */
   .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
@@ -168,9 +149,7 @@
   .stat-label { font-size: 12px; color: var(--text-dim); font-weight: 300; }
 
   @media (max-width: 640px) {
-    .app-nav { padding: 0 1.25rem; }
     .main { padding: 2rem 1.25rem; }
-    .nav-greeting { display: none; }
     .profile-layout { flex-direction: column; align-items: stretch; }
     .photo-col { flex-direction: row; align-items: center; gap: 1.25rem; }
     .info-grid { grid-template-columns: 1fr; }
@@ -187,13 +166,8 @@
 </div>
 
 <div id="app" style="display:none;">
-  <nav class="app-nav">
-    <div class="nav-brand">The Performer's <span>Lab</span></div>
-    <div class="nav-right">
-      <div class="nav-greeting">Signed in as <strong id="nav-name">—</strong></div>
-      <button class="nav-signout" onclick="signOut()">Sign out</button>
-    </div>
-  </nav>
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
 
   <main class="main">
     <a href="/app/dashboard.html" class="back-link">Back to dashboard</a>
@@ -265,10 +239,15 @@
       </div>
     </div>
   </main>
+  <div id="app-footer"></div>
 </div>
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
@@ -293,7 +272,7 @@
     // Run profile, membership, and submission count queries in parallel
     const [profileRes, membershipRes, countRes] = await Promise.all([
       supabase.from('profiles')
-        .select('display_name, bio, location, photo_url')
+        .select('display_name, bio, location, photo_url, is_admin, theme')
         .eq('user_id', currentUserId)
         .single(),
       supabase.from('memberships')
@@ -306,9 +285,10 @@
     ]);
 
     const profile = profileRes.data;
-    // Populate nav + form
     const name = profile?.display_name || session.user.email.split('@')[0];
-    document.getElementById('nav-name').textContent = name;
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initSubnav(null);
     document.getElementById('input-name').value = profile?.display_name || '';
     document.getElementById('input-bio').value = profile?.bio || '';
     document.getElementById('input-location').value = profile?.location || '';
@@ -343,6 +323,7 @@
     // Submission count
     document.getElementById('stat-submissions').textContent = countRes.count ?? 0;
 
+    initFooter();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
   }
@@ -419,11 +400,6 @@
     el.textContent = text;
     el.className = `save-msg ${type}`;
   }
-
-  window.signOut = async function() {
-    await supabase.auth.signOut();
-    window.location.href = '/app/login.html';
-  };
 
   init();
 </script>

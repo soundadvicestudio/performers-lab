@@ -31,33 +31,6 @@
   .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── NAV ── */
-  .app-nav {
-    position: sticky; top: 0; z-index: 100;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 0 2.5rem; height: 56px;
-    background: rgba(7,7,7,0.96); backdrop-filter: blur(12px);
-    border-bottom: 0.5px solid var(--border);
-  }
-  .nav-brand { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 400; color: var(--text); letter-spacing: 0.04em; }
-  .nav-brand span { color: var(--gold); }
-  .nav-right { display: flex; align-items: center; gap: 1.5rem; }
-  .nav-greeting { font-size: 12px; color: var(--text-dim); font-weight: 300; }
-  .nav-greeting strong { color: var(--text-muted); font-weight: 500; }
-  .nav-signout {
-    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--text-dim); background: none; border: none; cursor: pointer;
-    font-family: 'Raleway', sans-serif; font-weight: 600; transition: color 0.2s;
-  }
-  .nav-signout:hover { color: var(--gold); }
-  .nav-admin-btn {
-    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--gold); border: 0.5px solid var(--border-gold);
-    padding: 5px 12px; border-radius: 2px;
-    font-family: 'Raleway', sans-serif; font-weight: 600;
-    text-decoration: none; transition: all 0.2s;
-  }
-  .nav-admin-btn:hover { background: var(--gold-dim); border-color: var(--gold); }
 
   /* ── MAIN ── */
   .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
@@ -130,9 +103,7 @@
   .submitted-note { font-size: 12px; color: var(--green); font-weight: 500; }
 
   @media (max-width: 600px) {
-    .app-nav { padding: 0 1.25rem; }
     .main { padding: 2rem 1.25rem; }
-    .nav-greeting { display: none; }
   }
 </style>
 </head>
@@ -146,14 +117,8 @@
 </div>
 
 <div id="app" style="display:none;">
-  <nav class="app-nav">
-    <div class="nav-brand">The Performer's <span>Lab</span></div>
-    <div class="nav-right">
-      <div class="nav-greeting">Welcome back, <strong id="nav-name">—</strong></div>
-      <a href="/admin" class="nav-admin-btn" id="nav-admin-btn" style="display:none;">Admin Panel</a>
-      <button class="nav-signout" onclick="signOut()">Sign out</button>
-    </div>
-  </nav>
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
 
   <main class="main">
     <div class="page-eyebrow">Member Dashboard</div>
@@ -215,10 +180,15 @@
       <a class="btn-gold" href="/app/submit.html">Submit this week →</a>
     </div>
   </main>
+  <div id="app-footer"></div>
 </div>
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
@@ -239,16 +209,16 @@
     const user = session.user;
 
     // Load profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
-      .select('display_name, is_admin')
+      .select('display_name, is_admin, theme')
       .eq('user_id', user.id)
       .single();
 
-    if (profile?.is_admin) { document.getElementById('nav-admin-btn').style.display = ''; }
-
     const name = profile?.display_name || user.email.split('@')[0];
-    document.getElementById('nav-name').textContent = name;
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initSubnav('Dashboard');
     document.getElementById('dash-name').textContent = name;
 
     // Load membership
@@ -306,14 +276,10 @@
     }
 
     // Show app, hide loading
+    initFooter();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
   }
-
-  window.signOut = async function() {
-    await supabase.auth.signOut();
-    window.location.href = '/app/login.html';
-  };
 
   init();
 </script>
