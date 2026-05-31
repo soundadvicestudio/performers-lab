@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── LAYOUT ── */
+  .community-layout {
+    display: flex;
+    min-height: calc(100vh - 56px - 42px);
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    gap: 0;
+  }
+
+  /* ── CHANNEL SIDEBAR ── */
+  .channel-sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    border-right: 0.5px solid var(--border);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: 98px; /* nav 56px + subnav 42px */
+    height: calc(100vh - 98px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .channel-sidebar::-webkit-scrollbar { width: 4px; }
+  .channel-sidebar::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+
+  .sidebar-toggle {
+    display: none;
+    align-items: center; gap: 8px;
+    padding: 10px 1rem;
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 4px; margin: 1rem 0 0.5rem;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); cursor: pointer; width: 100%;
+  }
+  .sidebar-toggle:hover { color: var(--gold); border-color: var(--border-gold); }
+  .sidebar-toggle svg { flex-shrink: 0; }
+
+  .sidebar-section { margin-bottom: 1.5rem; }
+  .sidebar-category {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--text-dim); padding: 0 1rem 0.5rem;
+  }
+
+  .channel-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 1rem; cursor: pointer;
+    font-size: 13px; font-weight: 400; color: var(--text-muted);
+    border-left: 3px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .channel-item:hover { color: var(--text); background: rgba(240,237,230,0.03); }
+  .channel-item.active { color: var(--gold); border-left-color: var(--gold); font-weight: 500; background: var(--gold-dim); }
+  .channel-item-name { display: flex; align-items: center; gap: 6px; }
+  .channel-hash { color: var(--text-dim); font-size: 14px; line-height: 1; }
+  .channel-item.active .channel-hash { color: var(--gold); opacity: 0.7; }
+  .unread-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold); flex-shrink: 0;
+  }
+
+  /* ── MAIN FEED ── */
+  .feed-area {
+    flex: 1;
+    min-width: 0;
+    padding: 1.5rem 0 2rem 1.5rem;
+  }
+
+  .feed-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .feed-header-hash { font-size: 20px; color: var(--text-dim); line-height: 1; }
+  .feed-header-name {
+    font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400;
+    color: var(--text); letter-spacing: 0.02em;
+  }
+
+  /* ── COMPOSER ── */
+  .composer-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 8px; padding: 16px; margin-bottom: 1.25rem;
+    position: relative;
+  }
+  .composer-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    border-radius: 8px 8px 0 0;
+  }
+
+  /* Quill dark theme overrides */
+  .ql-snow .ql-toolbar {
+    background: var(--bg-3) !important;
+    border: 0.5px solid var(--border) !important;
+    border-bottom: none !important;
+    border-radius: 4px 4px 0 0;
+  }
+  .ql-snow .ql-container {
+    background: var(--bg-3) !important;
+    border: 0.5px solid var(--border) !important;
+    border-top: none !important;
+    border-radius: 0 0 4px 4px;
+    font-family: 'Raleway', sans-serif !important;
+    font-size: 14px !important;
+    color: var(--text) !important;
+    min-height: 80px;
+  }
+  .ql-snow .ql-container:focus-within {
+    border-color: var(--border-gold) !important;
+  }
+  .ql-snow .ql-toolbar:has(+ .ql-container:focus-within) {
+    border-color: var(--border-gold) !important;
+  }
+  .ql-editor { min-height: 80px; }
+  .ql-editor.ql-blank::before {
+    color: var(--text-dim) !important;
+    font-style: normal !important;
+    font-family: 'Raleway', sans-serif !important;
+  }
+  .ql-snow .ql-stroke { stroke: var(--text-dim) !important; }
+  .ql-snow .ql-fill { fill: var(--text-dim) !important; }
+  .ql-snow .ql-picker { color: var(--text-dim) !important; }
+  .ql-snow .ql-toolbar button:hover .ql-stroke,
+  .ql-snow .ql-toolbar button.ql-active .ql-stroke { stroke: var(--gold) !important; }
+  .ql-snow .ql-toolbar button:hover .ql-fill,
+  .ql-snow .ql-toolbar button.ql-active .ql-fill { fill: var(--gold) !important; }
+  .ql-snow a { color: var(--gold) !important; }
+  .ql-editor p, .ql-editor li { color: var(--text); }
+
+  .composer-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 10px;
+  }
+  .composer-error { font-size: 12px; color: #e05a5a; }
+  .btn-post {
+    background: var(--gold); color: #070707;
+    border: none; padding: 9px 22px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif;
+    transition: background 0.2s, opacity 0.2s; display: flex; align-items: center; gap: 8px;
+  }
+  .btn-post:hover:not(:disabled) { background: var(--gold-light); }
+  .btn-post:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-spinner {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid rgba(7,7,7,0.3); border-top-color: #070707;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+
+  /* ── POST CARDS ── */
+  #feed-list { display: flex; flex-direction: column; gap: 1rem; }
+
+  .post-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 8px; padding: 18px 20px;
+    transition: border-color 0.2s;
+  }
+  .post-card:hover { border-color: var(--border-mid); }
+
+  .post-pin-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold); background: var(--gold-dim); border: 0.5px solid var(--border-gold);
+    padding: 3px 8px; border-radius: 2px; margin-bottom: 10px;
+  }
+
+  .post-meta {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .post-avatar {
+    width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    background: var(--bg-4); border: 0.5px solid var(--border-mid);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: var(--gold); font-family: 'Raleway', sans-serif;
+    overflow: hidden;
+  }
+  .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .post-author-info { display: flex; flex-direction: column; gap: 2px; }
+  .post-author { font-size: 13px; font-weight: 600; color: var(--gold); }
+  .post-time { font-size: 11px; color: var(--text-dim); }
+
+  .post-body {
+    font-size: 14px; color: var(--text); line-height: 1.65;
+    margin-bottom: 14px; word-break: break-word;
+  }
+  .post-body p { margin-bottom: 0.5em; }
+  .post-body p:last-child { margin-bottom: 0; }
+  .post-body a { color: var(--gold); text-decoration: underline; }
+  .post-body ul, .post-body ol { padding-left: 1.4em; margin-bottom: 0.5em; }
+  .post-body li { margin-bottom: 0.2em; }
+  .post-body strong { font-weight: 700; }
+  .post-body em { font-style: italic; }
+
+  .post-actions {
+    display: flex; align-items: center; gap: 16px;
+    padding-top: 12px; border-top: 0.5px solid var(--border);
+  }
+
+  .reaction-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 0.5px solid var(--border);
+    border-radius: 20px; padding: 5px 12px;
+    font-size: 13px; color: var(--text-muted);
+    cursor: pointer; font-family: 'Raleway', sans-serif;
+    transition: all 0.15s;
+  }
+  .reaction-btn:hover { border-color: var(--border-gold); color: var(--gold); }
+  .reaction-btn.reacted {
+    border-color: var(--border-gold); color: var(--gold);
+    background: var(--gold-dim);
+  }
+  .reaction-count { font-size: 12px; font-weight: 600; min-width: 10px; }
+
+  .comment-toggle-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 12px; color: var(--text-dim); font-family: 'Raleway', sans-serif;
+    font-weight: 500; letter-spacing: 0.04em; transition: color 0.15s;
+    padding: 0;
+  }
+  .comment-toggle-btn:hover { color: var(--text-muted); }
+
+  /* ── COMMENT THREAD ── */
+  .comment-thread {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 0.5px solid var(--border);
+    display: none;
+  }
+  .comment-thread.open { display: block; }
+
+  .comment-item {
+    display: flex; gap: 10px; margin-bottom: 12px;
+  }
+  .comment-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--bg-4); border: 0.5px solid var(--border-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: var(--gold); font-family: 'Raleway', sans-serif;
+    overflow: hidden;
+  }
+  .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .comment-body { flex: 1; min-width: 0; }
+  .comment-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+  .comment-author { font-size: 12px; font-weight: 600; color: var(--gold); }
+  .comment-time { font-size: 10px; color: var(--text-dim); }
+  .comment-text { font-size: 13px; color: var(--text); line-height: 1.55; word-break: break-word; }
+
+  .comment-composer {
+    display: flex; gap: 10px; margin-top: 10px; align-items: flex-start;
+  }
+  .comment-input {
+    flex: 1; background: var(--bg-3); border: 0.5px solid var(--border);
+    border-radius: 4px; padding: 8px 12px;
+    font-size: 13px; color: var(--text); font-family: 'Raleway', sans-serif;
+    resize: none; height: 38px; overflow: hidden;
+    transition: border-color 0.2s; line-height: 1.5;
+  }
+  .comment-input::placeholder { color: var(--text-dim); }
+  .comment-input:focus { outline: none; border-color: var(--border-gold); }
+  .btn-comment {
+    background: var(--gold); color: #070707; border: none;
+    padding: 8px 14px; border-radius: 2px; flex-shrink: 0;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-comment:hover:not(:disabled) { background: var(--gold-light); }
+  .btn-comment:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .comments-loading { font-size: 12px; color: var(--text-dim); font-style: italic; padding: 4px 0; }
+  .no-comments { font-size: 12px; color: var(--text-dim); font-style: italic; padding: 4px 0; }
+
+  /* ── FEED STATES ── */
+  .feed-loading {
+    text-align: center; padding: 3rem 1rem;
+    font-size: 13px; color: var(--text-dim); font-style: italic;
+  }
+  .feed-empty {
+    text-align: center; padding: 3rem 1rem;
+    font-size: 14px; color: var(--text-dim);
+    border: 0.5px dashed var(--border); border-radius: 8px;
+  }
+  .feed-empty strong { color: var(--text-muted); display: block; margin-bottom: 6px; font-size: 15px; }
+  .feed-error {
+    background: rgba(224,90,90,0.08); border: 0.5px solid rgba(224,90,90,0.25);
+    border-radius: 6px; padding: 14px 16px;
+    font-size: 13px; color: #e05a5a;
+  }
+
+  /* ── MOBILE SIDEBAR TOGGLE ── */
+  @media (max-width: 768px) {
+    .community-layout { padding: 0 1rem; flex-direction: column; gap: 0; }
+    .channel-sidebar {
+      width: 100%; position: static; height: auto;
+      border-right: none; border-bottom: 0.5px solid var(--border);
+      padding: 0;
+    }
+    .sidebar-toggle { display: flex; }
+    .sidebar-channels { display: none; padding-bottom: 0.5rem; }
+    .sidebar-channels.open { display: block; }
+    .feed-area { padding: 1.25rem 0 2rem; }
+  }
+  @media (max-width: 600px) {
+    .feed-area { padding: 1rem 0 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <div class="community-layout">
+
+    <!-- Channel sidebar -->
+    <aside class="channel-sidebar" id="channel-sidebar">
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-expanded="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Channels
+        <svg id="sidebar-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="sidebar-channels" id="sidebar-channels">
+        <div id="channel-list">
+          <div class="sidebar-section">
+            <div class="channel-item active" data-channel-id="" id="channel-main-feed">
+              <span class="channel-item-name">
+                <span style="font-size:16px;line-height:1">🏠</span>
+                Main Feed
+              </span>
+            </div>
+          </div>
+          <div id="channel-groups"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Feed area -->
+    <main class="feed-area">
+      <div class="feed-header">
+        <span class="feed-header-hash" id="feed-header-hash">#</span>
+        <span class="feed-header-name" id="feed-header-name">Main Feed</span>
+      </div>
+
+      <!-- Composer -->
+      <div class="composer-card" id="composer">
+        <div id="quill-editor"></div>
+        <div class="composer-footer">
+          <span class="composer-error" id="composer-error"></span>
+          <button class="btn-post" id="btn-post">Post</button>
+        </div>
+      </div>
+
+      <!-- Posts -->
+      <div id="feed-list">
+        <div class="feed-loading"><div class="spinner" style="margin:0 auto;"></div></div>
+      </div>
+    </main>
+
+  </div>
+
+  <div id="app-footer"></div>
+</div>
+
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  // ── State ──────────────────────────────────────────────────────────────
+  let currentUser = null;
+  let activeChannelId = null; // null = main feed
+  let activeChannelName = 'Main Feed';
+  let channels = [];
+  let channelViews = {}; // channel_id → last_seen_at
+  let realtimeChannel = null;
+  let quill = null;
+  let myReactions = new Set(); // "postId:reaction_type"
+  let postReactionCounts = {}; // postId → count
+  let openCommentThreads = new Set(); // postIds with open threads
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+  function timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const s = Math.floor(diff / 1000);
+    if (s < 60) return 'just now';
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `${d}d ago`;
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function getInitial(name) {
+    return String(name || '?').charAt(0).toUpperCase();
+  }
+
+  function avatarEl(photoUrl, name, size = 36) {
+    const px = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.38)}px;`;
+    if (photoUrl) {
+      return `<div class="post-avatar" style="${size !== 36 ? px : ''}">`
+        + `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(name)}" loading="lazy">`
+        + `</div>`;
+    }
+    return `<div class="post-avatar" style="${size !== 36 ? px : ''}">${escapeHtml(getInitial(name))}</div>`;
+  }
+
+  function commentAvatarEl(photoUrl, name) {
+    if (photoUrl) {
+      return `<div class="comment-avatar"><img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(name)}" loading="lazy"></div>`;
+    }
+    return `<div class="comment-avatar">${escapeHtml(getInitial(name))}</div>`;
+  }
+
+  function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+    currentUser = session.user;
+
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from('profiles').select('display_name, photo_url, is_admin, theme').eq('user_id', currentUser.id).single(),
+      supabase.from('memberships').select('status').eq('user_id', currentUser.id).single(),
+    ]);
+
+    const hasAccess = profile?.is_admin
+      || membership?.status === 'active'
+      || membership?.status === 'cancelling';
+
+    if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
+
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: profile?.display_name || currentUser.email.split('@')[0], isAdmin: profile?.is_admin });
+    initSubnav('Community');
+    initFooter();
+
+    initQuill();
+    initSidebarToggle();
+
+    await Promise.all([
+      loadChannels(),
+      loadChannelViews(),
+    ]);
+
+    renderSidebar();
+    await loadFeed();
+    subscribeRealtime();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  // ── Quill ──────────────────────────────────────────────────────────────
+  function initQuill() {
+    quill = new Quill('#quill-editor', {
+      theme: 'snow',
+      placeholder: "What's on your mind?",
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline'],
+          ['link'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+        ],
+      },
+    });
+
+    document.getElementById('btn-post').addEventListener('click', submitPost);
+  }
+
+  // ── Sidebar toggle (mobile) ────────────────────────────────────────────
+  function initSidebarToggle() {
+    const btn = document.getElementById('sidebar-toggle');
+    const channels = document.getElementById('sidebar-channels');
+    const chevron = document.getElementById('sidebar-chevron');
+
+    // On desktop the channels block is always visible
+    if (window.innerWidth > 768) {
+      channels.classList.add('open');
+    }
+
+    btn.addEventListener('click', () => {
+      const open = channels.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+      chevron.style.transform = open ? 'rotate(180deg)' : '';
+    });
+  }
+
+  // ── Channels ───────────────────────────────────────────────────────────
+  async function loadChannels() {
+    const { data } = await supabase
+      .from('channels')
+      .select('id, name, slug, category, position')
+      .eq('archived', false)
+      .order('position', { ascending: true });
+    channels = data || [];
+  }
+
+  async function loadChannelViews() {
+    const { data } = await supabase
+      .from('channel_views')
+      .select('channel_id, last_seen_at')
+      .eq('user_id', currentUser.id);
+    channelViews = {};
+    for (const row of (data || [])) {
+      channelViews[row.channel_id] = row.last_seen_at;
+    }
+  }
+
+  async function getChannelUnread(channelId) {
+    const lastSeen = channelViews[channelId];
+    const query = supabase
+      .from('posts')
+      .select('id', { count: 'exact', head: true })
+      .eq('channel_id', channelId);
+    if (lastSeen) {
+      query.gt('created_at', lastSeen);
+    }
+    const { count } = await query;
+    return (count || 0) > 0;
+  }
+
+  async function checkMainFeedUnread() {
+    // Main feed uses channel_id IS NULL — use a known sentinel key
+    const lastSeen = channelViews['__main__'];
+    const query = supabase
+      .from('posts')
+      .select('id', { count: 'exact', head: true })
+      .is('channel_id', null);
+    if (lastSeen) {
+      query.gt('created_at', lastSeen);
+    }
+    const { count } = await query;
+    return (count || 0) > 0;
+  }
+
+  function renderSidebar() {
+    const groups = document.getElementById('channel-groups');
+    if (!channels.length) { groups.innerHTML = ''; return; }
+
+    // Group by category
+    const byCategory = {};
+    for (const ch of channels) {
+      const cat = ch.category || 'Other';
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(ch);
+    }
+
+    groups.innerHTML = Object.entries(byCategory).map(([cat, chs]) => `
+      <div class="sidebar-section">
+        <div class="sidebar-category">${escapeHtml(cat)}</div>
+        ${chs.map(ch => `
+          <div class="channel-item" data-channel-id="${escapeHtml(ch.id)}" id="channel-${escapeHtml(ch.id)}">
+            <span class="channel-item-name">
+              <span class="channel-hash">#</span>
+              ${escapeHtml(ch.name)}
+            </span>
+            <span class="unread-dot" id="dot-${escapeHtml(ch.id)}" style="display:none;"></span>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+    // Attach click handlers
+    document.querySelectorAll('.channel-item[data-channel-id]').forEach(el => {
+      el.addEventListener('click', () => selectChannel(el.dataset.channelId, el));
+    });
+
+    // Load unread state async (non-blocking)
+    loadUnreadIndicators();
+  }
+
+  async function loadUnreadIndicators() {
+    // Main feed
+    const mainUnread = await checkMainFeedUnread();
+    // No dot for main feed — it's always the landing default
+
+    // Channels
+    await Promise.all(channels.map(async ch => {
+      const hasUnread = await getChannelUnread(ch.id);
+      const dot = document.getElementById(`dot-${ch.id}`);
+      if (dot) dot.style.display = hasUnread ? 'block' : 'none';
+    }));
+  }
+
+  async function selectChannel(channelId, clickedEl) {
+    if (channelId === activeChannelId) return;
+
+    // Update active state
+    document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+    clickedEl.classList.add('active');
+
+    activeChannelId = channelId || null;
+
+    // Update header
+    if (!channelId) {
+      activeChannelName = 'Main Feed';
+      document.getElementById('feed-header-hash').textContent = '#';
+      document.getElementById('feed-header-name').textContent = 'Main Feed';
+    } else {
+      const ch = channels.find(c => c.id === channelId);
+      activeChannelName = ch?.name || channelId;
+      document.getElementById('feed-header-hash').textContent = '#';
+      document.getElementById('feed-header-name').textContent = activeChannelName;
+
+      // Mark viewed — upsert channel_views
+      supabase.from('channel_views').upsert(
+        { user_id: currentUser.id, channel_id: channelId, last_seen_at: new Date().toISOString() },
+        { onConflict: 'user_id,channel_id' }
+      ).then(() => {
+        channelViews[channelId] = new Date().toISOString();
+        const dot = document.getElementById(`dot-${channelId}`);
+        if (dot) dot.style.display = 'none';
+      });
+    }
+
+    openCommentThreads.clear();
+    subscribeRealtime();
+    await loadFeed();
+  }
+
+  // ── Feed ───────────────────────────────────────────────────────────────
+  async function loadFeed() {
+    const feedList = document.getElementById('feed-list');
+    feedList.innerHTML = '<div class="feed-loading"><div class="spinner" style="margin:0 auto;"></div></div>';
+
+    let query = supabase
+      .from('posts')
+      .select(`
+        id, author_id, channel_id, content, is_pinned, created_at,
+        profiles!posts_author_id_fkey(display_name, photo_url)
+      `)
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (activeChannelId === null) {
+      query = query.is('channel_id', null);
+    } else {
+      query = query.eq('channel_id', activeChannelId);
+    }
+
+    const { data: posts, error } = await query;
+
+    if (error) {
+      feedList.innerHTML = '<div class="feed-error">Couldn\'t load posts. Try refreshing.</div>';
+      return;
+    }
+
+    if (!posts || posts.length === 0) {
+      feedList.innerHTML = `
+        <div class="feed-empty">
+          <strong>No posts yet</strong>
+          Be the first to post in ${activeChannelId ? '#' + activeChannelName : 'the main feed'}.
+        </div>`;
+      return;
+    }
+
+    const postIds = posts.map(p => p.id);
+
+    // Load reactions in parallel
+    const [{ data: reactions }, { data: mineRaw }] = await Promise.all([
+      supabase.from('post_reactions').select('post_id, reaction_type').in('post_id', postIds),
+      supabase.from('post_reactions').select('post_id, reaction_type').in('post_id', postIds).eq('user_id', currentUser.id),
+    ]);
+
+    // Load comment counts
+    const { data: commentCounts } = await supabase
+      .from('comments')
+      .select('post_id')
+      .in('post_id', postIds);
+
+    // Build lookup maps
+    postReactionCounts = {};
+    myReactions = new Set();
+
+    for (const r of (reactions || [])) {
+      const key = r.post_id;
+      postReactionCounts[key] = (postReactionCounts[key] || 0) + 1;
+    }
+    for (const r of (mineRaw || [])) {
+      myReactions.add(`${r.post_id}:${r.reaction_type}`);
+    }
+
+    const commentCountMap = {};
+    for (const c of (commentCounts || [])) {
+      commentCountMap[c.post_id] = (commentCountMap[c.post_id] || 0) + 1;
+    }
+
+    feedList.innerHTML = posts.map(post => renderPostCard(post, commentCountMap[post.id] || 0)).join('');
+
+    // Re-attach event listeners
+    attachPostListeners(posts);
+  }
+
+  function renderPostCard(post, commentCount) {
+    const profile = post.profiles || {};
+    const authorName = profile.display_name || 'Member';
+    const photoUrl = profile.photo_url || null;
+    const reacted = myReactions.has(`${post.id}:clap`);
+    const clapCount = postReactionCounts[post.id] || 0;
+    const commentLabel = commentCount === 1 ? '1 comment' : `${commentCount} comments`;
+
+    return `
+      <div class="post-card" id="post-${post.id}" data-post-id="${post.id}" data-author-id="${escapeHtml(post.author_id)}">
+        ${post.is_pinned ? '<div class="post-pin-badge">📌 Pinned</div>' : ''}
+        <div class="post-meta">
+          ${avatarEl(photoUrl, authorName)}
+          <div class="post-author-info">
+            <div class="post-author">${escapeHtml(authorName)}</div>
+            <div class="post-time">${timeAgo(post.created_at)}</div>
+          </div>
+        </div>
+        <div class="post-body">${post.content}</div>
+        <div class="post-actions">
+          <button class="reaction-btn${reacted ? ' reacted' : ''}" data-post-id="${post.id}" data-reaction="clap" aria-label="Clap">
+            👏 <span class="reaction-count">${clapCount > 0 ? clapCount : ''}</span>
+          </button>
+          <button class="comment-toggle-btn" data-post-id="${post.id}">
+            ${commentLabel}
+          </button>
+        </div>
+        <div class="comment-thread" id="thread-${post.id}"></div>
+      </div>
+    `;
+  }
+
+  function attachPostListeners(posts) {
+    // Reaction buttons
+    document.querySelectorAll('.reaction-btn').forEach(btn => {
+      btn.addEventListener('click', () => toggleReaction(btn.dataset.postId, btn.dataset.reaction, btn));
+    });
+
+    // Comment toggles
+    document.querySelectorAll('.comment-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => toggleCommentThread(btn.dataset.postId));
+    });
+  }
+
+  // ── Reactions ──────────────────────────────────────────────────────────
+  async function toggleReaction(postId, reactionType, btn) {
+    const key = `${postId}:${reactionType}`;
+    const hasReacted = myReactions.has(key);
+    const countEl = btn.querySelector('.reaction-count');
+
+    // Optimistic update
+    if (hasReacted) {
+      myReactions.delete(key);
+      postReactionCounts[postId] = Math.max(0, (postReactionCounts[postId] || 1) - 1);
+      btn.classList.remove('reacted');
+    } else {
+      myReactions.add(key);
+      postReactionCounts[postId] = (postReactionCounts[postId] || 0) + 1;
+      btn.classList.add('reacted');
+    }
+    const newCount = postReactionCounts[postId] || 0;
+    countEl.textContent = newCount > 0 ? newCount : '';
+
+    if (hasReacted) {
+      await supabase.from('post_reactions')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', currentUser.id)
+        .eq('reaction_type', reactionType);
+    } else {
+      await supabase.from('post_reactions')
+        .insert({ post_id: postId, user_id: currentUser.id, reaction_type: reactionType });
+    }
+  }
+
+  // ── Comments ───────────────────────────────────────────────────────────
+  async function toggleCommentThread(postId) {
+    const thread = document.getElementById(`thread-${postId}`);
+    if (!thread) return;
+
+    if (openCommentThreads.has(postId)) {
+      openCommentThreads.delete(postId);
+      thread.classList.remove('open');
+      thread.innerHTML = '';
+    } else {
+      openCommentThreads.add(postId);
+      thread.classList.add('open');
+      await loadComments(postId, thread);
+    }
+  }
+
+  async function loadComments(postId, threadEl) {
+    threadEl.innerHTML = '<div class="comments-loading">Loading comments…</div>';
+
+    const { data: comments, error } = await supabase
+      .from('comments')
+      .select(`
+        id, content, created_at, author_id,
+        profiles!comments_author_id_fkey(display_name, photo_url)
+      `)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      threadEl.innerHTML = '<div class="comments-loading">Couldn\'t load comments.</div>';
+      return;
+    }
+
+    const commentListHtml = (comments && comments.length > 0)
+      ? comments.map(c => renderComment(c)).join('')
+      : '<div class="no-comments">No comments yet. Be the first!</div>';
+
+    threadEl.innerHTML = `
+      <div id="comments-${postId}">${commentListHtml}</div>
+      <div class="comment-composer">
+        <textarea class="comment-input" id="comment-input-${postId}" placeholder="Write a comment…" rows="1"></textarea>
+        <button class="btn-comment" id="btn-comment-${postId}">Post</button>
+      </div>
+    `;
+
+    // Auto-resize textarea
+    const textarea = document.getElementById(`comment-input-${postId}`);
+    textarea.addEventListener('input', () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    });
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitComment(postId);
+      }
+    });
+
+    document.getElementById(`btn-comment-${postId}`).addEventListener('click', () => submitComment(postId));
+  }
+
+  function renderComment(c) {
+    const profile = c.profiles || {};
+    const name = profile.display_name || 'Member';
+    return `
+      <div class="comment-item" id="comment-${c.id}">
+        ${commentAvatarEl(profile.photo_url, name)}
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-author">${escapeHtml(name)}</span>
+            <span class="comment-time">${timeAgo(c.created_at)}</span>
+          </div>
+          <div class="comment-text">${escapeHtml(c.content)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  async function submitComment(postId) {
+    const textarea = document.getElementById(`comment-input-${postId}`);
+    const btn = document.getElementById(`btn-comment-${postId}`);
+    const content = (textarea?.value || '').trim();
+    if (!content) return;
+
+    btn.disabled = true;
+
+    const { data: newComment, error } = await supabase
+      .from('comments')
+      .insert({ post_id: postId, author_id: currentUser.id, content })
+      .select(`id, content, created_at, author_id, profiles!comments_author_id_fkey(display_name, photo_url)`)
+      .single();
+
+    btn.disabled = false;
+
+    if (error || !newComment) return;
+
+    textarea.value = '';
+    textarea.style.height = '';
+
+    // Remove "no comments" placeholder if present
+    const listEl = document.getElementById(`comments-${postId}`);
+    const noComments = listEl?.querySelector('.no-comments');
+    if (noComments) noComments.remove();
+
+    // Append new comment
+    if (listEl) listEl.insertAdjacentHTML('beforeend', renderComment(newComment));
+
+    // Update comment count button
+    updateCommentCount(postId);
+  }
+
+  function updateCommentCount(postId) {
+    const btn = document.querySelector(`.comment-toggle-btn[data-post-id="${postId}"]`);
+    if (!btn) return;
+    const listEl = document.getElementById(`comments-${postId}`);
+    const count = listEl ? listEl.querySelectorAll('.comment-item').length : 0;
+    btn.textContent = count === 1 ? '1 comment' : `${count} comments`;
+  }
+
+  // ── Post submit ────────────────────────────────────────────────────────
+  async function submitPost() {
+    const errorEl = document.getElementById('composer-error');
+    const btn = document.getElementById('btn-post');
+    errorEl.textContent = '';
+
+    const html = quill.root.innerHTML;
+    const text = stripHtml(html).trim();
+    if (!text) {
+      errorEl.textContent = 'Post cannot be empty.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> Posting…';
+
+    const payload = {
+      author_id: currentUser.id,
+      content: html,
+      channel_id: activeChannelId || null,
+    };
+
+    const { error } = await supabase.from('posts').insert(payload);
+
+    btn.disabled = false;
+    btn.innerHTML = 'Post';
+
+    if (error) {
+      errorEl.textContent = 'Failed to post. Please try again.';
+      return;
+    }
+
+    quill.setText('');
+  }
+
+  // ── Realtime ───────────────────────────────────────────────────────────
+  function subscribeRealtime() {
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+    }
+
+    const filter = activeChannelId === null
+      ? 'channel_id=is.null'
+      : `channel_id=eq.${activeChannelId}`;
+
+    realtimeChannel = supabase
+      .channel(`posts:${activeChannelId ?? 'main'}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'posts',
+        filter,
+      }, payload => handleRealtimeInsert(payload.new))
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'posts',
+      }, payload => handleRealtimeDelete(payload.old?.id))
+      .subscribe();
+  }
+
+  async function handleRealtimeInsert(post) {
+    // Skip if this was our own post (already added optimistically via reload)
+    // Fetch author profile for the new post
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, photo_url')
+      .eq('user_id', post.author_id)
+      .single();
+
+    post.profiles = profile || {};
+
+    const feedList = document.getElementById('feed-list');
+
+    // Remove empty/loading state if present
+    const emptyEl = feedList.querySelector('.feed-empty, .feed-loading');
+    if (emptyEl) emptyEl.remove();
+
+    // Prepend (pinned posts stay at top; new posts come after pinned)
+    const firstNonPinned = feedList.querySelector('.post-card:not([data-pinned])');
+    const html = renderPostCard(post, 0);
+    if (firstNonPinned && !post.is_pinned) {
+      firstNonPinned.insertAdjacentHTML('beforebegin', html);
+    } else {
+      feedList.insertAdjacentHTML('afterbegin', html);
+    }
+
+    // Attach listeners for the new card
+    const newCard = document.getElementById(`post-${post.id}`);
+    if (newCard) {
+      newCard.querySelectorAll('.reaction-btn').forEach(btn =>
+        btn.addEventListener('click', () => toggleReaction(btn.dataset.postId, btn.dataset.reaction, btn))
+      );
+      newCard.querySelectorAll('.comment-toggle-btn').forEach(btn =>
+        btn.addEventListener('click', () => toggleCommentThread(btn.dataset.postId))
+      );
+    }
+  }
+
+  function handleRealtimeDelete(postId) {
+    if (!postId) return;
+    const el = document.getElementById(`post-${postId}`);
+    if (el) el.remove();
+
+    const feedList = document.getElementById('feed-list');
+    if (!feedList.querySelector('.post-card')) {
+      feedList.innerHTML = `
+        <div class="feed-empty">
+          <strong>No posts yet</strong>
+          Be the first to post in ${activeChannelId ? '#' + activeChannelName : 'the main feed'}.
+        </div>`;
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
