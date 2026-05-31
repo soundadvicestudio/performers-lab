@@ -405,7 +405,8 @@
       profile?.birth_year &&
       profile?.experience?.trim() &&
       profile?.location?.trim() &&
-      profile?.bio?.trim()
+      profile?.bio?.trim() &&
+      profile?.timezone?.trim()
     );
   }
 
@@ -416,7 +417,7 @@
     currentUser = session.user;
 
     const [{ data: profile }, { data: membership }] = await Promise.all([
-      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience').eq('user_id', currentUser.id).single(),
+      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience, timezone').eq('user_id', currentUser.id).single(),
       supabase.from('memberships').select('status').eq('user_id', currentUser.id).single(),
     ]);
 

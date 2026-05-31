@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Lab — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--gold-dim); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .main { max-width: 780px; margin: 0 auto; padding: 3rem 2rem 4rem; }
+
+  .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 0.5rem; }
+  .page-subtitle { font-size: 15px; color: var(--text-muted); font-weight: 300; margin-bottom: 3rem; line-height: 1.55; }
+
+  .section-heading {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem; border-bottom: 0.5px solid var(--border);
+  }
+  .section-block { margin-bottom: 3rem; }
+  .empty-state { font-size: 14px; color: var(--text-dim); font-style: italic; padding: 1.5rem 0; }
+
+  /* ── EVENT CARD ── */
+  .evt-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 10px; margin-bottom: 1rem; overflow: hidden; transition: border-color 0.2s;
+  }
+  .evt-card:hover { border-color: var(--border-mid); }
+  .evt-card.live { border-color: rgba(76,175,132,0.35); }
+  .evt-card-body { padding: 1.5rem; }
+
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76,175,132,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(76,175,132,0); }
+  }
+  .live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); flex-shrink: 0;
+    animation: live-pulse 1.5s ease-in-out infinite;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 3px; margin-bottom: 0.75rem;
+  }
+  .badge-live { background: var(--green-dim); color: var(--green); border: 0.5px solid rgba(76,175,132,0.3); }
+  .badge-upcoming { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
+
+  .evt-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); margin-bottom: 3px; line-height: 1.2; }
+  .evt-topic { font-size: 13px; color: var(--text-muted); font-weight: 300; margin-bottom: 0.75rem; }
+  .evt-time-primary { font-size: 14px; color: var(--text); font-weight: 500; margin-bottom: 2px; }
+  .evt-time-local { font-size: 12px; color: var(--text-dim); font-weight: 300; margin-bottom: 0.75rem; }
+  .evt-desc { font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.65; margin-bottom: 1.25rem; }
+
+  .rsvp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .btn-rsvp, .btn-notify {
+    border-radius: 3px; padding: 7px 16px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .btn-rsvp { background: none; border: 0.5px solid var(--border-gold); color: var(--gold); }
+  .btn-rsvp:not(:disabled):hover { background: var(--gold-dim); }
+  .btn-rsvp.rsvpd { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+  .btn-rsvp.rsvpd:not(:disabled):hover { background: var(--gold-light); }
+  .btn-rsvp:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-notify { background: none; border: 0.5px solid var(--border-mid); color: var(--text-dim); }
+  .btn-notify:not(:disabled):hover { border-color: var(--border-gold); color: var(--text-muted); }
+  .btn-notify.notified { background: var(--gold-dim); border-color: var(--border-gold); color: var(--gold); }
+  .btn-notify:disabled { opacity: 0.38; cursor: not-allowed; }
+  .rsvp-count { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .rsvp-hint { font-size: 11px; color: var(--text-dim); font-weight: 300; line-height: 1.5; margin-bottom: 1rem; }
+
+  .evt-card-footer {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    padding-top: 1rem; border-top: 0.5px solid var(--border);
+  }
+  .btn-cal {
+    font-size: 11px; color: var(--text-dim); font-weight: 500; letter-spacing: 0.06em;
+    transition: color 0.2s; background: none; border: none; cursor: pointer;
+    font-family: 'Raleway', sans-serif; padding: 0;
+  }
+  .btn-cal:hover { color: var(--gold); }
+  .btn-view {
+    display: inline-flex; align-items: center;
+    background: none; border: 0.5px solid var(--border-mid); color: var(--text-muted);
+    padding: 8px 18px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    text-decoration: none; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .btn-view:hover { border-color: var(--border-gold); color: var(--gold); }
+  .btn-join {
+    display: inline-flex; align-items: center;
+    background: var(--gold); color: var(--bg); border: none;
+    padding: 8px 18px; border-radius: 3px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    text-decoration: none; font-family: 'Raleway', sans-serif; transition: background 0.2s;
+  }
+  .btn-join:hover { background: var(--gold-light); }
+
+  /* ── PAST CARD ── */
+  .past-desc {
+    font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.65;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .past-desc.expanded { display: block; }
+  .read-more-btn {
+    background: none; border: none; cursor: pointer; padding: 0;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--gold); font-family: 'Raleway', sans-serif;
+    margin-bottom: 1rem; display: block; transition: color 0.2s;
+  }
+  .read-more-btn:hover { color: var(--gold-light); }
+  .past-attended { font-size: 12px; color: var(--text-dim); font-weight: 300; margin-bottom: 0.75rem; }
+  .recording-thumb {
+    display: block; width: 100%; max-width: 320px;
+    border-radius: 6px; overflow: hidden; border: 0.5px solid var(--border);
+    text-decoration: none; transition: border-color 0.2s; margin-bottom: 10px;
+  }
+  .recording-thumb:hover { border-color: var(--border-gold); }
+  .recording-thumb img { display: block; width: 100%; }
+  .recording-coming { font-size: 13px; color: var(--text-dim); font-style: italic; }
+
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem 3rem; }
+    .page-heading { font-size: 32px; }
+    .evt-card-footer { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <div class="page-eyebrow">Live Lab</div>
+    <h1 class="page-heading">Live Lab</h1>
+    <p class="page-subtitle">Monthly masterclasses and coaching sessions with Jonathan.</p>
+
+    <div class="section-block">
+      <div class="section-heading">Upcoming Sessions</div>
+      <div id="upcoming-list"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-heading">Past Sessions</div>
+      <div id="past-list"><div class="empty-state">Loading…</div></div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+  import { relativeTime } from './utils/time.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  function isProfileComplete(profile) {
+    return !!(
+      profile?.display_name?.trim() &&
+      profile?.birth_year &&
+      profile?.experience?.trim() &&
+      profile?.location?.trim() &&
+      profile?.bio?.trim() &&
+      profile?.timezone?.trim()
+    );
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatCtDate(isoString) {
+    if (!isoString) return '—';
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'long', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(new Date(isoString)) + ' CT';
+  }
+
+  function formatLocalTime(isoString, tz) {
+    const d = new Date(isoString);
+    const timePart = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(d);
+    const shortAbbr = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' })
+      .formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
+    const longName = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'long' })
+      .formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
+    return `${timePart} your time (${longName} · ${shortAbbr})`;
+  }
+
+  function toIcsDate(d) {
+    return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  }
+
+  function slugify(str) {
+    return String(str || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  function downloadIcs(evt) {
+    const now = toIcsDate(new Date());
+    const start = toIcsDate(new Date(evt.starts_at));
+    const end = toIcsDate(new Date(new Date(evt.starts_at).getTime() + 90 * 60000));
+    const desc = `${(evt.topic || '').replace(/\n/g, '\\n')}\\n\\n${(evt.description || '').replace(/\n/g, '\\n')}`;
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      "PRODID:-//The Performer's Lab//EN",
+      'BEGIN:VEVENT',
+      `UID:${evt.id}@performers-lab.com`,
+      `DTSTAMP:${now}`,
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${evt.title} — The Performer's Lab`,
+      `DESCRIPTION:${desc}`,
+      `URL:https://performers-lab.com/app/event.html?id=${evt.id}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `performers-lab-${slugify(evt.title)}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  function extractYouTubeId(url) {
+    const m = String(url).match(/(?:youtu\.be\/|[?&]v=|\/embed\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  let currentUserId = null;
+  let userProfile = null;
+  let rsvpMap = {};
+  let eventsById = {};
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+    currentUserId = session.user.id;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, is_admin, theme, bio, location, birth_year, experience, timezone')
+      .eq('user_id', currentUserId)
+      .single();
+
+    if (!profile?.is_admin && !isProfileComplete(profile)) {
+      window.location.href = '/app/profile.html?onboarding=true';
+      return;
+    }
+
+    if (!profile?.is_admin) {
+      const { data: membership } = await supabase
+        .from('memberships').select('status').eq('user_id', currentUserId).single();
+      const status = membership?.status;
+      if (status !== 'active' && status !== 'cancelling') {
+        window.location.href = '/app/gate.html';
+        return;
+      }
+    }
+
+    userProfile = profile;
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: profile?.display_name || session.user.email.split('@')[0], isAdmin: profile?.is_admin });
+    initSubnav('live-lab');
+    initFooter();
+
+    const [{ data: allEvents }, { data: myRsvps }] = await Promise.all([
+      supabase.from('events').select('*').order('starts_at', { ascending: false }),
+      supabase.from('event_rsvps').select('event_id, notify').eq('user_id', currentUserId),
+    ]);
+
+    const events = allEvents || [];
+    events.forEach(e => { eventsById[e.id] = e; });
+
+    rsvpMap = {};
+    (myRsvps || []).forEach(r => { rsvpMap[r.event_id] = { notify: r.notify }; });
+
+    const upcomingEvents = events
+      .filter(e => e.status === 'upcoming' || e.status === 'live')
+      .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+    const pastEvents = events
+      .filter(e => e.status === 'completed')
+      .sort((a, b) => new Date(b.starts_at) - new Date(a.starts_at));
+
+    const upcomingIds = upcomingEvents.map(e => e.id);
+    let countMap = {};
+    if (upcomingIds.length) {
+      const { data: rsvpRows } = await supabase
+        .from('event_rsvps').select('event_id').in('event_id', upcomingIds);
+      (rsvpRows || []).forEach(r => { countMap[r.event_id] = (countMap[r.event_id] || 0) + 1; });
+    }
+
+    const pastIds = pastEvents.map(e => e.id);
+    let pastCountMap = {};
+    if (pastIds.length) {
+      const { data: pastRsvpRows } = await supabase
+        .from('event_rsvps').select('event_id').in('event_id', pastIds);
+      (pastRsvpRows || []).forEach(r => { pastCountMap[r.event_id] = (pastCountMap[r.event_id] || 0) + 1; });
+    }
+
+    renderUpcoming(upcomingEvents, countMap);
+    renderPast(pastEvents, pastCountMap);
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  function renderUpcoming(events, countMap) {
+    const el = document.getElementById('upcoming-list');
+    if (!events.length) {
+      el.innerHTML = '<div class="empty-state">No sessions scheduled yet. Check back soon.</div>';
+      return;
+    }
+    el.innerHTML = events.map(evt => buildUpcomingCard(evt, countMap[evt.id] || 0)).join('');
+  }
+
+  function buildUpcomingCard(evt, rsvpCount) {
+    const isLive = evt.status === 'live';
+    const hasRsvp = !!rsvpMap[evt.id];
+    const hasNotify = rsvpMap[evt.id]?.notify === true;
+    const tz = userProfile?.timezone;
+    const showLocal = tz && tz !== 'America/Chicago';
+
+    return `<div class="evt-card${isLive ? ' live' : ''}" id="card-${evt.id}">
+      <div class="evt-card-body">
+        <div class="badge ${isLive ? 'badge-live' : 'badge-upcoming'}">
+          ${isLive ? '<span class="live-dot"></span>&nbsp;Live Now' : 'Upcoming'}
+        </div>
+        <div class="evt-title">${escHtml(evt.title)}</div>
+        <div class="evt-topic">${escHtml(evt.topic)}</div>
+        <div class="evt-time-primary">${formatCtDate(evt.starts_at)}</div>
+        ${showLocal ? `<div class="evt-time-local">${escHtml(formatLocalTime(evt.starts_at, tz))}</div>` : ''}
+        <div class="evt-desc">${escHtml(evt.description)}</div>
+        <div class="rsvp-row">
+          <button class="btn-rsvp${hasRsvp ? ' rsvpd' : ''}" id="rsvp-btn-${evt.id}"
+            onclick="window.toggleRsvp('${evt.id}')">
+            ${hasRsvp ? "RSVP'd ✓" : 'RSVP'}
+          </button>
+          <button class="btn-notify${hasNotify ? ' notified' : ''}" id="notify-btn-${evt.id}"
+            ${!hasRsvp ? 'disabled' : ''}
+            onclick="window.toggleNotify('${evt.id}')">
+            ${hasNotify ? 'Notified 🔔' : 'Notify Me 🔔'}
+          </button>
+          <span class="rsvp-count" id="rsvp-count-${evt.id}">${rsvpCount} going</span>
+        </div>
+        <div class="rsvp-hint">RSVP to get a 24-hour reminder · Notify Me for a morning-of reminder</div>
+        <div class="evt-card-footer">
+          <button class="btn-cal" onclick="window.downloadIcsById('${evt.id}')">Add to Calendar</button>
+          ${isLive
+            ? `<a href="/app/event.html?id=${evt.id}" class="btn-join">Join Live →</a>`
+            : `<a href="/app/event.html?id=${evt.id}" class="btn-view">View Session</a>`}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderPast(events, countMap) {
+    const el = document.getElementById('past-list');
+    if (!events.length) {
+      el.innerHTML = '<div class="empty-state">No recordings yet.</div>';
+      return;
+    }
+    el.innerHTML = events.map(evt => buildPastCard(evt, countMap[evt.id] || 0)).join('');
+    events.forEach(evt => {
+      const btn = document.getElementById(`read-more-${evt.id}`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const desc = document.getElementById(`past-desc-${evt.id}`);
+          if (!desc) return;
+          desc.classList.toggle('expanded');
+          btn.textContent = desc.classList.contains('expanded') ? 'Show less' : 'Read more';
+        });
+      }
+    });
+  }
+
+  function buildPastCard(evt, rsvpCount) {
+    const ytId = evt.recording_url ? extractYouTubeId(evt.recording_url) : null;
+    const descLong = (evt.description || '').length > 200;
+
+    return `<div class="evt-card" id="past-card-${evt.id}">
+      <div class="evt-card-body">
+        <div class="evt-title">${escHtml(evt.title)}</div>
+        <div class="evt-topic">${escHtml(evt.topic)}</div>
+        <div class="evt-time-primary" style="margin-bottom:0.75rem;">${formatCtDate(evt.starts_at)}</div>
+        <div class="past-attended">${rsvpCount} ${rsvpCount === 1 ? 'member' : 'members'} attended</div>
+        <div class="past-desc" id="past-desc-${evt.id}">${escHtml(evt.description)}</div>
+        ${descLong ? `<button class="read-more-btn" id="read-more-${evt.id}">Read more</button>` : '<div style="margin-bottom:1rem;"></div>'}
+        ${evt.recording_url
+          ? `${ytId ? `<a href="/app/event.html?id=${evt.id}" class="recording-thumb"><img src="https://img.youtube.com/vi/${escHtml(ytId)}/mqdefault.jpg" alt="Recording thumbnail"></a>` : ''}
+             <a href="/app/event.html?id=${evt.id}" class="btn-view">Watch Recording</a>`
+          : `<div class="recording-coming">Recording coming soon</div>`}
+      </div>
+    </div>`;
+  }
+
+  window.downloadIcsById = function(eventId) {
+    const evt = eventsById[eventId];
+    if (evt) downloadIcs(evt);
+  };
+
+  window.toggleRsvp = async function(eventId) {
+    const btn = document.getElementById(`rsvp-btn-${eventId}`);
+    const notifyBtn = document.getElementById(`notify-btn-${eventId}`);
+    const countEl = document.getElementById(`rsvp-count-${eventId}`);
+    if (!btn) return;
+
+    const hasRsvp = !!rsvpMap[eventId];
+
+    if (hasRsvp) {
+      btn.disabled = true;
+      const { error } = await supabase
+        .from('event_rsvps')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', currentUserId);
+      btn.disabled = false;
+      if (error) return;
+      delete rsvpMap[eventId];
+      btn.className = 'btn-rsvp';
+      btn.textContent = 'RSVP';
+      if (notifyBtn) { notifyBtn.disabled = true; notifyBtn.className = 'btn-notify'; notifyBtn.textContent = 'Notify Me 🔔'; }
+      if (countEl) {
+        const cur = parseInt(countEl.textContent) || 0;
+        countEl.textContent = `${Math.max(0, cur - 1)} going`;
+      }
+    } else {
+      btn.disabled = true;
+      const { error } = await supabase
+        .from('event_rsvps')
+        .upsert({ event_id: eventId, user_id: currentUserId, notify: false }, { onConflict: 'event_id,user_id', ignoreDuplicates: true });
+      btn.disabled = false;
+      if (error) return;
+      rsvpMap[eventId] = { notify: false };
+      btn.className = 'btn-rsvp rsvpd';
+      btn.textContent = "RSVP'd ✓";
+      if (notifyBtn) { notifyBtn.disabled = false; }
+      if (countEl) {
+        const cur = parseInt(countEl.textContent) || 0;
+        countEl.textContent = `${cur + 1} going`;
+      }
+    }
+  };
+
+  window.toggleNotify = async function(eventId) {
+    if (!rsvpMap[eventId]) return;
+    const btn = document.getElementById(`notify-btn-${eventId}`);
+    if (!btn || btn.disabled) return;
+
+    const currentNotify = rsvpMap[eventId].notify === true;
+    btn.disabled = true;
+
+    const { error } = await supabase
+      .from('event_rsvps')
+      .update({ notify: !currentNotify })
+      .eq('event_id', eventId)
+      .eq('user_id', currentUserId);
+
+    btn.disabled = false;
+    if (error) return;
+
+    rsvpMap[eventId].notify = !currentNotify;
+    if (!currentNotify) {
+      btn.className = 'btn-notify notified';
+      btn.textContent = 'Notified 🔔';
+    } else {
+      btn.className = 'btn-notify';
+      btn.textContent = 'Notify Me 🔔';
+    }
+  };
+
+  init();
+</script>
+</body>
+</html>
