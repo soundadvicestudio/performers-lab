@@ -209,7 +209,7 @@
   .msg-textarea:focus { outline: none; border-color: var(--border-gold); }
   .msg-textarea::placeholder { color: var(--text-dim); }
   .btn-send {
-    background: var(--gold); color: #070707; border: none;
+    background: var(--gold); color: var(--bg); border: none;
     width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: background 0.2s, opacity 0.2s;
@@ -220,7 +220,7 @@
 
   /* ── MEMBER SEARCH MODAL ── */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.78);
     display: flex; align-items: center; justify-content: center;
     z-index: 500; padding: 1rem;
   }
@@ -356,6 +356,7 @@
   import { initNav } from './components/nav.js';
   import { initSubnav } from './components/subnav.js';
   import { applyTheme } from './components/theme.js';
+  import { relativeTime } from './utils/time.js';
 
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
@@ -372,6 +373,7 @@
 
   // ── State ────────────────────────────────────────────────────────────
   let currentUser = null;
+  let currentUserDisplayName = '';
   let conversations = [];
   let convProfiles = {}; // otherUserId → profile
   let activeConvId = null;
@@ -385,19 +387,7 @@
 
   function getInitial(name) { return String(name || '?').charAt(0).toUpperCase(); }
 
-  function timeAgo(dateStr) {
-    if (!dateStr) return '';
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const s = Math.floor(diff / 1000);
-    if (s < 60) return 'just now';
-    const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h ago`;
-    const d = Math.floor(h / 24);
-    if (d < 7) return `${d}d ago`;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
+  const timeAgo = relativeTime;
 
   function avatarHtml(photoUrl, name, size = 36) {
     const s = `width:${size}px;height:${size}px;font-size:${Math.round(size*0.38)}px;`;
@@ -418,8 +408,9 @@
     const { data: profile } = await supabase
       .from('profiles').select('display_name, is_admin, theme').eq('user_id', currentUser.id).single();
 
+    currentUserDisplayName = profile?.display_name || currentUser.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
-    initNav(supabase, { userName: profile?.display_name || currentUser.email.split('@')[0], isAdmin: profile?.is_admin });
+    initNav(supabase, { userName: currentUserDisplayName, isAdmin: profile?.is_admin });
     initSubnav('Messages');
 
     await loadConversations();
@@ -714,6 +705,32 @@
     if (optEl) optEl.id = `msg-${sent.id}`;
 
     updateConvPreview(activeConvId, content, sent.created_at);
+
+    // Notify recipient (fire-and-forget — do not block UI)
+    const conv = conversations.find(c => c.id === activeConvId);
+    if (conv) {
+      const recipientId = otherParticipantId(conv);
+      const preview = content.substring(0, 80);
+      supabase.from('notifications').insert({
+        user_id: recipientId,
+        type: 'new_dm',
+        title: `New message from ${currentUserDisplayName}`,
+        body: preview,
+        link: `/app/messages.html?conversation=${activeConvId}`,
+        read: false,
+      }).then(() => {
+        fetch('/api/community/notifyDM', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipientUserId: recipientId,
+            senderName: currentUserDisplayName,
+            messagePreview: preview,
+            conversationId: activeConvId,
+          }),
+        }).catch(err => console.error('[notifyDM]', err));
+      }).catch(err => console.error('[notification insert]', err));
+    }
   }
 
   function appendMessage(msg, otherProfile) {

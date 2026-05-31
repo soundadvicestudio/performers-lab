@@ -108,6 +108,7 @@
   import { initSubnav } from './components/subnav.js';
   import { initFooter } from './components/footer.js';
   import { applyTheme } from './components/theme.js';
+  import { relativeTime, startRelativeTimers } from './utils/time.js';
 
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
@@ -121,19 +122,6 @@
       detectSessionInUrl: true
     }
   });
-
-  function timeAgo(dateStr) {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const s = Math.floor(diff / 1000);
-    if (s < 60) return 'just now';
-    const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h ago`;
-    const d = Math.floor(h / 24);
-    if (d < 7) return `${d}d ago`;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
 
   function escapeHtml(str) {
     return String(str || '')
@@ -205,7 +193,7 @@
           <div class="notif-content">
             <div class="notif-title">${escapeHtml(n.title || '')}</div>
             ${n.body ? `<div class="notif-body">${escapeHtml(n.body)}</div>` : ''}
-            <div class="notif-time">${timeAgo(n.created_at)}</div>
+            <div class="notif-time" data-timestamp="${escapeHtml(n.created_at)}">${relativeTime(n.created_at)}</div>
           </div>
         </div>
       `;
@@ -217,6 +205,8 @@
       row.addEventListener('click', navigate);
       row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') navigate(); });
     });
+
+    startRelativeTimers();
   }
 
   init();

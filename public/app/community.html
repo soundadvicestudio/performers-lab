@@ -17,6 +17,8 @@
     --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
     --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
     --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.08); --red-border: rgba(224,92,92,0.25);
+    --btn-bg-dim: rgba(7,7,7,0.3);
   }
   html, body { height: 100%; }
   body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -166,9 +168,9 @@
     display: flex; align-items: center; justify-content: space-between;
     margin-top: 10px;
   }
-  .composer-error { font-size: 12px; color: #e05a5a; }
+  .composer-error { font-size: 12px; color: var(--red); }
   .btn-post {
-    background: var(--gold); color: #070707;
+    background: var(--gold); color: var(--bg);
     border: none; padding: 9px 22px; border-radius: 2px;
     font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
     cursor: pointer; font-family: 'Raleway', sans-serif;
@@ -178,7 +180,7 @@
   .btn-post:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-spinner {
     display: inline-block; width: 12px; height: 12px;
-    border: 2px solid rgba(7,7,7,0.3); border-top-color: #070707;
+    border: 2px solid var(--btn-bg-dim); border-top-color: var(--bg);
     border-radius: 50%; animation: spin 0.7s linear infinite;
   }
 
@@ -292,7 +294,7 @@
   .comment-input::placeholder { color: var(--text-dim); }
   .comment-input:focus { outline: none; border-color: var(--border-gold); }
   .btn-comment {
-    background: var(--gold); color: #070707; border: none;
+    background: var(--gold); color: var(--bg); border: none;
     padding: 8px 14px; border-radius: 2px; flex-shrink: 0;
     font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
     cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s;
@@ -316,9 +318,9 @@
   }
   .feed-empty strong { color: var(--text-muted); display: block; margin-bottom: 6px; font-size: 15px; }
   .feed-error {
-    background: rgba(224,90,90,0.08); border: 0.5px solid rgba(224,90,90,0.25);
+    background: var(--red-dim); border: 0.5px solid var(--red-border);
     border-radius: 6px; padding: 14px 16px;
-    font-size: 13px; color: #e05a5a;
+    font-size: 13px; color: var(--red);
   }
 
   /* ── MOBILE SIDEBAR TOGGLE ── */
@@ -460,6 +462,7 @@
   import { initSubnav } from './components/subnav.js';
   import { initFooter } from './components/footer.js';
   import { applyTheme } from './components/theme.js';
+  import { relativeTime, startRelativeTimers } from './utils/time.js';
 
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
@@ -489,17 +492,29 @@
   let currentUserDisplayName = '';
 
   // ── Helpers ────────────────────────────────────────────────────────────
-  function timeAgo(dateStr) {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const s = Math.floor(diff / 1000);
-    if (s < 60) return 'just now';
-    const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h ago`;
-    const d = Math.floor(h / 24);
-    if (d < 7) return `${d}d ago`;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  function sanitizeHTML(html) {
+    const ALLOWED = new Set(['b','i','u','strong','em','a','ul','ol','li','p','br']);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    function clean(node) {
+      const toUnwrap = [];
+      for (const child of [...node.childNodes]) {
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const tag = child.tagName.toLowerCase();
+        if (!ALLOWED.has(tag)) { toUnwrap.push(child); continue; }
+        // Strip all attributes; allow href on <a> with safe protocol only
+        for (const attr of [...child.attributes]) {
+          if (tag === 'a' && attr.name === 'href' && /^(https?:|\/|#)/.test(attr.value)) continue;
+          child.removeAttribute(attr.name);
+        }
+        clean(child);
+      }
+      for (const el of toUnwrap) {
+        while (el.firstChild) node.insertBefore(el.firstChild, el);
+        node.removeChild(el);
+      }
+    }
+    clean(doc.body);
+    return doc.body.innerHTML;
   }
 
   function escapeHtml(str) {
@@ -830,7 +845,7 @@
 
     feedList.innerHTML = posts.map(post => renderPostCard(post, commentCountMap[post.id] || 0)).join('');
 
-    // Re-attach event listeners
+    startRelativeTimers();
     attachPostListeners(posts);
   }
 
@@ -851,10 +866,10 @@
             <div class="post-author">
               <a class="author-link" href="/app/member.html?id=${escapeHtml(post.author_id)}">${escapeHtml(authorName)}</a>
             </div>
-            <div class="post-time">${timeAgo(post.created_at)}</div>
+            <span class="post-time" data-timestamp="${escapeHtml(post.created_at)}">${relativeTime(post.created_at)}</span>
           </div>
         </div>
-        <div class="post-body">${post.content}</div>
+        <div class="post-body">${sanitizeHTML(post.content)}</div>
         <div class="post-actions">
           <div class="reaction-wrapper" data-post-id="${post.id}">
             <button class="reaction-btn${reacted ? ' reacted' : ''}" data-post-id="${post.id}" data-reaction="clap" aria-label="Clap">
@@ -1041,7 +1056,7 @@
         <div class="comment-body">
           <div class="comment-header">
             <a class="comment-author author-link" href="/app/member.html?id=${escapeHtml(c.author_id)}">${escapeHtml(name)}</a>
-            <span class="comment-time">${timeAgo(c.created_at)}</span>
+            <span class="comment-time" data-timestamp="${escapeHtml(c.created_at)}">${relativeTime(c.created_at)}</span>
           </div>
           <div class="comment-text">${escapeHtml(c.content)}</div>
         </div>
@@ -1123,6 +1138,10 @@
 
     btn.disabled = false;
     btn.innerHTML = 'Post';
+
+    // TODO Phase 5: trigger server-side broadcast notification to all active members.
+    // Fetching all member IDs client-side is expensive; this should be a serverless
+    // function called here (POST /api/community/notifyPost) that handles fan-out.
 
     if (error) {
       errorEl.textContent = 'Failed to post. Please try again.';
