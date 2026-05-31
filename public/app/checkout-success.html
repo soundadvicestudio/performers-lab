@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MAIN ── */
+  .main {
+    max-width: 900px; margin: 0 auto; padding: 3rem 2rem 5rem;
+    min-height: calc(100vh - 56px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+
+  /* ── SUCCESS ICON ── */
+  .success-icon {
+    width: 58px; height: 58px; border-radius: 50%;
+    background: var(--green-dim); border: 0.5px solid rgba(76,175,132,0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.75rem;
+    color: var(--green); font-size: 22px; line-height: 1;
+  }
+  .success-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .success-heading {
+    font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 400;
+    color: var(--text); line-height: 1.15; max-width: 580px; margin-bottom: 1rem;
+  }
+  .success-heading em { font-style: italic; color: var(--gold); font-weight: 300; }
+  .success-body {
+    font-size: 14px; color: var(--text-muted); line-height: 1.8; font-weight: 300;
+    max-width: 400px; margin: 0 auto 2.5rem;
+  }
+
+  /* ── STATUS AREA ── */
+  .status-polling { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+  .status-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  .status-label { font-size: 12px; color: var(--text-dim); font-weight: 300; letter-spacing: 0.04em; }
+
+  /* ── DASHBOARD BUTTON ── */
+  .btn-dashboard {
+    display: inline-block; background: var(--gold); color: #070707;
+    border: none; padding: 13px 36px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+    text-decoration: none; margin-bottom: 1rem;
+  }
+  .btn-dashboard:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .timeout-note {
+    font-size: 12px; color: var(--text-dim); line-height: 1.7; font-weight: 300;
+    max-width: 400px; margin: 0 auto;
+  }
+  .timeout-note a { color: var(--gold); text-decoration: none; transition: color 0.2s; }
+  .timeout-note a:hover { color: var(--gold-light); text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem 5rem; }
+    .success-heading { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+
+  <main class="main">
+    <div class="success-icon">✓</div>
+    <div class="success-eyebrow">Payment confirmed</div>
+    <h1 class="success-heading">You're in. Welcome to <em>The Performer's Lab.</em></h1>
+    <p class="success-body">Your payment was received. We're activating your membership now — this usually takes just a moment.</p>
+
+    <div id="status-area">
+      <div class="status-polling">
+        <div class="status-spinner"></div>
+        <div class="status-label">Activating your membership…</div>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  let userId    = null;
+  let pollCount = 0;
+  const MAX_POLLS = 15; // 15 × 2s = 30s
+
+  const statusArea = document.getElementById('status-area');
+
+  function showActivated() {
+    statusArea.innerHTML = `
+      <a href="/app/dashboard.html" class="btn-dashboard">Go to your dashboard →</a>
+    `;
+  }
+
+  function showTimeout() {
+    statusArea.innerHTML = `
+      <a href="/app/dashboard.html" class="btn-dashboard">Go to your dashboard →</a>
+      <p class="timeout-note">Your membership is being activated — if your dashboard doesn't show active status within a few minutes, <a href="https://www.alittlesoundadvice.com/contact" target="_blank" rel="noopener">contact us</a>.</p>
+    `;
+  }
+
+  async function pollMembership() {
+    const { data: membership } = await supabase
+      .from('memberships')
+      .select('status')
+      .eq('user_id', userId)
+      .single();
+
+    if (membership?.status === 'active') {
+      showActivated();
+      return;
+    }
+
+    pollCount++;
+    if (pollCount >= MAX_POLLS) {
+      showTimeout();
+      return;
+    }
+
+    setTimeout(pollMembership, 2000);
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    userId = session.user.id;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, is_admin, theme')
+      .eq('user_id', userId)
+      .single();
+
+    const name = profile?.display_name || session.user.email.split('@')[0];
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initFooter();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display     = 'block';
+
+    // Check if already active (fast webhook, or page refresh after activation)
+    const { data: membership } = await supabase
+      .from('memberships')
+      .select('status')
+      .eq('user_id', userId)
+      .single();
+
+    if (membership?.status === 'active') {
+      showActivated();
+    } else {
+      setTimeout(pollMembership, 2000);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

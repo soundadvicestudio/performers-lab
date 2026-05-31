@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="/api/env"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --red: #e05c5c;
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .loading-msg { font-size: 13px; color: var(--text-muted); font-weight: 300; margin-bottom: 1.5rem; }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 520px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+  .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 2.5rem; }
+  .page-heading em { font-style: italic; color: var(--gold); font-weight: 300; }
+  .section-label { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); font-weight: 700; margin-bottom: 1rem; }
+
+  /* ── PLAN CARDS ── */
+  .plans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+  .plan-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 1.75rem;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: border-color 0.2s; user-select: none;
+  }
+  .plan-card:hover { border-color: var(--border-mid); }
+  .plan-card.selected { border-color: var(--gold); }
+  .plan-card.selected::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .plan-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; }
+  .plan-name { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .plan-badge {
+    display: inline-block; background: var(--gold); color: #070707;
+    font-size: 8px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 2px;
+  }
+  .plan-radio {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1.5px solid var(--border-mid); flex-shrink: 0; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.2s;
+  }
+  .plan-card.selected .plan-radio { border-color: var(--gold); }
+  .plan-radio::after {
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--gold); display: none;
+  }
+  .plan-card.selected .plan-radio::after { display: block; }
+  .plan-price {
+    font-family: 'Cormorant Garamond', serif; font-size: 42px;
+    font-weight: 400; color: var(--text); line-height: 1; margin-bottom: 6px;
+  }
+  .plan-price span { font-size: 18px; color: var(--text-muted); font-weight: 300; }
+  .plan-note { font-size: 11px; color: var(--text-dim); font-weight: 300; line-height: 1.55; }
+
+  /* ── DIVIDER ── */
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: 0 0 2rem; }
+
+  /* ── DISCOUNT CODE ── */
+  .field-label {
+    display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;
+  }
+  .field-label .opt { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.65; }
+  .discount-row { display: flex; gap: 0.75rem; margin-bottom: 0; }
+  .discount-input {
+    flex: 1; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 10px 13px; border-radius: 3px;
+    font-size: 13px; font-family: 'Raleway', sans-serif; font-weight: 500;
+    outline: none; transition: border-color 0.2s, background 0.2s;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .discount-input:focus { border-color: var(--gold); background: var(--bg-4); }
+  .discount-input::placeholder { text-transform: none; letter-spacing: 0; font-weight: 300; color: var(--text-dim); }
+  .btn-apply {
+    background: none; border: 0.5px solid var(--border-mid);
+    color: var(--text-muted); padding: 10px 18px; border-radius: 3px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-apply:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-apply:disabled { opacity: 0.45; cursor: not-allowed; }
+  .discount-msg { margin-top: 8px; font-size: 12px; font-weight: 500; min-height: 18px; }
+  .discount-msg.success { color: var(--green); }
+  .discount-msg.error { color: var(--red); }
+
+  /* ── CONTINUE BUTTON ── */
+  .checkout-error { font-size: 12px; color: var(--red); margin-bottom: 0.75rem; min-height: 18px; text-align: center; }
+  .btn-continue {
+    width: 100%; background: var(--gold); color: #070707;
+    border: none; padding: 14px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+    margin-top: 2rem; margin-bottom: 1rem;
+  }
+  .btn-continue:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-continue:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .checkout-note { font-size: 11px; color: var(--text-dim); font-weight: 300; text-align: center; line-height: 1.65; }
+  .checkout-note a { color: var(--text-dim); text-decoration: underline; transition: color 0.2s; }
+  .checkout-note a:hover { color: var(--gold); }
+
+  @media (max-width: 500px) {
+    .main { padding: 2rem 1.25rem 5rem; }
+    .plans-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="loading-msg" id="loading-msg" style="display:none;"></div>
+    <div class="spinner" id="loading-spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+
+  <main class="main">
+    <div class="page-eyebrow">Membership</div>
+    <div class="page-heading">Choose your <em>plan</em></div>
+
+    <div class="section-label">Select a plan</div>
+    <div class="plans-grid">
+
+      <div class="plan-card selected" id="card-founding" role="button" tabindex="0" aria-pressed="true">
+        <div class="plan-header">
+          <div>
+            <div class="plan-name">Founding Member</div>
+            <div class="plan-badge">Recommended</div>
+          </div>
+          <div class="plan-radio"></div>
+        </div>
+        <div class="plan-price">$40<span>/mo</span></div>
+        <div class="plan-note">Locks in forever — your rate never increases.</div>
+      </div>
+
+      <div class="plan-card" id="card-standard" role="button" tabindex="0" aria-pressed="false">
+        <div class="plan-header">
+          <div>
+            <div class="plan-name">Standard</div>
+          </div>
+          <div class="plan-radio"></div>
+        </div>
+        <div class="plan-price">$60<span>/mo</span></div>
+        <div class="plan-note">Full access. Available after founding spots are filled.</div>
+      </div>
+
+    </div>
+
+    <hr class="divider">
+
+    <div style="margin-bottom: 2rem;">
+      <label class="field-label" for="discount-input">Discount code <span class="opt">(optional)</span></label>
+      <div class="discount-row">
+        <input type="text" class="discount-input" id="discount-input"
+          placeholder="Enter code" autocomplete="off" spellcheck="false" maxlength="64">
+        <button class="btn-apply" id="apply-btn">Apply</button>
+      </div>
+      <div class="discount-msg" id="discount-msg"></div>
+    </div>
+
+    <div class="checkout-error" id="checkout-error"></div>
+    <button class="btn-continue" id="continue-btn">Continue to payment →</button>
+    <p class="checkout-note">
+      Billed monthly · Cancel anytime ·
+      <a href="https://www.alittlesoundadvice.com/contact" target="_blank" rel="noopener">Questions? Contact us</a>
+    </p>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  const FOUNDING_PRICE_ID = window.__ENV__?.STRIPE_FOUNDING_PRICE_ID || '';
+  const STANDARD_PRICE_ID = window.__ENV__?.STRIPE_STANDARD_PRICE_ID || '';
+
+  let userId    = null;
+  let userEmail = null;
+  let selectedPlan       = 'founding';
+  let storedCheckoutUrl  = null;
+  let discountApplied    = '';
+
+  // ── PLAN CARDS ──
+  const cardFounding = document.getElementById('card-founding');
+  const cardStandard = document.getElementById('card-standard');
+
+  function selectPlan(plan) {
+    selectedPlan = plan;
+    // Invalidate stored URL — it was for the previous plan
+    if (storedCheckoutUrl) storedCheckoutUrl = null;
+    cardFounding.classList.toggle('selected', plan === 'founding');
+    cardFounding.setAttribute('aria-pressed', plan === 'founding');
+    cardStandard.classList.toggle('selected', plan === 'standard');
+    cardStandard.setAttribute('aria-pressed', plan === 'standard');
+  }
+
+  cardFounding.addEventListener('click', () => selectPlan('founding'));
+  cardStandard.addEventListener('click', () => selectPlan('standard'));
+  cardFounding.addEventListener('keydown', e => e.key === 'Enter' && selectPlan('founding'));
+  cardStandard.addEventListener('keydown', e => e.key === 'Enter' && selectPlan('standard'));
+
+  function getPriceId() {
+    return selectedPlan === 'founding' ? FOUNDING_PRICE_ID : STANDARD_PRICE_ID;
+  }
+
+  // ── DISCOUNT CODE ──
+  const discountInput = document.getElementById('discount-input');
+  const applyBtn      = document.getElementById('apply-btn');
+  const discountMsg   = document.getElementById('discount-msg');
+
+  discountInput.addEventListener('input', () => {
+    if (!discountInput.value.trim()) {
+      discountApplied   = '';
+      storedCheckoutUrl = null;
+      discountMsg.textContent = '';
+      discountMsg.className   = 'discount-msg';
+    }
+  });
+
+  applyBtn.addEventListener('click', async () => {
+    const code = discountInput.value.trim().toUpperCase();
+    if (!code) {
+      discountMsg.textContent = 'Enter a discount code first.';
+      discountMsg.className   = 'discount-msg error';
+      return;
+    }
+
+    applyBtn.disabled    = true;
+    applyBtn.textContent = '…';
+    discountMsg.textContent = '';
+    discountMsg.className   = 'discount-msg';
+
+    try {
+      const res  = await fetch('/api/stripe/createCheckout', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ priceId: getPriceId(), discountCode: code, userId, email: userEmail }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        discountMsg.textContent = data.error || 'Invalid or expired discount code.';
+        discountMsg.className   = 'discount-msg error';
+        discountApplied         = '';
+        storedCheckoutUrl       = null;
+      } else {
+        discountApplied         = code;
+        storedCheckoutUrl       = data.url;
+        discountMsg.textContent = '✓ Code applied — your discount will be reflected at checkout.';
+        discountMsg.className   = 'discount-msg success';
+      }
+    } catch {
+      discountMsg.textContent = 'Could not validate code. Please try again.';
+      discountMsg.className   = 'discount-msg error';
+    } finally {
+      applyBtn.disabled    = false;
+      applyBtn.textContent = 'Apply';
+    }
+  });
+
+  // ── CONTINUE TO PAYMENT ──
+  const continueBtn   = document.getElementById('continue-btn');
+  const checkoutError = document.getElementById('checkout-error');
+
+  continueBtn.addEventListener('click', async () => {
+    checkoutError.textContent = '';
+    continueBtn.disabled      = true;
+    continueBtn.textContent   = 'Redirecting…';
+
+    // Reuse the session URL from Apply if the plan hasn't changed since
+    if (storedCheckoutUrl) {
+      window.location.href = storedCheckoutUrl;
+      return;
+    }
+
+    try {
+      const res  = await fetch('/api/stripe/createCheckout', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          priceId:      getPriceId(),
+          discountCode: discountApplied || undefined,
+          userId,
+          email:        userEmail,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        checkoutError.textContent = data.error || 'Could not start checkout. Please try again.';
+        continueBtn.disabled      = false;
+        continueBtn.textContent   = 'Continue to payment →';
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      checkoutError.textContent = 'Connection error. Please try again.';
+      continueBtn.disabled      = false;
+      continueBtn.textContent   = 'Continue to payment →';
+    }
+  });
+
+  // ── INIT ──
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    userId    = session.user.id;
+    userEmail = session.user.email;
+
+    const [profileRes, membershipRes] = await Promise.all([
+      supabase.from('profiles').select('display_name, is_admin, theme').eq('user_id', userId).single(),
+      supabase.from('memberships').select('status').eq('user_id', userId).single(),
+    ]);
+
+    // Already a member — redirect with message
+    if (membershipRes.data?.status === 'active') {
+      document.getElementById('loading-msg').textContent    = 'You already have an active membership. Redirecting…';
+      document.getElementById('loading-msg').style.display  = 'block';
+      document.getElementById('loading-spinner').style.display = 'none';
+      setTimeout(() => { window.location.href = '/app/dashboard.html'; }, 2000);
+      return;
+    }
+
+    const profile = profileRes.data;
+    const name    = profile?.display_name || userEmail.split('@')[0];
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initFooter();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display     = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
