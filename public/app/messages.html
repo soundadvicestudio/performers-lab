@@ -399,14 +399,37 @@
     return conv.participant_1_id === currentUser.id ? conv.participant_2_id : conv.participant_1_id;
   }
 
+  function isProfileComplete(profile) {
+    return !!(
+      profile?.display_name?.trim() &&
+      profile?.birth_year &&
+      profile?.experience?.trim() &&
+      profile?.location?.trim() &&
+      profile?.bio?.trim()
+    );
+  }
+
   // ── Init ─────────────────────────────────────────────────────────────
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = '/app/login.html'; return; }
     currentUser = session.user;
 
-    const { data: profile } = await supabase
-      .from('profiles').select('display_name, is_admin, theme').eq('user_id', currentUser.id).single();
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience').eq('user_id', currentUser.id).single(),
+      supabase.from('memberships').select('status').eq('user_id', currentUser.id).single(),
+    ]);
+
+    if (!profile?.is_admin && !isProfileComplete(profile)) {
+      window.location.href = '/app/profile.html?onboarding=true';
+      return;
+    }
+
+    const hasAccess = profile?.is_admin
+      || membership?.status === 'active'
+      || membership?.status === 'cancelling';
+
+    if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
 
     currentUserDisplayName = profile?.display_name || currentUser.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');

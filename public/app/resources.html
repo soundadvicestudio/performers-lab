@@ -188,19 +188,20 @@
 
   function renderFilterPills() {
     const container = document.getElementById('filter-pills');
-    if (!allResources.length) { container.innerHTML = ''; return; }
 
-    const usedCatIds = new Set(allResources.map(r => r.category_id).filter(Boolean));
-    const usedCats = allCategories.filter(c => usedCatIds.has(c.id));
+    // "All" pill always renders, regardless of whether resources exist
+    let html = `<button class="filter-pill active" data-cat="all" onclick="window.__setFilter('all')">All${allResources.length ? ` (${allResources.length})` : ''}</button>`;
 
-    const pills = [
-      `<button class="filter-pill active" data-cat="all" onclick="window.__setFilter('all')">All (${allResources.length})</button>`,
-      ...usedCats.map(c => {
+    if (allResources.length) {
+      const usedCatIds = new Set(allResources.map(r => r.category_id).filter(Boolean));
+      const usedCats = allCategories.filter(c => usedCatIds.has(c.id));
+      html += usedCats.map(c => {
         const count = allResources.filter(r => r.category_id === c.id).length;
         return `<button class="filter-pill" data-cat="${escapeHtml(c.id)}" onclick="window.__setFilter('${escapeHtml(c.id)}')">${escapeHtml(c.name)} (${count})</button>`;
-      })
-    ];
-    container.innerHTML = pills.join('');
+      }).join('');
+    }
+
+    container.innerHTML = html;
   }
 
   window.__setFilter = function(catId) {

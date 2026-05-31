@@ -202,7 +202,7 @@
     // Read ?id= from URL
     const params = new URLSearchParams(window.location.search);
     memberId = params.get('id');
-    if (!memberId) { window.location.href = '/app/community.html'; return; }
+    if (!memberId) { window.location.href = '/app/dashboard.html'; return; }
 
     // Load current user profile for nav
     const { data: myProfile } = await supabase
@@ -232,9 +232,7 @@
     const content = document.getElementById('member-content');
 
     if (!profile) {
-      content.innerHTML = '<div class="not-found">Member not found.</div>';
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
+      window.location.href = '/app/dashboard.html';
       return;
     }
 
@@ -271,6 +269,7 @@
 
         ${hasBio ? `
           <div class="member-bio-wrap">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">About You</div>
             <div class="member-bio${bioNeedsExpand ? ' clamped' : ''}" id="member-bio">${escapeHtml(profile.bio)}</div>
             ${bioNeedsExpand ? '<button class="read-more-btn" id="read-more-btn">Read more</button>' : ''}
           </div>` : ''}
