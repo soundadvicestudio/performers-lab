@@ -696,10 +696,7 @@
 
     let query = supabase
       .from('posts')
-      .select(`
-        id, author_id, channel_id, content, is_pinned, created_at,
-        profiles!author_id(display_name, photo_url)
-      `)
+      .select('id, author_id, channel_id, content, is_pinned, created_at')
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(30);
@@ -727,12 +724,19 @@
     }
 
     const postIds = posts.map(p => p.id);
+    const authorIds = [...new Set(posts.map(p => p.author_id))];
 
-    // Load reactions in parallel
-    const [{ data: reactions }, { data: mineRaw }] = await Promise.all([
+    // Load author profiles and reactions in parallel
+    const [{ data: authorProfiles }, { data: reactions }, { data: mineRaw }] = await Promise.all([
+      supabase.from('profiles').select('user_id, display_name, photo_url').in('user_id', authorIds),
       supabase.from('post_reactions').select('post_id, reaction_type').in('post_id', postIds),
       supabase.from('post_reactions').select('post_id, reaction_type').in('post_id', postIds).eq('user_id', currentUser.id),
     ]);
+
+    // Merge profiles into posts
+    const profileMap = {};
+    for (const p of (authorProfiles || [])) profileMap[p.user_id] = p;
+    for (const post of posts) post.profiles = profileMap[post.author_id] || {};
 
     // Load comment counts
     const { data: commentCounts } = await supabase
@@ -859,16 +863,24 @@
 
     const { data: comments, error } = await supabase
       .from('comments')
-      .select(`
-        id, content, created_at, author_id,
-        profiles!comments_author_id_fkey(display_name, photo_url)
-      `)
+      .select('id, content, created_at, author_id')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
     if (error) {
       threadEl.innerHTML = '<div class="comments-loading">Couldn\'t load comments.</div>';
       return;
+    }
+
+    if (comments && comments.length > 0) {
+      const commentAuthorIds = [...new Set(comments.map(c => c.author_id))];
+      const { data: commentProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, photo_url')
+        .in('user_id', commentAuthorIds);
+      const commentProfileMap = {};
+      for (const p of (commentProfiles || [])) commentProfileMap[p.user_id] = p;
+      for (const c of comments) c.profiles = commentProfileMap[c.author_id] || {};
     }
 
     const commentListHtml = (comments && comments.length > 0)
@@ -927,12 +939,19 @@
     const { data: newComment, error } = await supabase
       .from('comments')
       .insert({ post_id: postId, author_id: currentUser.id, content })
-      .select(`id, content, created_at, author_id, profiles!comments_author_id_fkey(display_name, photo_url)`)
+      .select('id, content, created_at, author_id')
       .single();
 
     btn.disabled = false;
 
     if (error || !newComment) return;
+
+    const { data: newCommentProfile } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, photo_url')
+      .eq('user_id', currentUser.id)
+      .single();
+    newComment.profiles = newCommentProfile || {};
 
     textarea.value = '';
     textarea.style.height = '';
