@@ -79,20 +79,38 @@
   .btn-cal:hover { color: var(--gold); }
 
   /* ── EMBED AREA ── */
-  .embed-container { width: 100%; aspect-ratio: 16 / 9; background: var(--bg-2); border-radius: 8px; overflow: hidden; }
-  .embed-placeholder { width: 100%; aspect-ratio: 16 / 9; background: var(--bg-2); border: 0.5px solid var(--border-gold); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2rem; text-align: center; }
+  .embed-container { width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-gold); box-shadow: 0 0 0 1px var(--border-gold), 0 8px 32px rgba(0,0,0,0.4); }
+  .embed-placeholder { width: 100%; aspect-ratio: 16 / 9; background: var(--bg-2); border: 1px solid var(--border-gold); border-radius: 10px; box-shadow: 0 0 0 1px var(--border-gold), 0 8px 32px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2rem; text-align: center; }
   .embed-placeholder-icon { color: var(--text-dim); opacity: 0.5; }
   .embed-placeholder-text { font-size: 15px; color: var(--text-muted); font-weight: 300; }
   .embed-placeholder-sub { font-size: 13px; color: var(--text-dim); font-weight: 300; }
   .embed-ext-link { display: inline-flex; align-items: center; gap: 6px; background: var(--gold); color: var(--bg); border: none; padding: 10px 22px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; font-family: 'Raleway', sans-serif; transition: background 0.2s; margin: 1.5rem; }
   .embed-ext-link:hover { background: var(--gold-light); }
 
+  /* ── ADMIN CONTROL BAR ── */
+  .admin-ctrl-wrap { margin-bottom: 1.5rem; }
+  .admin-ctrl-bar { display: flex; align-items: center; justify-content: space-between; background: var(--bg-3); border: 0.5px solid var(--border-gold); border-radius: 8px; padding: 10px 16px; }
+  .admin-ctrl-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
+  .admin-ctrl-actions { display: flex; gap: 10px; align-items: center; }
+  .btn-go-live { background: none; border: 0.5px solid var(--border-gold); color: var(--gold); padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s; }
+  .btn-go-live:hover:not(:disabled) { background: var(--gold-dim); }
+  .btn-go-live:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-end-session { background: none; border: 0.5px solid rgba(224,92,92,0.4); color: #e05c5c; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s; }
+  .btn-end-session:hover:not(:disabled) { background: rgba(224,92,92,0.06); border-color: rgba(224,92,92,0.7); }
+  .btn-end-session:disabled { opacity: 0.5; cursor: not-allowed; }
+  .admin-end-confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--bg-3); border: 0.5px solid var(--border-mid); border-radius: 6px; padding: 10px 14px; margin-top: 8px; font-size: 13px; color: var(--text-muted); font-weight: 300; }
+  .admin-end-confirm-yes { background: none; border: 0.5px solid rgba(224,92,92,0.4); color: #e05c5c; padding: 6px 14px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s; }
+  .admin-end-confirm-yes:hover:not(:disabled) { background: rgba(224,92,92,0.06); }
+  .admin-end-confirm-yes:disabled { opacity: 0.5; cursor: not-allowed; }
+  .admin-end-confirm-cancel { background: none; border: 0.5px solid var(--border-mid); color: var(--text-muted); padding: 6px 14px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s; }
+  .admin-end-confirm-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+
   /* ── CHAT PANEL ── */
   .chat-panel { background: var(--bg-2); border: 0.5px solid var(--border-gold); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; height: 100%; }
   .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
   .chat-header-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); }
   .chat-participant-count { font-size: 11px; color: var(--text-dim); font-weight: 300; }
-  #chat-messages { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+  #chat-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
   .chat-empty { text-align: center; padding: 2rem 0; font-size: 13px; color: var(--text-dim); font-style: italic; }
   .chat-msg { display: flex; align-items: flex-start; gap: 8px; }
   .chat-msg-avatar { flex-shrink: 0; width: 28px; height: 28px; }
@@ -123,14 +141,18 @@
   .chat-confirm-danger:disabled { opacity: 0.5; cursor: not-allowed; }
   #chat-readonly-banner { display: none; padding: 14px 16px; text-align: center; font-size: 13px; color: var(--text-muted); font-weight: 300; border-top: 0.5px solid var(--border); flex-shrink: 0; line-height: 1.6; }
   #chat-readonly-banner a { color: var(--gold); text-decoration: none; }
-  #chat-input-row { display: none; border-top: 0.5px solid var(--border); padding: 10px 12px; flex-shrink: 0; }
-  .chat-input-wrap { display: flex; gap: 8px; }
-  #chat-input { flex: 1; background: var(--bg-3); border: 0.5px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: 'Raleway', sans-serif; font-weight: 300; outline: none; transition: border-color 0.2s; }
+  #chat-input-row { display: none; flex-shrink: 0; border-top: 1px solid var(--border); padding: 12px 16px; background: var(--bg-2); }
+  .chat-input-wrap { display: flex; gap: 8px; align-items: center; }
+  #chat-input { flex: 1; padding: 10px 14px; font-size: 0.95rem; background: var(--bg-3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'Raleway', sans-serif; font-weight: 300; outline: none; transition: border-color 0.2s; }
   #chat-input:focus { border-color: var(--gold); }
-  #chat-send-btn { background: var(--gold); color: var(--bg); border: none; border-radius: 6px; padding: 8px 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s; flex-shrink: 0; }
+  #chat-send-btn { padding: 10px 20px; background: var(--gold); color: var(--bg); border: none; border-radius: 6px; font-family: 'Raleway', sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.2s; }
   #chat-send-btn:hover:not(:disabled) { background: var(--gold-light); }
   #chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   #chat-error { font-size: 11px; color: #e05c5c; font-weight: 300; display: none; margin-top: 5px; min-height: 14px; }
+
+  /* ── TOAST ── */
+  .event-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(8px); background: var(--gold); color: var(--bg); padding: 10px 24px; border-radius: 4px; font-size: 13px; font-weight: 600; font-family: 'Raleway', sans-serif; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 500; pointer-events: none; white-space: nowrap; }
+  .event-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   @media (max-width: 900px) {
     .event-layout { grid-template-columns: 1fr; }
@@ -181,6 +203,7 @@
 
   <div id="app-footer"></div>
 </div>
+<div id="event-toast" class="event-toast"></div>
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -389,8 +412,8 @@
     }
     if (event.status==='live') {
       if (!event.daily_room_url) return `<div class="embed-placeholder"><div class="embed-placeholder-text">Session starting…</div></div>`;
-      let src=event.daily_room_url;
-      if (userIsAdmin) { const t=sessionStorage.getItem(`host_token_${event.id}`); if(t) src=`${event.daily_room_url}?t=${t}`; }
+      let src=event.daily_room_url+'?camera=off&microphone=off';
+      if (userIsAdmin) { const t=sessionStorage.getItem(`host_token_${event.id}`); if(t) src=`${event.daily_room_url}?t=${t}&camera=off&microphone=off`; }
       return `<div class="embed-container"><iframe id="daily-frame" src="${escHtml(src)}" allow="camera; microphone; fullscreen; display-capture" style="width:100%;height:100%;border:none;"></iframe></div>`;
     }
     if (event.status==='completed') {
@@ -401,6 +424,26 @@
       return `<div class="embed-placeholder"><div class="embed-placeholder-text">Session recording available</div><a href="${escHtml(event.recording_url)}" class="embed-ext-link" target="_blank" rel="noopener noreferrer">Watch Recording →</a></div>`;
     }
     return '';
+  }
+
+  function buildAdminControls(event) {
+    if (!userIsAdmin || event.status==='completed') return '';
+    const showGoLive = event.status==='upcoming';
+    const showEndSession = event.status==='live';
+    return `<div id="admin-control-bar" class="admin-ctrl-wrap">
+      <div class="admin-ctrl-bar">
+        <span class="admin-ctrl-label">Admin Controls</span>
+        <div class="admin-ctrl-actions">
+          ${showGoLive?`<button class="btn-go-live" id="btn-go-live" onclick="window.handleGoLive()">⚡ Go Live</button>`:''}
+          ${showEndSession?`<button class="btn-end-session" id="btn-end-session" onclick="window.handleEndSession()">■ End Session</button>`:''}
+        </div>
+      </div>
+      <div id="admin-end-confirm" class="admin-end-confirm" style="display:none;">
+        <span>End this session and mark as completed?</span>
+        <button class="admin-end-confirm-yes" id="btn-end-confirm-yes" onclick="window.confirmEndSession()">End Session</button>
+        <button class="admin-end-confirm-cancel" onclick="document.getElementById('admin-end-confirm').style.display='none'">Cancel</button>
+      </div>
+    </div>`;
   }
 
   function renderPage() {
@@ -414,6 +457,7 @@
         <div class="event-desc">${escHtml(event.description)}</div>
         ${buildRsvpSection(event)}
       </div>
+      ${buildAdminControls(event)}
       <div id="event-embed-area">${buildEmbed(event)}</div>`;
   }
 
@@ -433,6 +477,12 @@
     if (event.status!=='upcoming'&&rsvpEl) rsvpEl.remove();
     const embedEl=document.getElementById('event-embed-area');
     if (embedEl) embedEl.innerHTML=buildEmbed(event);
+    const adminCtrl=document.getElementById('admin-control-bar');
+    if (adminCtrl) {
+      const wrapper=document.createElement('div'); wrapper.innerHTML=buildAdminControls(event);
+      const newEl=wrapper.firstElementChild;
+      if (newEl) adminCtrl.replaceWith(newEl); else adminCtrl.remove();
+    }
     updateChatStateForStatus(event.status);
   }
 
@@ -741,6 +791,56 @@
         payload=>{ perEventModIds.delete(payload.old.user_id); refreshMessagesByUser(payload.old.user_id); })
       .subscribe();
   }
+
+  // ── Toast ───────────────────────────────────────────────────────────────
+  let toastTimeout = null;
+  function showToast(msg) {
+    const el=document.getElementById('event-toast');
+    if (!el) return;
+    el.textContent=msg; el.classList.add('visible');
+    clearTimeout(toastTimeout);
+    toastTimeout=setTimeout(()=>el.classList.remove('visible'),3000);
+  }
+
+  // ── Admin Go Live / End Session ─────────────────────────────────────────
+  window.handleGoLive=async function() {
+    const btn=document.getElementById('btn-go-live');
+    if (btn) { btn.disabled=true; btn.textContent='Going live…'; }
+    const {data:{user}}=await supabase.auth.getUser();
+    if (!user) { if(btn){btn.disabled=false;btn.textContent='⚡ Go Live';} return; }
+    const res=await fetch('/api/events/createRoom',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({admin_user_id:user.id, event_id:eventId}),
+    });
+    const json=await res.json();
+    if (!res.ok) {
+      if (btn) { btn.disabled=false; btn.textContent='⚡ Go Live'; }
+      showToast('Error: '+(json.error||'Failed to create room'));
+      return;
+    }
+    if (json.host_token) sessionStorage.setItem(`host_token_${eventId}`, json.host_token);
+    showToast('Session is live');
+    // Realtime subscription on events UPDATE fires and swaps the embed automatically
+  };
+
+  window.handleEndSession=function() {
+    const confirm=document.getElementById('admin-end-confirm');
+    if (confirm) confirm.style.display='';
+  };
+
+  window.confirmEndSession=async function() {
+    const yesBtn=document.getElementById('btn-end-confirm-yes');
+    if (yesBtn) { yesBtn.disabled=true; yesBtn.textContent='Ending…'; }
+    const {error}=await supabase.from('events')
+      .update({status:'completed', daily_room_url:null}).eq('id',eventId);
+    if (error) {
+      if (yesBtn) { yesBtn.disabled=false; yesBtn.textContent='End Session'; }
+      showToast('Failed to end session.');
+      return;
+    }
+    showToast('Session ended');
+    // Realtime subscription handles embed swap and chat state
+  };
 
   // ── Init ────────────────────────────────────────────────────────────────
   async function init() {

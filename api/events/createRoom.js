@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     body: JSON.stringify({
       privacy: 'public',
       properties: {
-        enable_chat: true,
+        enable_chat: false,
         enable_screenshare: true,
         start_video_off: false,
         start_audio_off: false,
