@@ -74,8 +74,10 @@ export default async function handler(req, res) {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object;
+        console.log('[webhook] subscription.updated sub_id:', subscription.id);
+        console.log('[webhook] cancel_at_period_end:', subscription.cancel_at_period_end);
         if (subscription.cancel_at_period_end) {
-          await supabaseRequest(
+          const patchResult = await supabaseRequest(
             'PATCH',
             `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}`,
             {
@@ -85,12 +87,14 @@ export default async function handler(req, res) {
                 : null,
             }
           );
+          console.log('[webhook] patch response:', JSON.stringify(patchResult));
         } else {
-          await supabaseRequest(
+          const patchResult = await supabaseRequest(
             'PATCH',
             `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}`,
             { status: 'active', cancel_at: null }
           );
+          console.log('[webhook] patch response:', JSON.stringify(patchResult));
         }
         break;
       }
