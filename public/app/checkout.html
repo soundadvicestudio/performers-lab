@@ -376,7 +376,7 @@
     const name    = profile?.display_name || userEmail.split('@')[0];
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
-    initSubnav(null);
+    initSubnav(null, supabase);
     initFooter();
 
     document.getElementById('loading').style.display = 'none';

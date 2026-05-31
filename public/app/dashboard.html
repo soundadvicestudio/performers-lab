@@ -363,7 +363,7 @@
     const name = profile?.display_name || user.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
-    initSubnav('Dashboard');
+    initSubnav('Dashboard', supabase);
     document.getElementById('dash-name').textContent = name;
 
     if (membership) {

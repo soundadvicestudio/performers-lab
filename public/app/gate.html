@@ -151,7 +151,7 @@
     const name = profile?.display_name || user.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
-    initSubnav(null);
+    initSubnav(null, supabase);
 
     const badge = document.getElementById('gate-status-badge');
     const status = membership?.status;

@@ -435,7 +435,7 @@
     currentUserDisplayName = profile?.display_name || currentUser.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: currentUserDisplayName, isAdmin: profile?.is_admin });
-    initSubnav('Messages');
+    initSubnav('Messages', supabase);
 
     await loadConversations();
     initSearch();

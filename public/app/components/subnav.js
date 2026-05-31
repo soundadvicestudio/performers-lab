@@ -49,6 +49,7 @@ function injectStyles() {
       padding: 0 2rem;
     }
     .subnav-tab {
+      position: relative;
       display: flex; align-items: center;
       padding: 0 1rem; height: 42px;
       font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
@@ -60,6 +61,49 @@ function injectStyles() {
     .subnav-tab:hover { color: var(--text-muted); }
     .subnav-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
     .subnav-icon { display: none; }
+
+    #live-banner {
+      background: var(--bg-2);
+      border-bottom: 1px solid rgba(220,50,50,0.3);
+      padding: 8px 24px;
+      display: none;
+    }
+    .live-banner-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .live-dot-red {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #dc3232; flex-shrink: 0;
+      animation: live-pulse-red 1.5s ease-in-out infinite;
+    }
+    .live-banner-text {
+      font-family: 'Raleway', sans-serif;
+      font-size: 0.8rem; font-weight: 600;
+      letter-spacing: 0.12em; color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .live-banner-link {
+      font-family: 'Raleway', sans-serif;
+      font-size: 0.8rem; font-weight: 700;
+      color: #dc3232; text-decoration: none;
+      letter-spacing: 0.08em; margin-left: auto;
+    }
+    .live-banner-link:hover { text-decoration: underline; }
+    @keyframes live-pulse-red {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .live-tab-dot {
+      position: absolute;
+      top: 8px; right: 4px;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #dc3232;
+      animation: live-pulse-red 1.5s ease-in-out infinite;
+    }
 
     @media (max-width: 700px) {
       .app-subnav {
@@ -79,12 +123,52 @@ function injectStyles() {
       .subnav-icon svg { width: 18px; height: 18px; }
       .subnav-label { white-space: nowrap; }
       body { padding-bottom: 60px; }
+      .live-tab-dot { top: 6px; right: calc(50% - 14px); }
     }
   `;
   document.head.appendChild(style);
 }
 
-export function initSubnav(activeTab) {
+function injectBanner() {
+  if (document.getElementById('live-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'live-banner';
+  banner.innerHTML = `
+    <div class="live-banner-inner">
+      <span class="live-dot-red"></span>
+      <span class="live-banner-text">ON AIR — Live Lab is live now</span>
+      <a class="live-banner-link" href="">Join Now →</a>
+    </div>
+  `;
+  const subnavEl = document.getElementById('app-subnav');
+  if (subnavEl && subnavEl.parentNode) {
+    subnavEl.parentNode.insertBefore(banner, subnavEl.nextSibling);
+  }
+}
+
+function showLiveState(eventId) {
+  const banner = document.getElementById('live-banner');
+  if (banner) {
+    banner.style.display = 'block';
+    const link = banner.querySelector('.live-banner-link');
+    if (link) link.href = `/app/event.html?id=${eventId}`;
+  }
+  const liveLabTab = document.querySelector('#app-subnav a[href="/app/events.html"]');
+  if (liveLabTab && !liveLabTab.querySelector('.live-tab-dot')) {
+    const dot = document.createElement('span');
+    dot.className = 'live-tab-dot';
+    liveLabTab.appendChild(dot);
+  }
+}
+
+function hideLiveState() {
+  const banner = document.getElementById('live-banner');
+  if (banner) banner.style.display = 'none';
+  const dot = document.querySelector('#app-subnav .live-tab-dot');
+  if (dot) dot.remove();
+}
+
+export function initSubnav(activeTab, supabase) {
   injectStyles();
 
   const container = document.getElementById('app-subnav');
@@ -101,4 +185,34 @@ export function initSubnav(activeTab) {
       `).join('')}
     </div>
   `;
+
+  injectBanner();
+
+  if (!supabase) return;
+
+  supabase
+    .from('events')
+    .select('id')
+    .eq('status', 'live')
+    .limit(1)
+    .then(({ data }) => {
+      if (data && data.length > 0) showLiveState(data[0].id);
+    });
+
+  const channel = supabase
+    .channel('subnav-live-watch')
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'events',
+    }, payload => {
+      if (payload.new.status === 'live') {
+        showLiveState(payload.new.id);
+      } else {
+        hideLiveState();
+      }
+    })
+    .subscribe();
+
+  window.addEventListener('beforeunload', () => {
+    supabase.removeChannel(channel);
+  }, { once: true });
 }

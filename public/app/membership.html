@@ -257,7 +257,7 @@
 
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
-    initSubnav(null);
+    initSubnav(null, supabase);
 
     // ── POPULATE MEMBERSHIP DATA ──
     if (membership) {

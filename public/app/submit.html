@@ -317,6 +317,7 @@
   let countdownInterval = null;
   let currentUserId = null;
   let currentUserDisplayName = null;
+  let userTimezone = 'America/Chicago';
 
   // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -511,7 +512,7 @@
 
     const countdownEl = document.getElementById('status-countdown');
     startCountdown(deadlineMs, countdownEl);
-    startRelativeTimers();
+    startRelativeTimers(60000, userTimezone);
   }
 
   // ── Render: intake form ───────────────────────────────────────────────
@@ -800,7 +801,7 @@
     }
 
     section.innerHTML = html;
-    startRelativeTimers();
+    startRelativeTimers(60000, userTimezone);
   }
 
   // ── Init ───────────────────────────────────────────────────────────────
@@ -831,9 +832,10 @@
 
     const name = profile?.display_name || session.user.email.split('@')[0];
     currentUserDisplayName = name;
+    userTimezone = profile?.timezone || 'America/Chicago';
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
-    initSubnav('submit');
+    initSubnav('submit', supabase);
     initFooter();
 
     // Admin view

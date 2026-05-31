@@ -1,4 +1,4 @@
-export const themes = {
+export const THEMES = {
   gold: {
     '--gold':        '#c9a96e',
     '--gold-light':  '#d4b87e',
@@ -17,9 +17,13 @@ export const themes = {
 };
 
 export function applyTheme(themeName = 'gold') {
-  const vars = themes[themeName] || themes.gold;
+  const vars = THEMES[themeName] || THEMES.gold;
   const root = document.documentElement;
   for (const [prop, value] of Object.entries(vars)) {
     root.style.setProperty(prop, value);
   }
+}
+
+export function getThemeNames() {
+  return Object.keys(THEMES);
 }

@@ -172,6 +172,7 @@
   });
 
   let countdownInterval = null;
+  let userTimezone = 'America/Chicago';
 
   // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -381,7 +382,7 @@
       if (countdownEl) startCountdown(deadlineMs, countdownEl);
     }
 
-    startRelativeTimers();
+    startRelativeTimers(60000, userTimezone);
   }
 
   // ── Init ───────────────────────────────────────────────────────────────
@@ -397,7 +398,7 @@
     if (!submissionId) { window.location.href = '/app/submit.html'; return; }
 
     const [{ data: profile }, { data: membership }] = await Promise.all([
-      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience').eq('user_id', userId).single(),
+      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience, timezone').eq('user_id', userId).single(),
       supabase.from('memberships').select('status').eq('user_id', userId).single(),
     ]);
 
@@ -415,9 +416,10 @@
     if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
 
     const name = profile?.display_name || session.user.email.split('@')[0];
+    userTimezone = profile?.timezone || 'America/Chicago';
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
-    initSubnav(null);
+    initSubnav(null, supabase);
     initFooter();
 
     // Load submission

@@ -12,10 +12,31 @@ export function relativeTime(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function startRelativeTimers(intervalMs = 60000) {
+export function startRelativeTimers(intervalMs = 60000, timezone) {
+  const tz = timezone || 'America/Chicago';
+
+  function formatTitle(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      month: 'long', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit',
+      timeZoneName: 'short',
+    });
+    const parts = fmt.formatToParts(d);
+    const get = type => parts.find(p => p.type === type)?.value ?? '';
+    const date = `${get('month')} ${get('day')}, ${get('year')}`;
+    const time = `${get('hour')}:${get('minute')} ${get('dayPeriod')}`;
+    const tzName = get('timeZoneName');
+    return `${date} at ${time} (${tzName})`;
+  }
+
   function update() {
     document.querySelectorAll('[data-timestamp]').forEach(el => {
       el.textContent = relativeTime(el.dataset.timestamp);
+      el.title = formatTitle(el.dataset.timestamp);
+      el.style.cursor = 'help';
     });
   }
   update();

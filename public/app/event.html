@@ -862,7 +862,7 @@
     userProfile=profile; userIsAdmin=!!profile?.is_admin;
     applyTheme(profile?.theme||'gold');
     initNav(supabase,{userName:profile?.display_name||session.user.email.split('@')[0],isAdmin:profile?.is_admin});
-    initSubnav('live-lab');
+    initSubnav('live-lab', supabase);
     initFooter();
 
     const [

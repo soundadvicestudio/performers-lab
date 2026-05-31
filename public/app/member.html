@@ -56,7 +56,7 @@
 
   /* ── AVATAR ── */
   .member-avatar {
-    width: 80px; height: 80px; border-radius: 50%;
+    width: 160px; height: 160px; border-radius: 50%;
     background: var(--bg-4); border: 1px solid var(--border-gold);
     display: flex; align-items: center; justify-content: center;
     font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 400;
@@ -213,7 +213,7 @@
 
     applyTheme(myProfile?.theme || 'gold');
     initNav(supabase, { userName: myProfile?.display_name || session.user.email.split('@')[0], isAdmin: myProfile?.is_admin });
-    initSubnav(null);
+    initSubnav(null, supabase);
     initFooter();
 
     // Load member profile and submission count in parallel

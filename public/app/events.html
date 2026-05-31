@@ -145,6 +145,23 @@
   .recording-thumb img { display: block; width: 100%; }
   .recording-coming { font-size: 13px; color: var(--text-dim); font-style: italic; }
 
+  /* ── EVENT TABS ── */
+  .events-tabs {
+    display: flex; gap: 0;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .events-tab {
+    background: none; border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 22px; margin-bottom: -0.5px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); cursor: pointer; font-family: 'Raleway', sans-serif;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .events-tab.active { color: var(--text); border-bottom-color: var(--gold); }
+  .events-tab:hover:not(.active) { color: var(--text); }
+
   @media (max-width: 600px) {
     .main { padding: 2rem 1.25rem 3rem; }
     .page-heading { font-size: 32px; }
@@ -170,14 +187,20 @@
     <h1 class="page-heading">Live Lab</h1>
     <p class="page-subtitle">Monthly masterclasses and coaching sessions with Jonathan.</p>
 
-    <div class="section-block">
-      <div class="section-heading">Upcoming Sessions</div>
+    <!-- Tab strip -->
+    <div class="events-tabs">
+      <button class="events-tab active" data-tab="upcoming-tab">Upcoming</button>
+      <button class="events-tab" data-tab="archive-tab">Archive</button>
+    </div>
+
+    <!-- Upcoming tab panel -->
+    <div id="upcoming-tab" class="events-tab-panel">
       <div id="upcoming-list"><div class="empty-state">Loading…</div></div>
     </div>
 
-    <div class="section-block">
-      <div class="section-heading">Past Sessions</div>
-      <div id="past-list"><div class="empty-state">Loading…</div></div>
+    <!-- Archive tab panel -->
+    <div id="archive-tab" class="events-tab-panel" style="display:none;">
+      <div id="archive-list"><div class="empty-state">Loading…</div></div>
     </div>
   </main>
 
@@ -287,6 +310,8 @@
   let userProfile = null;
   let rsvpMap = {};
   let eventsById = {};
+  let archiveLoaded = false;
+  let archiveDirty = false;
 
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -317,26 +342,21 @@
     userProfile = profile;
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: profile?.display_name || session.user.email.split('@')[0], isAdmin: profile?.is_admin });
-    initSubnav('live-lab');
+    initSubnav('live-lab', supabase);
     initFooter();
 
-    const [{ data: allEvents }, { data: myRsvps }] = await Promise.all([
-      supabase.from('events').select('*').order('starts_at', { ascending: false }),
+    const [{ data: upcomingData }, { data: myRsvps }] = await Promise.all([
+      supabase.from('events').select('*')
+        .in('status', ['upcoming', 'live'])
+        .order('starts_at', { ascending: true }),
       supabase.from('event_rsvps').select('event_id, notify').eq('user_id', currentUserId),
     ]);
 
-    const events = allEvents || [];
-    events.forEach(e => { eventsById[e.id] = e; });
+    const upcomingEvents = upcomingData || [];
+    upcomingEvents.forEach(e => { eventsById[e.id] = e; });
 
     rsvpMap = {};
     (myRsvps || []).forEach(r => { rsvpMap[r.event_id] = { notify: r.notify }; });
-
-    const upcomingEvents = events
-      .filter(e => e.status === 'upcoming' || e.status === 'live')
-      .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
-    const pastEvents = events
-      .filter(e => e.status === 'completed')
-      .sort((a, b) => new Date(b.starts_at) - new Date(a.starts_at));
 
     const upcomingIds = upcomingEvents.map(e => e.id);
     let countMap = {};
@@ -346,19 +366,101 @@
       (rsvpRows || []).forEach(r => { countMap[r.event_id] = (countMap[r.event_id] || 0) + 1; });
     }
 
-    const pastIds = pastEvents.map(e => e.id);
-    let pastCountMap = {};
-    if (pastIds.length) {
-      const { data: pastRsvpRows } = await supabase
-        .from('event_rsvps').select('event_id').in('event_id', pastIds);
-      (pastRsvpRows || []).forEach(r => { pastCountMap[r.event_id] = (pastCountMap[r.event_id] || 0) + 1; });
-    }
-
     renderUpcoming(upcomingEvents, countMap);
-    renderPast(pastEvents, pastCountMap);
+
+    // Wire tab buttons
+    document.querySelectorAll('.events-tab').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const targetId = btn.dataset.tab;
+        document.querySelectorAll('.events-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.events-tab-panel').forEach(p => p.style.display = 'none');
+        btn.classList.add('active');
+        document.getElementById(targetId).style.display = 'block';
+
+        if (targetId === 'archive-tab' && (!archiveLoaded || archiveDirty)) {
+          await loadArchive();
+          archiveLoaded = true;
+          archiveDirty = false;
+        }
+      });
+    });
+
+    // Realtime: watch event status changes
+    supabase.channel('events-page-watch')
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'events',
+      }, handleEventStatusChange)
+      .subscribe();
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+  }
+
+  async function loadArchive() {
+    const archiveEl = document.getElementById('archive-list');
+    archiveEl.innerHTML = '<div class="empty-state">Loading…</div>';
+
+    const { data: archiveData } = await supabase
+      .from('events').select('*')
+      .eq('status', 'completed')
+      .order('starts_at', { ascending: false });
+
+    const events = archiveData || [];
+    if (!events.length) {
+      archiveEl.innerHTML = '<div class="empty-state">No recordings yet — check back after the first Live Lab session.</div>';
+      return;
+    }
+
+    const ids = events.map(e => e.id);
+    let countMap = {};
+    if (ids.length) {
+      const { data: rows } = await supabase.from('event_rsvps').select('event_id').in('event_id', ids);
+      (rows || []).forEach(r => { countMap[r.event_id] = (countMap[r.event_id] || 0) + 1; });
+    }
+
+    archiveEl.innerHTML = events.map(evt => buildPastCard(evt, countMap[evt.id] || 0)).join('');
+    events.forEach(evt => {
+      const btn = document.getElementById(`read-more-${evt.id}`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const desc = document.getElementById(`past-desc-${evt.id}`);
+          if (!desc) return;
+          desc.classList.toggle('expanded');
+          btn.textContent = desc.classList.contains('expanded') ? 'Show less' : 'Read more';
+        });
+      }
+    });
+  }
+
+  function handleEventStatusChange(payload) {
+    const evt = payload.new;
+    eventsById[evt.id] = evt;
+
+    if (evt.status === 'live') {
+      // Update existing upcoming card if present
+      const card = document.getElementById(`card-${evt.id}`);
+      if (card) {
+        const rsvpCountEl = document.getElementById(`rsvp-count-${evt.id}`);
+        const currentCount = rsvpCountEl ? (parseInt(rsvpCountEl.textContent) || 0) : 0;
+        card.outerHTML = buildUpcomingCard(evt, currentCount);
+      }
+    } else if (evt.status === 'completed') {
+      // Remove from upcoming tab
+      const card = document.getElementById(`card-${evt.id}`);
+      if (card) card.remove();
+      const upcomingList = document.getElementById('upcoming-list');
+      if (upcomingList && !upcomingList.querySelector('.evt-card')) {
+        upcomingList.innerHTML = '<div class="empty-state">No sessions scheduled yet. Check back soon.</div>';
+      }
+
+      // Handle archive tab
+      const archivePanel = document.getElementById('archive-tab');
+      if (archivePanel && archivePanel.style.display !== 'none') {
+        loadArchive();
+      } else {
+        archiveDirty = true;
+      }
+    }
   }
 
   function renderUpcoming(events, countMap) {
@@ -408,26 +510,6 @@
         </div>
       </div>
     </div>`;
-  }
-
-  function renderPast(events, countMap) {
-    const el = document.getElementById('past-list');
-    if (!events.length) {
-      el.innerHTML = '<div class="empty-state">No recordings yet.</div>';
-      return;
-    }
-    el.innerHTML = events.map(evt => buildPastCard(evt, countMap[evt.id] || 0)).join('');
-    events.forEach(evt => {
-      const btn = document.getElementById(`read-more-${evt.id}`);
-      if (btn) {
-        btn.addEventListener('click', () => {
-          const desc = document.getElementById(`past-desc-${evt.id}`);
-          if (!desc) return;
-          desc.classList.toggle('expanded');
-          btn.textContent = desc.classList.contains('expanded') ? 'Show less' : 'Read more';
-        });
-      }
-    });
   }
 
   function buildPastCard(evt, rsvpCount) {

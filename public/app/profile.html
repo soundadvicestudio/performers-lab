@@ -271,6 +271,35 @@
   }
   .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ── PROFILE/ACCOUNT TABS ── */
+  .profile-tabs {
+    display: flex; gap: 0;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .profile-tab {
+    background: none; border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 22px; margin-bottom: -0.5px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); cursor: pointer; font-family: 'Raleway', sans-serif;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .profile-tab.active { color: var(--text); border-bottom-color: var(--gold); }
+  .profile-tab:hover:not(.active) { color: var(--text); }
+
+  /* ── THEME SWATCHES ── */
+  .theme-swatches { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .theme-swatch-card {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 14px 20px; border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; transition: border-color 0.2s; min-width: 90px;
+  }
+  .theme-swatch-card:hover { border-color: var(--border-mid); }
+  .theme-swatch-card.selected { border-color: var(--border-gold); }
+  .theme-swatch-circle { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+  .theme-swatch-name { font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: capitalize; }
+
   @media (max-width: 640px) {
     .main { padding: 2rem 1.25rem; }
     .profile-layout { flex-direction: column; align-items: stretch; }
@@ -311,165 +340,196 @@
     <div class="page-eyebrow">Your Account</div>
     <div class="page-heading">Edit <em>profile</em></div>
 
-    <!-- Edit card -->
-    <div class="edit-card">
-      <div class="card-title">Profile information</div>
-      <div class="profile-layout">
+    <!-- Tab strip -->
+    <div class="profile-tabs">
+      <button class="profile-tab active" data-tab="profile-tab">Profile</button>
+      <button class="profile-tab" data-tab="account-tab">Account</button>
+    </div>
 
-        <!-- Photo -->
-        <div class="photo-col">
-          <div class="photo-avatar" id="photo-avatar" title="Click to change photo">
-            <img id="photo-img" alt="Profile photo">
-            <span id="photo-initial">—</span>
+    <!-- Profile tab panel -->
+    <div id="profile-tab" class="tab-panel">
+      <div class="edit-card">
+        <div class="card-title">Profile information</div>
+        <div class="profile-layout">
+
+          <!-- Photo -->
+          <div class="photo-col">
+            <div class="photo-avatar" id="photo-avatar" title="Click to change photo">
+              <img id="photo-img" alt="Profile photo">
+              <span id="photo-initial">—</span>
+            </div>
+            <button class="photo-change" id="photo-change-btn">Change photo</button>
+            <input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp">
+            <div class="photo-hint">Click avatar or button<br>to change photo</div>
           </div>
-          <button class="photo-change" id="photo-change-btn">Change photo</button>
-          <input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp">
-          <div class="photo-hint">Click avatar or button<br>to change photo</div>
+
+          <!-- Fields -->
+          <div class="fields-col">
+            <div class="field">
+              <label class="field-label" for="input-name">Display name<span class="req-star">*</span></label>
+              <input type="text" class="field-input" id="input-name" placeholder="Your name" maxlength="60">
+              <div class="field-error" id="error-name"></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="input-birth-year">Birth Year<span class="req-star">*</span></label>
+              <input type="number" class="field-input" id="input-birth-year" placeholder="e.g. 1995" min="1920">
+              <div class="field-helper">Used by your coach to tailor feedback to your voice.</div>
+              <div class="field-error" id="error-birth-year"></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="input-experience">Singing Experience<span class="req-star">*</span></label>
+              <textarea class="field-textarea" id="input-experience" rows="3" placeholder="How long have you been singing, and what's your musical background?" maxlength="600"></textarea>
+              <div class="field-error" id="error-experience"></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="input-bio">About You<span class="req-star">*</span></label>
+              <textarea class="field-textarea" id="input-bio" placeholder="Tell the community about yourself…" maxlength="400"></textarea>
+              <div class="field-error" id="error-bio"></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="input-location">Location<span class="req-star">*</span></label>
+              <input type="text" class="field-input" id="input-location" placeholder="City, State" maxlength="80">
+              <div class="field-error" id="error-location"></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="input-timezone">Time Zone<span class="req-star">*</span></label>
+              <select class="field-select" id="input-timezone">
+                <optgroup label="United States">
+                  <option value="America/New_York">Eastern Time (ET)</option>
+                  <option value="America/Chicago">Central Time (CT)</option>
+                  <option value="America/Denver">Mountain Time (MT)</option>
+                  <option value="America/Phoenix">Arizona (no DST)</option>
+                  <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                  <option value="America/Anchorage">Alaska Time (AKT)</option>
+                  <option value="Pacific/Honolulu">Hawaii Time (HT)</option>
+                </optgroup>
+                <optgroup label="Canada">
+                  <option value="America/St_Johns">Newfoundland Time (NT)</option>
+                  <option value="America/Halifax">Atlantic Time (AT)</option>
+                  <option value="America/Toronto">Eastern Time — Toronto</option>
+                  <option value="America/Winnipeg">Central Time — Winnipeg</option>
+                  <option value="America/Edmonton">Mountain Time — Edmonton</option>
+                  <option value="America/Vancouver">Pacific Time — Vancouver</option>
+                </optgroup>
+                <optgroup label="United Kingdom &amp; Ireland">
+                  <option value="Europe/London">London (GMT/BST)</option>
+                  <option value="Europe/Dublin">Dublin (GMT/IST)</option>
+                </optgroup>
+                <optgroup label="Europe">
+                  <option value="Europe/Paris">Central European Time (CET)</option>
+                  <option value="Europe/Helsinki">Eastern European Time (EET)</option>
+                </optgroup>
+                <optgroup label="Caribbean &amp; Latin America">
+                  <option value="America/Jamaica">Jamaica (EST, no DST)</option>
+                  <option value="America/Port_of_Spain">Trinidad &amp; Tobago</option>
+                  <option value="America/Barbados">Barbados</option>
+                  <option value="America/Nassau">Bahamas</option>
+                  <option value="America/Belize">Belize</option>
+                  <option value="America/Guyana">Guyana</option>
+                </optgroup>
+                <optgroup label="Africa">
+                  <option value="Africa/Johannesburg">South Africa (SAST)</option>
+                  <option value="Africa/Lagos">West Africa Time (WAT)</option>
+                  <option value="Africa/Nairobi">East Africa Time (EAT)</option>
+                </optgroup>
+                <optgroup label="Middle East">
+                  <option value="Asia/Dubai">Gulf Standard Time (GST)</option>
+                  <option value="Asia/Riyadh">Arabia Standard Time (AST)</option>
+                </optgroup>
+                <optgroup label="Asia &amp; Pacific">
+                  <option value="Asia/Kolkata">India (IST)</option>
+                  <option value="Asia/Singapore">Singapore (SGT)</option>
+                  <option value="Asia/Hong_Kong">Hong Kong (HKT)</option>
+                  <option value="Asia/Manila">Philippines (PHT)</option>
+                  <option value="Asia/Tokyo">Japan (JST)</option>
+                  <option value="Asia/Seoul">Korea (KST)</option>
+                </optgroup>
+                <optgroup label="Australia &amp; New Zealand">
+                  <option value="Australia/Perth">Western Australia (AWST)</option>
+                  <option value="Australia/Darwin">Northern Territory (ACST)</option>
+                  <option value="Australia/Adelaide">South Australia (ACST/ACDT)</option>
+                  <option value="Australia/Sydney">Eastern Australia (AEST/AEDT)</option>
+                  <option value="Australia/Brisbane">Queensland (AEST, no DST)</option>
+                  <option value="Pacific/Auckland">New Zealand (NZST/NZDT)</option>
+                  <option value="Pacific/Fiji">Fiji (FJT)</option>
+                </optgroup>
+              </select>
+              <div class="field-helper">Don't see yours? <a href="mailto:alittlesoundadvice@gmail.com" style="color:var(--gold);text-decoration:none;">Contact us</a></div>
+              <div class="field-error" id="error-timezone"></div>
+            </div>
+          </div>
         </div>
 
-        <!-- Fields -->
-        <div class="fields-col">
-          <div class="field">
-            <label class="field-label" for="input-name">Display name<span class="req-star">*</span></label>
-            <input type="text" class="field-input" id="input-name" placeholder="Your name" maxlength="60">
-            <div class="field-error" id="error-name"></div>
+        <div class="save-row">
+          <button class="btn-gold" id="save-btn">Save changes</button>
+          <span class="save-msg" id="save-msg"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account tab panel -->
+    <div id="account-tab" class="tab-panel" style="display:none;">
+
+      <!-- Email Notifications -->
+      <div class="edit-card">
+        <div class="notify-section" style="margin-top:0;padding-top:0;border-top:none;">
+          <div class="notify-section-title">Email Notifications</div>
+          <p class="notify-section-desc">In-platform notifications are always on. Control which reminder emails you receive.</p>
+
+          <div class="toggle-row">
+            <div class="toggle-wrap">
+              <input type="checkbox" class="toggle-input" id="email_notify_dm" checked>
+              <label class="toggle-track" for="email_notify_dm"></label>
+            </div>
+            <div class="toggle-text">
+              <label class="toggle-label-text" for="email_notify_dm">Direct Message Emails</label>
+              <span class="toggle-desc">Get an email when you receive a new message</span>
+            </div>
           </div>
 
-          <div class="field">
-            <label class="field-label" for="input-birth-year">Birth Year<span class="req-star">*</span></label>
-            <input type="number" class="field-input" id="input-birth-year" placeholder="e.g. 1995" min="1920">
-            <div class="field-helper">Used by your coach to tailor feedback to your voice.</div>
-            <div class="field-error" id="error-birth-year"></div>
+          <div class="toggle-row">
+            <div class="toggle-wrap">
+              <input type="checkbox" class="toggle-input" id="email_notify_feedback" checked>
+              <label class="toggle-track" for="email_notify_feedback"></label>
+            </div>
+            <div class="toggle-text">
+              <label class="toggle-label-text" for="email_notify_feedback">Feedback Emails</label>
+              <span class="toggle-desc">Get an email when Jonathan posts feedback on your submission</span>
+            </div>
           </div>
 
-          <div class="field">
-            <label class="field-label" for="input-experience">Singing Experience<span class="req-star">*</span></label>
-            <textarea class="field-textarea" id="input-experience" rows="3" placeholder="How long have you been singing, and what's your musical background?" maxlength="600"></textarea>
-            <div class="field-error" id="error-experience"></div>
+          <div class="toggle-row">
+            <div class="toggle-wrap">
+              <input type="checkbox" class="toggle-input" id="email_notify_events" checked>
+              <label class="toggle-track" for="email_notify_events"></label>
+            </div>
+            <div class="toggle-text">
+              <label class="toggle-label-text" for="email_notify_events">Event Reminder Emails</label>
+              <span class="toggle-desc">Get 24-hour and morning-of reminders for sessions you've RSVP'd to</span>
+            </div>
           </div>
 
-          <div class="field">
-            <label class="field-label" for="input-bio">About You<span class="req-star">*</span></label>
-            <textarea class="field-textarea" id="input-bio" placeholder="Tell the community about yourself…" maxlength="400"></textarea>
-            <div class="field-error" id="error-bio"></div>
-          </div>
-
-          <div class="field">
-            <label class="field-label" for="input-location">Location<span class="req-star">*</span></label>
-            <input type="text" class="field-input" id="input-location" placeholder="City, State" maxlength="80">
-            <div class="field-error" id="error-location"></div>
-          </div>
-
-          <div class="field">
-            <label class="field-label" for="input-timezone">Time Zone<span class="req-star">*</span></label>
-            <select class="field-select" id="input-timezone">
-              <optgroup label="United States">
-                <option value="America/New_York">Eastern Time (ET)</option>
-                <option value="America/Chicago">Central Time (CT)</option>
-                <option value="America/Denver">Mountain Time (MT)</option>
-                <option value="America/Phoenix">Arizona (no DST)</option>
-                <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                <option value="America/Anchorage">Alaska Time (AKT)</option>
-                <option value="Pacific/Honolulu">Hawaii Time (HT)</option>
-              </optgroup>
-              <optgroup label="Canada">
-                <option value="America/St_Johns">Newfoundland Time (NT)</option>
-                <option value="America/Halifax">Atlantic Time (AT)</option>
-                <option value="America/Toronto">Eastern Time — Toronto</option>
-                <option value="America/Winnipeg">Central Time — Winnipeg</option>
-                <option value="America/Edmonton">Mountain Time — Edmonton</option>
-                <option value="America/Vancouver">Pacific Time — Vancouver</option>
-              </optgroup>
-              <optgroup label="United Kingdom &amp; Ireland">
-                <option value="Europe/London">London (GMT/BST)</option>
-                <option value="Europe/Dublin">Dublin (GMT/IST)</option>
-              </optgroup>
-              <optgroup label="Europe">
-                <option value="Europe/Paris">Central European Time (CET)</option>
-                <option value="Europe/Helsinki">Eastern European Time (EET)</option>
-              </optgroup>
-              <optgroup label="Caribbean &amp; Latin America">
-                <option value="America/Jamaica">Jamaica (EST, no DST)</option>
-                <option value="America/Port_of_Spain">Trinidad &amp; Tobago</option>
-                <option value="America/Barbados">Barbados</option>
-                <option value="America/Nassau">Bahamas</option>
-                <option value="America/Belize">Belize</option>
-                <option value="America/Guyana">Guyana</option>
-              </optgroup>
-              <optgroup label="Africa">
-                <option value="Africa/Johannesburg">South Africa (SAST)</option>
-                <option value="Africa/Lagos">West Africa Time (WAT)</option>
-                <option value="Africa/Nairobi">East Africa Time (EAT)</option>
-              </optgroup>
-              <optgroup label="Middle East">
-                <option value="Asia/Dubai">Gulf Standard Time (GST)</option>
-                <option value="Asia/Riyadh">Arabia Standard Time (AST)</option>
-              </optgroup>
-              <optgroup label="Asia &amp; Pacific">
-                <option value="Asia/Kolkata">India (IST)</option>
-                <option value="Asia/Singapore">Singapore (SGT)</option>
-                <option value="Asia/Hong_Kong">Hong Kong (HKT)</option>
-                <option value="Asia/Manila">Philippines (PHT)</option>
-                <option value="Asia/Tokyo">Japan (JST)</option>
-                <option value="Asia/Seoul">Korea (KST)</option>
-              </optgroup>
-              <optgroup label="Australia &amp; New Zealand">
-                <option value="Australia/Perth">Western Australia (AWST)</option>
-                <option value="Australia/Darwin">Northern Territory (ACST)</option>
-                <option value="Australia/Adelaide">South Australia (ACST/ACDT)</option>
-                <option value="Australia/Sydney">Eastern Australia (AEST/AEDT)</option>
-                <option value="Australia/Brisbane">Queensland (AEST, no DST)</option>
-                <option value="Pacific/Auckland">New Zealand (NZST/NZDT)</option>
-                <option value="Pacific/Fiji">Fiji (FJT)</option>
-              </optgroup>
-            </select>
-            <div class="field-helper">Don't see yours? <a href="mailto:alittlesoundadvice@gmail.com" style="color:var(--gold);text-decoration:none;">Contact us</a></div>
-            <div class="field-error" id="error-timezone"></div>
+          <div class="save-row">
+            <button class="btn-gold" id="save-account-btn">Save Account Settings</button>
+            <span class="save-msg" id="save-account-msg"></span>
           </div>
         </div>
       </div>
 
-      <div class="notify-section">
-        <div class="notify-section-title">Email Notifications</div>
-        <p class="notify-section-desc">In-platform notifications are always on. Control which reminder emails you receive.</p>
-
-        <div class="toggle-row">
-          <div class="toggle-wrap">
-            <input type="checkbox" class="toggle-input" id="email_notify_dm" checked>
-            <label class="toggle-track" for="email_notify_dm"></label>
-          </div>
-          <div class="toggle-text">
-            <label class="toggle-label-text" for="email_notify_dm">Direct Message Emails</label>
-            <span class="toggle-desc">Get an email when you receive a new message</span>
-          </div>
+      <!-- Display Theme -->
+      <div class="edit-card">
+        <div class="card-title">Display Theme</div>
+        <p style="font-size:12px;color:var(--text-muted);font-weight:300;margin-bottom:1.5rem;line-height:1.5;">Choose how The Performer's Lab looks for you.</p>
+        <div id="theme-swatches" class="theme-swatches"></div>
+        <div class="save-row">
+          <button class="btn-gold" id="save-theme-btn">Save Theme</button>
+          <a href="#" id="reset-theme-link" style="font-size:12px;color:var(--text-dim);text-decoration:none;margin-left:4px;">Reset</a>
         </div>
-
-        <div class="toggle-row">
-          <div class="toggle-wrap">
-            <input type="checkbox" class="toggle-input" id="email_notify_feedback" checked>
-            <label class="toggle-track" for="email_notify_feedback"></label>
-          </div>
-          <div class="toggle-text">
-            <label class="toggle-label-text" for="email_notify_feedback">Feedback Emails</label>
-            <span class="toggle-desc">Get an email when Jonathan posts feedback on your submission</span>
-          </div>
-        </div>
-
-        <div class="toggle-row">
-          <div class="toggle-wrap">
-            <input type="checkbox" class="toggle-input" id="email_notify_events" checked>
-            <label class="toggle-track" for="email_notify_events"></label>
-          </div>
-          <div class="toggle-text">
-            <label class="toggle-label-text" for="email_notify_events">Event Reminder Emails</label>
-            <span class="toggle-desc">Get 24-hour and morning-of reminders for sessions you've RSVP'd to</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="save-row">
-        <button class="btn-gold" id="save-btn">Save changes</button>
-        <span class="save-msg" id="save-msg"></span>
       </div>
     </div>
 
@@ -531,7 +591,7 @@
   import { initNav } from './components/nav.js';
   import { initSubnav } from './components/subnav.js';
   import { initFooter } from './components/footer.js';
-  import { applyTheme } from './components/theme.js';
+  import { applyTheme, getThemeNames } from './components/theme.js';
 
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
@@ -550,6 +610,10 @@
 
   let currentUserId = null;
   let currentPhotoUrl = null;
+  let selectedTheme = 'gold';
+  let savedTheme = 'gold';
+
+  const SWATCH_COLORS = { gold: '#c9a96e' };
 
   // ── Crop state ────────────────────────────────────────────────────────
   let cropImg = null;
@@ -593,9 +657,11 @@
 
     const profile = profileRes.data;
     const name = profile?.display_name || session.user.email.split('@')[0];
-    applyTheme(profile?.theme || 'gold');
+    savedTheme = profile?.theme || 'gold';
+    selectedTheme = savedTheme;
+    applyTheme(savedTheme);
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
-    initSubnav(null);
+    initSubnav(null, supabase);
 
     // Show onboarding banner
     if (isOnboarding) {
@@ -633,8 +699,9 @@
       fileInput.value = '';
     });
 
-    // Wire save button
+    // Wire save buttons
     document.getElementById('save-btn').addEventListener('click', saveProfile);
+    document.getElementById('save-account-btn').addEventListener('click', saveAccountSettings);
 
     // Membership
     const membership = membershipRes.data;
@@ -651,6 +718,8 @@
 
     document.getElementById('stat-submissions').textContent = countRes.count ?? 0;
 
+    initTabs();
+    initThemePicker();
     initCropModal();
     initFooter();
     document.getElementById('loading').style.display = 'none';
@@ -838,6 +907,64 @@
     }, 'image/jpeg', 0.85);
   }
 
+  // ── Tab switching ─────────────────────────────────────────────────────
+  function initTabs() {
+    document.querySelectorAll('.profile-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.tab;
+        document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+        btn.classList.add('active');
+        document.getElementById(targetId).style.display = 'block';
+      });
+    });
+  }
+
+  // ── Theme picker ──────────────────────────────────────────────────────
+  function renderThemeSwatches() {
+    const container = document.getElementById('theme-swatches');
+    if (!container) return;
+    const names = getThemeNames();
+    container.innerHTML = names.map(name => `
+      <div class="theme-swatch-card${name === selectedTheme ? ' selected' : ''}" data-theme="${name}">
+        <div class="theme-swatch-circle" style="background:${SWATCH_COLORS[name] || '#888'};"></div>
+        <span class="theme-swatch-name">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
+      </div>
+    `).join('');
+    container.querySelectorAll('.theme-swatch-card').forEach(card => {
+      card.addEventListener('click', () => {
+        selectedTheme = card.dataset.theme;
+        applyTheme(selectedTheme);
+        container.querySelectorAll('.theme-swatch-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      });
+    });
+  }
+
+  function initThemePicker() {
+    renderThemeSwatches();
+
+    document.getElementById('save-theme-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('save-theme-btn');
+      btn.disabled = true;
+      const { error } = await supabase.from('profiles')
+        .update({ theme: selectedTheme })
+        .eq('user_id', currentUserId);
+      btn.disabled = false;
+      if (!error) {
+        savedTheme = selectedTheme;
+        showToast('Theme saved.');
+      }
+    });
+
+    document.getElementById('reset-theme-link').addEventListener('click', e => {
+      e.preventDefault();
+      selectedTheme = savedTheme;
+      applyTheme(selectedTheme);
+      renderThemeSwatches();
+    });
+  }
+
   // ── Field validation helpers ──────────────────────────────────────────
   function setError(fieldId, msg) {
     const el = document.getElementById(`error-${fieldId}`);
@@ -848,6 +975,31 @@
 
   function clearErrors() {
     ['name', 'birth-year', 'experience', 'bio', 'location', 'timezone'].forEach(id => setError(id, ''));
+  }
+
+  // ── Account settings save (email prefs) ──────────────────────────────
+  async function saveAccountSettings() {
+    const btn = document.getElementById('save-account-btn');
+    const msgEl = document.getElementById('save-account-msg');
+    btn.disabled = true;
+    msgEl.textContent = 'Saving…';
+    msgEl.className = 'save-msg saving';
+
+    const { error } = await supabase.from('profiles').update({
+      email_notify_dm: document.getElementById('email_notify_dm').checked,
+      email_notify_feedback: document.getElementById('email_notify_feedback').checked,
+      email_notify_events: document.getElementById('email_notify_events').checked,
+    }).eq('user_id', currentUserId);
+
+    btn.disabled = false;
+    if (error) {
+      msgEl.textContent = 'Could not save: ' + error.message;
+      msgEl.className = 'save-msg error';
+    } else {
+      msgEl.textContent = '';
+      msgEl.className = 'save-msg';
+      showToast('Account settings saved.');
+    }
   }
 
   // ── Profile save ──────────────────────────────────────────────────────

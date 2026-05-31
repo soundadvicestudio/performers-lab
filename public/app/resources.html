@@ -311,7 +311,7 @@
     const name = profile?.display_name || session.user.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
-    initSubnav('resources');
+    initSubnav('resources', supabase);
     initFooter();
 
     const resourceQuery = profile?.is_admin
