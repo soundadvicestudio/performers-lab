@@ -87,6 +87,10 @@ export function initNav(supabase, { userName, isAdmin }) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span id="nav-notif-count" class="nav-notif-count" style="display:none;"></span>
         </a>
+        <a href="/app/messages.html" class="nav-bell" id="nav-msg-link" aria-label="Messages" style="display:none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span id="nav-msg-count" class="nav-notif-count"></span>
+        </a>
         <a href="/admin" class="nav-admin-btn"${isAdmin ? '' : ' style="display:none;"'}>Admin Panel</a>
         <button class="nav-signout" id="nav-signout-btn">Sign out</button>
       </div>
@@ -99,6 +103,7 @@ export function initNav(supabase, { userName, isAdmin }) {
   });
 
   wireNotifications(supabase);
+  wireMessages(supabase);
 }
 
 function updateBell(count) {
@@ -139,4 +144,59 @@ async function wireNotifications(supabase) {
     .subscribe();
 
   window.addEventListener('notifications-cleared', () => updateBell(0));
+}
+
+function updateMsgBadge(count) {
+  const link = document.getElementById('nav-msg-link');
+  const badge = document.getElementById('nav-msg-count');
+  if (!link || !badge) return;
+  if (count <= 0) {
+    link.style.display = 'none';
+    badge.textContent = '';
+  } else {
+    badge.textContent = count > 99 ? '99+' : String(count);
+    link.style.display = 'flex';
+  }
+}
+
+async function wireMessages(supabase) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // Load all conversation IDs for this user
+  const { data: convs } = await supabase
+    .from('conversations')
+    .select('id')
+    .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`);
+
+  const convIds = (convs || []).map(c => c.id);
+
+  if (convIds.length > 0) {
+    const { count } = await supabase
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .in('conversation_id', convIds)
+      .neq('sender_id', user.id)
+      .eq('read', false);
+
+    updateMsgBadge(count || 0);
+  }
+
+  const myConvIds = new Set(convIds);
+
+  // Realtime: new message from another user in any of my conversations
+  supabase.channel('nav-messages')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+      payload => {
+        const msg = payload.new;
+        if (msg.sender_id === user.id) return;
+        if (!myConvIds.has(msg.conversation_id)) return;
+        const badge = document.getElementById('nav-msg-count');
+        const current = badge ? (parseInt(badge.textContent, 10) || 0) : 0;
+        updateMsgBadge(current + 1);
+      })
+    .subscribe();
+
+  window.addEventListener('messages-cleared', () => updateMsgBadge(0));
+  window.addEventListener('messages-count-update', e => updateMsgBadge(e.detail?.count || 0));
 }

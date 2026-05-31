@@ -420,7 +420,7 @@
 
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: profile?.display_name || currentUser.email.split('@')[0], isAdmin: profile?.is_admin });
-    initSubnav(null);
+    initSubnav('Messages');
 
     await loadConversations();
     initSearch();
@@ -629,6 +629,28 @@
 
     const dot = document.getElementById(`dot-${convId}`);
     if (dot) dot.style.display = 'none';
+
+    dispatchMsgUnread();
+  }
+
+  async function dispatchMsgUnread() {
+    const convIds = [...myConvIds];
+    if (!convIds.length) {
+      window.dispatchEvent(new CustomEvent('messages-cleared'));
+      return;
+    }
+    const { count } = await supabase
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .in('conversation_id', convIds)
+      .neq('sender_id', currentUser.id)
+      .eq('read', false);
+
+    if ((count || 0) === 0) {
+      window.dispatchEvent(new CustomEvent('messages-cleared'));
+    } else {
+      window.dispatchEvent(new CustomEvent('messages-count-update', { detail: { count } }));
+    }
   }
 
   // ── Send message ──────────────────────────────────────────────────────

@@ -12,6 +12,11 @@ const TABS = [
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   },
   {
+    label: 'Messages',
+    href: '/app/messages.html',
+    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  },
+  {
     label: 'Live Lab',
     href: '/app/events.html',
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
@@ -65,12 +70,14 @@ function injectStyles() {
       .subnav-inner { padding: 0; max-width: 100%; }
       .subnav-tab {
         flex: 1; flex-direction: column; justify-content: center; align-items: center;
-        height: 60px; gap: 4px; padding: 0;
-        font-size: 9px; letter-spacing: 0.07em;
+        height: 60px; gap: 3px; padding: 0;
+        font-size: 8px; letter-spacing: 0.03em;
         border-bottom: none; border-top: 2px solid transparent;
       }
       .subnav-tab.active { color: var(--gold); border-top-color: var(--gold); border-bottom-color: transparent; }
       .subnav-icon { display: flex; align-items: center; justify-content: center; }
+      .subnav-icon svg { width: 18px; height: 18px; }
+      .subnav-label { white-space: nowrap; }
       body { padding-bottom: 60px; }
     }
   `;
