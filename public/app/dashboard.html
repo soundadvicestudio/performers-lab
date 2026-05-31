@@ -208,25 +208,26 @@
 
     const user = session.user;
 
-    // Load profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name, is_admin, theme')
-      .eq('user_id', user.id)
-      .single();
+    // Load profile and membership in parallel.
+    // MEMBERSHIP GATE PATTERN — copy to all content pages (community, submit, resources, events):
+    //   if (!profile?.is_admin && membership?.status !== 'active') redirect to /app/gate.html
+    //   Account management pages (profile.html, membership.html) intentionally skip this check.
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from('profiles').select('display_name, is_admin, theme').eq('user_id', user.id).single(),
+      supabase.from('memberships').select('plan, status').eq('user_id', user.id).single(),
+    ]);
+
+    // Membership gate — admins bypass regardless of membership status
+    if (!profile?.is_admin && membership?.status !== 'active') {
+      window.location.href = '/app/gate.html';
+      return;
+    }
 
     const name = profile?.display_name || user.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
     initSubnav('Dashboard');
     document.getElementById('dash-name').textContent = name;
-
-    // Load membership
-    const { data: membership } = await supabase
-      .from('memberships')
-      .select('plan, status')
-      .eq('user_id', user.id)
-      .single();
 
     if (membership) {
       const planLabel = membership.plan === 'founding' ? 'Founding Member — $40/mo' : 'Standard Member — $60/mo';
