@@ -443,12 +443,16 @@
       const img = new Image();
       img.onload = () => {
         cropImg = img;
-        // Initial zoom to fill the 240px viewport
-        const minFill = Math.max(240 / img.naturalWidth, 240 / img.naturalHeight);
-        cropZoom = Math.min(Math.max(minFill, 1), 4);
+        const fillZoom = Math.max(240 / img.naturalWidth, 240 / img.naturalHeight);
+        cropZoom = fillZoom;
         cropPanX = 0;
         cropPanY = 0;
-        document.getElementById('crop-zoom-slider').value = Math.round(cropZoom * 100);
+        const slider = document.getElementById('crop-zoom-slider');
+        slider.min   = (fillZoom * 0.5).toFixed(3);
+        slider.max   = (fillZoom * 4).toFixed(3);
+        slider.step  = (fillZoom * 0.01).toFixed(3);
+        slider.value = fillZoom;
+        clampPan();
         document.getElementById('crop-modal').style.display = 'block';
         renderCropPreview();
       };
@@ -490,7 +494,7 @@
 
     // Zoom slider
     slider.addEventListener('input', e => {
-      cropZoom = parseInt(e.target.value, 10) / 100;
+      cropZoom = parseFloat(e.target.value);
       clampPan();
       renderCropPreview();
     });

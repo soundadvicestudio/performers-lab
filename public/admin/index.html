@@ -331,6 +331,159 @@
   .action-btn.primary:hover { background: var(--gold-light); }
   .export-actions { display: flex; gap: 10px; margin-top: 12px; }
 
+  /* ── ANNOUNCEMENTS COMPOSER ── */
+  .audience-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .audience-card {
+    background: var(--bg-3); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.15s;
+  }
+  .audience-card:hover { border-color: var(--border-mid); }
+  .audience-card.selected { background: var(--gold-dim); border-color: var(--border-gold); }
+  .aud-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .aud-desc { font-size: 11px; color: var(--text-dim); font-weight: 300; }
+  .audience-card.selected .aud-label { color: var(--gold); }
+
+  .member-picker-wrap { position: relative; }
+  .member-results {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 4px; max-height: 200px; overflow-y: auto;
+    display: none;
+  }
+  .member-results.open { display: block; }
+  .member-result-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; cursor: pointer; transition: background 0.1s;
+  }
+  .member-result-item:hover { background: var(--gold-dim); }
+  .mr-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--bg-4); border: 0.5px solid var(--border-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: var(--gold); overflow: hidden;
+  }
+  .mr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .mr-name { font-size: 13px; color: var(--text); }
+
+  .member-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .member-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--gold-dim); border: 0.5px solid var(--border-gold);
+    border-radius: 4px; padding: 4px 10px;
+    font-size: 12px; color: var(--text-muted); font-weight: 400;
+  }
+  .chip-remove {
+    background: none; border: none; cursor: pointer; color: var(--text-dim);
+    font-size: 14px; line-height: 1; padding: 0; transition: color 0.15s;
+    font-family: 'Raleway', sans-serif;
+  }
+  .chip-remove:hover { color: var(--gold); }
+
+  .delivery-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .delivery-toggle {
+    background: none; border: 0.5px solid var(--border-mid);
+    color: var(--text-dim); padding: 8px 18px; border-radius: 4px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.15s;
+  }
+  .delivery-toggle:hover { border-color: var(--border-gold); color: var(--text-muted); }
+  .delivery-toggle.active { background: var(--gold-dim); border-color: var(--border-gold); color: var(--gold); }
+
+  .ann-preview-toggle {
+    background: none; border: 0.5px solid var(--border-mid);
+    color: var(--text-dim); padding: 6px 14px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.15s;
+  }
+  .ann-preview-toggle:hover { border-color: var(--border-gold); color: var(--text-muted); }
+  .ann-preview-area {
+    background: var(--bg-3); border: 0.5px solid var(--border);
+    border-radius: 4px; padding: 1.25rem; margin-top: 12px;
+  }
+  .preview-ann-subject { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+  .preview-ann-body { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
+  .preview-ann-body a { color: var(--gold); }
+  .preview-ann-body p { margin-bottom: 0.5em; }
+  .preview-ann-body ul, .preview-ann-body ol { padding-left: 1.4em; margin-bottom: 0.5em; }
+
+  .ann-send-btn {
+    width: 100%; background: var(--gold); color: var(--bg);
+    border: none; padding: 12px; border-radius: 3px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .ann-send-btn:hover:not(:disabled) { background: var(--gold-light); }
+  .ann-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .ann-error { font-size: 12px; color: #e05c5c; margin-top: 8px; min-height: 16px; }
+
+  /* ── SENT HISTORY ── */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .history-table th {
+    text-align: left; padding: 8px 10px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text-dim); border-bottom: 0.5px solid var(--border);
+  }
+  .history-table td { padding: 10px; border-bottom: 0.5px solid var(--border); color: var(--text-muted); vertical-align: top; }
+  .history-table tr:last-child td { border-bottom: none; }
+  .history-subject { color: var(--text); font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── ANN CONFIRM MODAL ── */
+  .ann-confirm-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 700;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .ann-confirm-overlay.open { display: flex; }
+  .ann-confirm-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 8px; padding: 2rem; max-width: 420px; width: 100%;
+    position: relative; overflow: hidden;
+  }
+  .ann-confirm-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .ann-confirm-title { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); margin-bottom: 0.75rem; }
+  .ann-confirm-text { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.5rem; font-weight: 300; }
+  .ann-confirm-actions { display: flex; gap: 10px; }
+  .ann-confirm-cancel {
+    flex: 1; background: none; border: 0.5px solid var(--border-mid);
+    color: var(--text-muted); padding: 10px; border-radius: 2px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .ann-confirm-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+  .ann-confirm-ok {
+    flex: 2; background: var(--gold); color: var(--bg); border: none;
+    padding: 10px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s;
+  }
+  .ann-confirm-ok:hover:not(:disabled) { background: var(--gold-light); }
+  .ann-confirm-ok:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── QUILL dark overrides for announcements ── */
+  #announce-quill-editor .ql-toolbar {
+    background: var(--bg-3) !important; border: 0.5px solid var(--border) !important;
+    border-bottom: none !important; border-radius: 3px 3px 0 0;
+  }
+  #announce-quill-editor .ql-container {
+    background: var(--bg-3) !important; border: 0.5px solid var(--border) !important;
+    border-top: none !important; border-radius: 0 0 3px 3px;
+    font-family: 'Raleway', sans-serif !important; font-size: 14px !important;
+    color: var(--text) !important; min-height: 200px;
+  }
+  #announce-quill-editor .ql-editor.ql-blank::before { color: var(--text-dim) !important; font-style: normal !important; }
+  #announce-quill-editor .ql-snow .ql-stroke { stroke: var(--text-dim) !important; }
+  #announce-quill-editor .ql-snow .ql-fill { fill: var(--text-dim) !important; }
+  #announce-quill-editor .ql-snow .ql-picker { color: var(--text-dim) !important; }
+  #announce-quill-editor .ql-snow button:hover .ql-stroke,
+  #announce-quill-editor .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
+  #announce-quill-editor .ql-snow button:hover .ql-fill,
+  #announce-quill-editor .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
+
   /* ── EMAIL TEMPLATE CARD ── */
   .email-tpl-card {
     background: var(--bg-2); border: 0.5px solid var(--border);
@@ -503,6 +656,10 @@
       <div class="nav-item" data-panel="email-templates" onclick="switchPanel(this,'email-templates')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
         Email Templates
+      </div>
+      <div class="nav-item" data-panel="announcements" onclick="switchPanel(this,'announcements'); window.initAnnounceQuill?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+        Announcements
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -850,6 +1007,92 @@
         </div>
       </div>
 
+      <!-- ANNOUNCEMENTS -->
+      <div class="panel" id="panel-announcements">
+        <div class="panel-title">Announcements</div>
+        <div class="panel-desc">Send a message to members via the platform, email, or both.</div>
+
+        <!-- Composer -->
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Compose & Send</span><span class="card-chevron open">⌄</span></div>
+          <div class="edit-card-body open">
+
+            <div class="field">
+              <label class="field-label">Subject</label>
+              <input type="text" id="ann-subject" placeholder="Announcement subject…">
+            </div>
+
+            <div class="field">
+              <label class="field-label">Body</label>
+              <div id="announce-quill-editor"></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Audience</label>
+              <div class="audience-cards" id="audience-cards">
+                <div class="audience-card selected" data-val="all" onclick="selectAudience(this)">
+                  <div class="aud-label">All Members</div>
+                  <div class="aud-desc">All active &amp; cancelling</div>
+                </div>
+                <div class="audience-card" data-val="founding" onclick="selectAudience(this)">
+                  <div class="aud-label">Founding Members</div>
+                  <div class="aud-desc">Founding plan only</div>
+                </div>
+                <div class="audience-card" data-val="standard" onclick="selectAudience(this)">
+                  <div class="aud-label">Standard Members</div>
+                  <div class="aud-desc">Standard plan only</div>
+                </div>
+                <div class="audience-card" data-val="individual" onclick="selectAudience(this)">
+                  <div class="aud-label">Specific Members</div>
+                  <div class="aud-desc">Choose recipients manually</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Member picker (shown only for individual audience) -->
+            <div class="field" id="member-picker-field" style="display:none;">
+              <label class="field-label">Select Members</label>
+              <div class="member-picker-wrap">
+                <input type="text" id="ann-member-search" placeholder="Search by display name…" autocomplete="off" oninput="debounceMemberSearch(this.value)">
+                <div class="member-results" id="ann-member-results"></div>
+              </div>
+              <div class="member-chips" id="ann-member-chips"></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Delivery Method</label>
+              <div class="delivery-toggles">
+                <button class="delivery-toggle active" data-val="platform" onclick="selectDelivery(this)">Platform</button>
+                <button class="delivery-toggle" data-val="email" onclick="selectDelivery(this)">Email</button>
+                <button class="delivery-toggle" data-val="both" onclick="selectDelivery(this)">Both</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <button class="ann-preview-toggle" onclick="toggleAnnPreview()">▸ Preview</button>
+              <div id="ann-preview-area" style="display:none;" class="ann-preview-area">
+                <div class="preview-ann-subject" id="preview-ann-subject"></div>
+                <div class="preview-ann-body" id="preview-ann-body"></div>
+              </div>
+            </div>
+
+            <div style="margin-top:1.25rem;">
+              <button class="ann-send-btn" id="ann-send-btn" onclick="confirmAnnouncement()">Send Announcement</button>
+              <div class="ann-error" id="ann-error"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Sent History -->
+        <div class="edit-card">
+          <div class="edit-card-header" onclick="toggleCard(this)"><span class="card-label">Previously Sent</span><span class="card-chevron open">⌄</span></div>
+          <div class="edit-card-body open">
+            <div id="ann-history"><div style="color:var(--text-dim);font-size:12px;font-style:italic;">Loading…</div></div>
+          </div>
+        </div>
+      </div>
+
       <!-- EMAIL TEMPLATES -->
       <div class="panel" id="panel-email-templates">
         <div class="panel-title">Email Templates</div>
@@ -866,6 +1109,18 @@
 
     </div>
   </main>
+</div>
+
+<!-- ANNOUNCEMENT CONFIRM MODAL -->
+<div class="ann-confirm-overlay" id="ann-confirm-modal">
+  <div class="ann-confirm-card">
+    <div class="ann-confirm-title">Confirm Send</div>
+    <div class="ann-confirm-text" id="ann-confirm-text"></div>
+    <div class="ann-confirm-actions">
+      <button class="ann-confirm-cancel" onclick="document.getElementById('ann-confirm-modal').classList.remove('open')">Cancel</button>
+      <button class="ann-confirm-ok" id="ann-confirm-ok" onclick="executeSendAnnouncement()">Confirm &amp; Send</button>
+    </div>
+  </div>
 </div>
 
 <!-- EMAIL EDIT MODAL -->
@@ -1130,6 +1385,202 @@
     await sbClient.auth.signOut();
     window.location.href = '/app/login.html';
   };
+
+  // ── Announcements composer ────────────────────────────────────────────
+  let announceQuill = null;
+  let selectedRecipients = []; // { userId, displayName, photoUrl }
+  let memberSearchDebounce = null;
+
+  window.initAnnounceQuill = function() {
+    if (announceQuill) return;
+    announceQuill = new Quill('#announce-quill-editor', {
+      theme: 'snow',
+      placeholder: 'Write your announcement…',
+      modules: { toolbar: [['bold','italic','underline'],['link'],[{list:'ordered'},{list:'bullet'}]] },
+    });
+    loadAnnHistory();
+  };
+
+  window.selectAudience = function(el) {
+    document.querySelectorAll('.audience-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    const val = el.dataset.val;
+    document.getElementById('member-picker-field').style.display = val === 'individual' ? 'block' : 'none';
+  };
+
+  window.selectDelivery = function(el) {
+    document.querySelectorAll('.delivery-toggle').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  };
+
+  window.toggleAnnPreview = function() {
+    const area = document.getElementById('ann-preview-area');
+    const toggle = document.querySelector('.ann-preview-toggle');
+    const visible = area.style.display !== 'none';
+    if (!visible) {
+      const subject = document.getElementById('ann-subject').value;
+      const body = announceQuill ? announceQuill.root.innerHTML : '';
+      document.getElementById('preview-ann-subject').textContent = subject || '(No subject)';
+      document.getElementById('preview-ann-body').innerHTML = body;
+    }
+    area.style.display = visible ? 'none' : 'block';
+    toggle.textContent = visible ? '▸ Preview' : '▾ Preview';
+  };
+
+  // Member search
+  window.debounceMemberSearch = function(val) {
+    clearTimeout(memberSearchDebounce);
+    if (!val.trim()) { document.getElementById('ann-member-results').classList.remove('open'); return; }
+    memberSearchDebounce = setTimeout(() => runMemberSearch(val.trim()), 300);
+  };
+
+  async function runMemberSearch(term) {
+    const { data } = await sbClient.from('profiles')
+      .select('user_id, display_name, photo_url').ilike('display_name', `%${term}%`).limit(10);
+    const results = document.getElementById('ann-member-results');
+    if (!data?.length) { results.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text-dim);">No results</div>'; }
+    else {
+      results.innerHTML = (data).map(p => `
+        <div class="member-result-item" onclick="addRecipient('${p.user_id}','${escStr(p.display_name)}','${escStr(p.photo_url||'')}')">
+          ${p.photo_url
+            ? `<div class="mr-avatar"><img src="${escStr(p.photo_url)}" style="width:100%;height:100%;object-fit:cover;"></div>`
+            : `<div class="mr-avatar">${(p.display_name||'?')[0].toUpperCase()}</div>`}
+          <div class="mr-name">${escStr(p.display_name||'Member')}</div>
+        </div>`).join('');
+    }
+    results.classList.add('open');
+  }
+
+  function escStr(s) { return String(s||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  window.addRecipient = function(userId, displayName, photoUrl) {
+    if (selectedRecipients.find(r => r.userId === userId)) return;
+    selectedRecipients.push({ userId, displayName, photoUrl });
+    renderChips();
+    document.getElementById('ann-member-search').value = '';
+    document.getElementById('ann-member-results').classList.remove('open');
+  };
+
+  window.removeRecipient = function(userId) {
+    selectedRecipients = selectedRecipients.filter(r => r.userId !== userId);
+    renderChips();
+  };
+
+  function renderChips() {
+    document.getElementById('ann-member-chips').innerHTML = selectedRecipients.map(r => `
+      <div class="member-chip">
+        ${escStr(r.displayName)}
+        <button class="chip-remove" onclick="removeRecipient('${r.userId}')">×</button>
+      </div>`).join('');
+  }
+
+  // Hide member results on outside click
+  document.addEventListener('click', e => {
+    const results = document.getElementById('ann-member-results');
+    if (results && !results.closest('.member-picker-wrap')?.contains(e.target)) {
+      results.classList.remove('open');
+    }
+  });
+
+  window.confirmAnnouncement = function() {
+    const errEl = document.getElementById('ann-error');
+    errEl.textContent = '';
+
+    const subject = document.getElementById('ann-subject').value.trim();
+    const body = announceQuill ? announceQuill.root.innerHTML : '';
+    const plainBody = body.replace(/<[^>]+>/g,'').trim();
+    const audience = document.querySelector('.audience-card.selected')?.dataset.val || 'all';
+    const delivery = document.querySelector('.delivery-toggle.active')?.dataset.val || 'platform';
+
+    if (!subject) { errEl.textContent = 'Subject is required.'; return; }
+    if (!plainBody) { errEl.textContent = 'Body cannot be empty.'; return; }
+    if (audience === 'individual' && !selectedRecipients.length) {
+      errEl.textContent = 'Select at least one recipient.'; return;
+    }
+
+    const audienceLabel = { all:'all active members', founding:'Founding members', standard:'Standard members', individual:`${selectedRecipients.length} selected member(s)` };
+    const deliveryLabel = { platform:'the platform', email:'email', both:'platform + email' };
+
+    document.getElementById('ann-confirm-text').textContent =
+      `Send "${subject}" to ${audienceLabel[audience]} via ${deliveryLabel[delivery]}?`;
+    document.getElementById('ann-confirm-modal').classList.add('open');
+  };
+
+  window.executeSendAnnouncement = async function() {
+    const okBtn = document.getElementById('ann-confirm-ok');
+    const sendBtn = document.getElementById('ann-send-btn');
+    okBtn.disabled = true;
+    okBtn.textContent = 'Sending…';
+
+    const subject = document.getElementById('ann-subject').value.trim();
+    const body = announceQuill ? announceQuill.root.innerHTML : '';
+    const audience = document.querySelector('.audience-card.selected')?.dataset.val || 'all';
+    const delivery = document.querySelector('.delivery-toggle.active')?.dataset.val || 'platform';
+
+    const { data: { user } } = await sbClient.auth.getUser();
+
+    try {
+      const res = await fetch('/api/admin/sendAnnouncement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUserId: user.id,
+          subject,
+          body,
+          audience,
+          recipientIds: audience === 'individual' ? selectedRecipients.map(r => r.userId) : [],
+          deliveryMethod: delivery,
+        }),
+      });
+      const data = await res.json();
+
+      document.getElementById('ann-confirm-modal').classList.remove('open');
+      okBtn.disabled = false;
+      okBtn.textContent = 'Confirm & Send';
+
+      if (!res.ok || !data.success) {
+        document.getElementById('ann-error').textContent = data.error || 'Send failed.';
+        return;
+      }
+
+      showToast(`Announcement sent to ${data.recipientCount} member${data.recipientCount === 1 ? '' : 's'}.`);
+      // Reset composer
+      document.getElementById('ann-subject').value = '';
+      announceQuill.setText('');
+      selectAudience(document.querySelector('.audience-card[data-val="all"]'));
+      selectDelivery(document.querySelector('.delivery-toggle[data-val="platform"]'));
+      selectedRecipients = [];
+      renderChips();
+      loadAnnHistory();
+    } catch (err) {
+      document.getElementById('ann-confirm-modal').classList.remove('open');
+      okBtn.disabled = false;
+      okBtn.textContent = 'Confirm & Send';
+      document.getElementById('ann-error').textContent = 'Network error. Please try again.';
+    }
+  };
+
+  async function loadAnnHistory() {
+    const { data } = await sbClient.from('announcements')
+      .select('id, subject, audience, recipient_count, sent_at').order('sent_at', { ascending: false }).limit(20);
+    const container = document.getElementById('ann-history');
+    if (!data?.length) {
+      container.innerHTML = '<div style="color:var(--text-dim);font-size:12px;font-style:italic;">No announcements sent yet.</div>';
+      return;
+    }
+    const audLabel = { all:'All', founding:'Founding', standard:'Standard', individual:'Individual' };
+    container.innerHTML = `<table class="history-table">
+      <thead><tr><th>Subject</th><th>Audience</th><th>Recipients</th><th>Sent At</th></tr></thead>
+      <tbody>${data.map(a => `
+        <tr>
+          <td class="history-subject" title="${escStr(a.subject)}">${escStr(a.subject.substring(0,60))}${a.subject.length>60?'…':''}</td>
+          <td>${audLabel[a.audience]||a.audience}</td>
+          <td>${a.recipient_count}</td>
+          <td>${new Date(a.sent_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }
 
   // ── Email template editor ─────────────────────────────────────────────
   let emailQuill = null;
