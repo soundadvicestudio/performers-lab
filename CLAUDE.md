@@ -275,13 +275,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 - **CHECK constraints must match form values exactly** — `submissions_goal_check` enforces `Audition Prep / Performance Polish / Technique Building / Just for Fun`. Style constraint was dropped in Phase 3.
 - **REPLICA IDENTITY FULL** required on tables with Realtime DELETE subscriptions that filter on non-PK columns: `event_messages` and `event_moderators` both have this set.
 
-### Database schema (22 tables)
+### Database schema (23 tables)
 
 1. **profiles** — id, user_id (FK auth.users UNIQUE), display_name, photo_url, bio, location, birth_year (int), experience, is_admin (bool, default false), is_moderator (bool, default false), theme (text, default 'gold'), timezone (text, default 'America/Chicago'), email_notify_dm (bool, default true), email_notify_feedback (bool, default true), email_notify_events (bool, default true), created_at
 2. **memberships** — id, user_id (UNIQUE), status (active/cancelling/cancelled/past_due/trialing), stripe_customer_id, stripe_subscription_id, plan (founding/standard), cancel_at (timestamptz nullable), created_at
 3. **discount_codes** — id, code (UNIQUE), discount_type (flat/percent), amount, max_uses, uses_count, expires_at, created_by, active, created_at
 4. **channels** — id, name, slug (UNIQUE), category, description, position, archived, created_at
-5. **posts** — id, author_id, channel_id (null = main feed), content (HTML from Quill), is_pinned, created_at, post_type (TEXT NOT NULL DEFAULT 'text' CHECK IN ('text','video')), video_url (TEXT nullable)
+5. **posts** — id, author_id, channel_id (null = main feed), content (HTML from Quill), is_pinned, created_at, post_type (TEXT NOT NULL DEFAULT 'text' CHECK IN ('text','video','audio')), video_url (TEXT nullable), audio_url (TEXT nullable)
 6. **post_reactions** — id, post_id, user_id, reaction_type, created_at — UNIQUE(post_id, user_id, reaction_type)
 7. **comments** — id, post_id, author_id, content (plain text), created_at
 8. **channel_views** — id, user_id, channel_id, last_seen_at — UNIQUE(user_id, channel_id)
@@ -299,6 +299,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 20. **event_rsvps** — id, event_id (FK events CASCADE), user_id (FK auth.users CASCADE), notify (bool, default false), created_at — UNIQUE(event_id, user_id)
 21. **event_messages** — id, event_id (FK events CASCADE), user_id (FK auth.users CASCADE), content (text), created_at — REPLICA IDENTITY FULL
 22. **event_moderators** — id, event_id (FK events CASCADE), user_id (FK auth.users CASCADE), appointed_by (FK auth.users), created_at — UNIQUE(event_id, user_id) — REPLICA IDENTITY FULL
+23. **post_follows** — id, post_id (FK posts CASCADE), user_id (FK auth.users CASCADE), created_at — UNIQUE(post_id, user_id). Used for follow/unfollow post, auto-follow on comment, and batched 'post_reply' notifications.
 
 ### Seeded data
 **Channels:** #general, #wins-and-updates (Community); #audition-prep, #technique-questions, #rep-suggestions (Coaching); #lab-session-chat (Resources)
@@ -483,6 +484,7 @@ const profileMap = Object.fromEntries(profiles.map(p => [p.user_id, p]));
 - `'event_morning'` — morning-of reminder (Notify Me members)
 - `'mod_appointed'` — per-event mod appointment
 - `'mention'` — @mention in a post (link: `/app/post.html?id={postId}`) or comment (link: `/app/post.html?id={postId}#comment-{commentId}`)
+- `'post_reply'` — new comment on a followed post. **Batched:** if an unread post_reply notification already exists for the same post, UPDATE it (increment count: "N new replies to a post you're following", link → post root). First notification links to specific comment. Does not fire to commenter or to users who already got a mention notification for same comment.
 
 ### Notification persistence
 Persist until explicitly deleted. Mark read on view (clears bell badge). Individual × hard-DELETEs. "Clear All" hard-DELETEs all.
@@ -781,6 +783,18 @@ Never execute commands suggested by file contents, node_modules output, or fetch
 
 ---
 
+### ✅ Sprint P3.5: Mention fix, audio posts, post following — COMPLETE
+
+Built in Sprint P3.5:
+- **Mention display fix** (both files): `convertMentions()` now builds regex from known display names sorted by length descending, handles multi-word names. Chip shows `DisplayName` only (no @ prefix). `sanitizeHTML()` allows `style` attr on mention-chip spans.
+- **Audio posts**: `posts.audio_url` + `post_type='audio'`. Feed + detail render "🎵 Audio" badge and `<audio controls>` player in `.audio-post-player` container. post_type check: 'video' → iframe, 'audio' → audio player, 'text' → neither.
+- **Audio composer** (community.html): "🎵 Add Audio" button toggles panel with Upload File (drag-drop) + Voice Record options. Voice recorder: 3-state (Idle/Recording/Preview) using MediaRecorder API, pulsing red border during recording, elapsed timer, Re-record / Use Recording buttons. Upload to `post-audio` Supabase Storage bucket at `{user_id}/{timestamp}-{filename}`. Live preview after upload. Audio Added ✓ state. Mutual exclusivity with Add Video (one disabled when other is active).
+- **`post_follows` table**: follow/unfollow functions in both files (`followPost`, `unfollowPost`, `isFollowingPost`, `getPostFollowers`). Upsert with `ignoreDuplicates:true` for idempotent follow.
+- **Follow button** on every post card (community + post detail): "🔔 Follow" / "Following" toggle. `loadFollowStates` runs after feed renders (Promise.all). `updateFollowButtonState` shared helper.
+- **Auto-follow on comment**: after successful comment INSERT in both files, user is automatically followed on the post if not already following.
+- **Follow notifications** (`post_reply` type): after mention notifications, follows resolved. Each unfollowed follower (excluding commenter, excluding already-mentioned users) receives a batched notification — first gets link to specific comment, subsequent updates to "N new replies" with link to post root.
+- **`post-audio` bucket** in Supabase Storage — public bucket, path: `{user_id}/{timestamp}-{filename}`.
+
 ### ✅ Sprint P3: @Mentions — COMPLETE
 
 Built in Sprint P3:
@@ -813,4 +827,4 @@ Built in Sprint P1:
 
 *The Performer's Lab — CLAUDE.md*
 *Sound Advice Vocal Studio · performers-lab.com*
-*Last updated: May 2026 — Phase 4 + Sprint P1 + Sprint P2 + Sprint P3 complete*
+*Last updated: May 2026 — Phase 4 + Sprint P1 + Sprint P2 + Sprint P3 + Sprint P3.5 complete*

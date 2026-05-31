@@ -210,6 +210,23 @@
   }
   .mention-option-name { color: var(--text); }
 
+  /* ── AUDIO POST PLAYER ── */
+  .audio-post-player {
+    background: var(--bg-3); border: 1px solid var(--border-gold);
+    border-radius: 8px; padding: 12px 16px; margin-top: 12px;
+  }
+  .audio-post-player audio { width: 100%; accent-color: var(--gold); display: block; }
+
+  /* ── FOLLOW BUTTON ── */
+  .follow-post-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 10px; font-family: 'Raleway', sans-serif; font-size: 0.75rem;
+    color: var(--text-muted); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
+  }
+  .follow-post-btn:hover { border-color: var(--border-mid); color: var(--text); }
+  .follow-post-btn[data-following="true"] { border-color: var(--border-gold); color: var(--gold); }
+
   .error-state {
     text-align: center; padding: 3rem 1rem; font-size: 14px; color: var(--text-dim);
   }
@@ -326,7 +343,7 @@
         if (tag === 'span') {
           if (child.classList.contains('mention-chip') && child.dataset.userId && child.dataset.displayName) {
             for (const attr of [...child.attributes]) {
-              if (!['class','data-user-id','data-display-name','contenteditable'].includes(attr.name)) {
+              if (!['class','data-user-id','data-display-name','contenteditable','style'].includes(attr.name)) {
                 child.removeAttribute(attr.name);
               }
             }
@@ -359,12 +376,17 @@
 
   function convertMentions(text, displayNameMap) {
     if (!text) return '';
+    const names = Object.keys(displayNameMap).sort((a, b) => b.length - a.length);
+    if (!names.length) return escapeHtml(text);
+    const pattern = new RegExp(
+      '@(' + names.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')',
+      'g'
+    );
     const escaped = escapeHtml(text);
-    if (!Object.keys(displayNameMap).length) return escaped;
-    return escaped.replace(/@([^\s@]+(?:\s[^\s@]+)*)/g, (match, name) => {
+    return escaped.replace(pattern, (match, name) => {
       const profile = displayNameMap[name];
       if (profile) {
-        return `<span class="mention-chip" data-user-id="${escapeHtml(profile.user_id)}" data-display-name="${escapeHtml(name)}">${escapeHtml(match)}</span>`;
+        return `<span class="mention-chip" data-user-id="${escapeHtml(profile.user_id)}" data-display-name="${escapeHtml(name)}" style="cursor:pointer">${escapeHtml(name)}</span>`;
       }
       return match;
     });
@@ -524,11 +546,73 @@
     </div>`;
   }
 
+  function audioMimeFromUrl(url) {
+    if (!url) return 'audio/mpeg';
+    const ext = url.split('.').pop().split('?')[0].toLowerCase();
+    return { mp3:'audio/mpeg', m4a:'audio/mp4', wav:'audio/wav', ogg:'audio/ogg', webm:'audio/webm' }[ext] || 'audio/mpeg';
+  }
+
+  function audioPlayerHtml(url) {
+    if (!url) return '';
+    return `<div class="audio-post-player">
+      <audio controls preload="metadata">
+        <source src="${escapeHtml(url)}" type="${escapeHtml(audioMimeFromUrl(url))}">
+        Your browser does not support audio playback.
+      </audio>
+    </div>`;
+  }
+
+  // ── Post follows ───────────────────────────────────────────────────────
+  async function followPost(postId) {
+    const { error } = await supabase.from('post_follows')
+      .upsert({ post_id: postId, user_id: currentUser.id }, { onConflict: 'post_id,user_id', ignoreDuplicates: true });
+    return !error;
+  }
+
+  async function unfollowPost(postId) {
+    const { error } = await supabase.from('post_follows')
+      .delete().eq('post_id', postId).eq('user_id', currentUser.id);
+    return !error;
+  }
+
+  async function isFollowingPost(postId) {
+    const { data } = await supabase.from('post_follows').select('id')
+      .eq('post_id', postId).eq('user_id', currentUser.id).limit(1);
+    return !!(data && data.length > 0);
+  }
+
+  async function getPostFollowers(postId) {
+    const { data } = await supabase.from('post_follows').select('user_id').eq('post_id', postId);
+    return (data || []).map(r => r.user_id);
+  }
+
+  function updateFollowButtonState(btn, isFollowing) {
+    btn.dataset.following = isFollowing ? 'true' : 'false';
+    const label = btn.querySelector('.follow-label');
+    if (label) label.textContent = isFollowing ? 'Following' : 'Follow';
+    if (isFollowing) {
+      btn.style.borderColor = 'var(--border-gold)';
+      btn.style.color = 'var(--gold)';
+    } else {
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }
+  }
+
+  async function toggleFollow(btn) {
+    const postId = btn.dataset.postId;
+    const isFollowing = btn.dataset.following === 'true';
+    updateFollowButtonState(btn, !isFollowing);
+    const success = isFollowing ? await unfollowPost(postId) : await followPost(postId);
+    if (!success) updateFollowButtonState(btn, isFollowing);
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────
   function renderPost(post, profile, reacted, clapCount) {
     const authorName = profile?.display_name || 'Member';
     const photoUrl = profile?.photo_url || null;
     const isVideo = post.post_type === 'video' && post.video_url;
+    const isAudio = post.post_type === 'audio' && post.audio_url;
     const hasText = post.content && stripHtml(post.content).trim();
 
     return `
@@ -540,12 +624,14 @@
             <div class="post-author">
               <a class="author-link" href="/app/member.html?id=${escapeHtml(post.author_id)}">${escapeHtml(authorName)}</a>
               ${isVideo ? '<span class="video-badge">▶ Video</span>' : ''}
+              ${isAudio ? '<span class="video-badge">🎵 Audio</span>' : ''}
             </div>
             <span class="post-time" data-timestamp="${escapeHtml(post.created_at)}">${relativeTime(post.created_at)}</span>
           </div>
         </div>
         ${hasText ? `<div class="post-body">${sanitizeHTML(post.content)}</div>` : ''}
         ${isVideo ? videoEmbedHtml(post.video_url) : ''}
+        ${isAudio ? audioPlayerHtml(post.audio_url) : ''}
         <div class="post-actions">
           <div class="reaction-wrapper" id="reaction-wrapper">
             <button class="reaction-btn${reacted ? ' reacted' : ''}" id="clap-btn" aria-label="Clap">
@@ -553,6 +639,10 @@
             </button>
             <div class="clapper-tooltip" id="clapper-tooltip"></div>
           </div>
+          <button class="follow-post-btn" id="post-follow-btn" data-post-id="${escapeHtml(post.id)}" data-following="false">
+            <span class="follow-icon">🔔</span>
+            <span class="follow-label">Follow</span>
+          </button>
         </div>
       </div>
     `;
@@ -673,26 +763,58 @@
 
     if (error || !newComment) return;
 
-    // Fire mention notifications
-    if (commentMentions.length > 0) {
-      const commenterName = (await supabase.from('profiles').select('display_name').eq('user_id', currentUser.id).single()).data?.display_name || 'Someone';
-      Promise.all(commentMentions
-        .filter(m => m.userId !== currentUser.id)
-        .map(m => supabase.from('notifications').insert({
-          user_id: m.userId,
-          type: 'mention',
-          title: 'You were mentioned',
-          body: `${commenterName} mentioned you in a comment`,
-          link: `/app/post.html?id=${postId}#comment-${newComment.id}`,
-          read: false,
-        }))
-      );
-      commentMentions = [];
-    }
-
     const { data: myProfile } = await supabase
       .from('profiles').select('user_id, display_name, photo_url').eq('user_id', currentUser.id).single();
     newComment.profiles = myProfile || {};
+    const commenterName = myProfile?.display_name || 'Someone';
+
+    // Fire mention notifications
+    const mentionedIds = commentMentions.filter(m => m.userId !== currentUser.id).map(m => m.userId);
+    if (mentionedIds.length > 0) {
+      Promise.all(mentionedIds.map(uid => supabase.from('notifications').insert({
+        user_id: uid, type: 'mention',
+        title: 'You were mentioned',
+        body: `${commenterName} mentioned you in a comment`,
+        link: `/app/post.html?id=${postId}#comment-${newComment.id}`, read: false,
+      })));
+      commentMentions = [];
+    }
+
+    // Fire follow notifications
+    try {
+      const followers = await getPostFollowers(postId);
+      const followersToNotify = followers.filter(uid => uid !== currentUser.id && !mentionedIds.includes(uid));
+      if (followersToNotify.length > 0) {
+        await Promise.all(followersToNotify.map(async followerId => {
+          const { data: existing } = await supabase.from('notifications').select('id, body')
+            .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
+            .like('link', `/app/post.html?id=${postId}%`).limit(1).maybeSingle();
+          if (!existing) {
+            await supabase.from('notifications').insert({
+              user_id: followerId, type: 'post_reply',
+              title: "New reply on a post you're following",
+              body: `${commenterName} replied to a post you're following`,
+              link: `/app/post.html?id=${postId}#comment-${newComment.id}`, read: false,
+            });
+          } else {
+            const m = existing.body.match(/^(\d+) new replies/);
+            const n = m ? parseInt(m[1]) + 1 : 2;
+            await supabase.from('notifications').update({
+              body: `${n} new replies to a post you're following`,
+              link: `/app/post.html?id=${postId}`,
+            }).eq('id', existing.id);
+          }
+        }));
+      }
+    } catch (_) {}
+
+    // Auto-follow after commenting
+    const alreadyFollowing = await isFollowingPost(postId);
+    if (!alreadyFollowing) {
+      await followPost(postId);
+      const followBtn = document.getElementById('post-follow-btn');
+      if (followBtn) updateFollowButtonState(followBtn, true);
+    }
 
     textarea.value = '';
 
@@ -764,7 +886,7 @@
     // Fetch post
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('id, author_id, channel_id, content, is_pinned, created_at, post_type, video_url')
+      .select('id, author_id, channel_id, content, is_pinned, created_at, post_type, video_url, audio_url')
       .eq('id', postId)
       .single();
 
@@ -820,6 +942,13 @@
     const commentsSection = document.getElementById('comments-section');
     commentsSection.innerHTML = renderCommentsSection(allComments || []);
     commentsSection.style.display = 'block';
+
+    // Wire follow button
+    const followBtn = document.getElementById('post-follow-btn');
+    if (followBtn) {
+      followBtn.addEventListener('click', () => toggleFollow(followBtn));
+      isFollowingPost(postId).then(following => updateFollowButtonState(followBtn, following));
+    }
 
     wireReaction(postId);
     wireComposer();
