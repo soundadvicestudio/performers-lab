@@ -389,6 +389,50 @@
   }
   .clapper-name { font-size: 13px; color: var(--text); display: block; padding: 2px 0; }
   .clapper-empty { font-size: 12px; color: var(--text-dim); font-style: italic; display: block; }
+
+  /* ── VIDEO BADGE ── */
+  .video-badge {
+    display: inline-flex; align-items: center;
+    background: var(--gold-dim); color: var(--gold);
+    font-size: 0.7rem; font-weight: 600; font-family: 'Raleway', sans-serif;
+    padding: 2px 7px; border-radius: 10px; border: 0.5px solid var(--border-gold);
+    letter-spacing: 0.05em; flex-shrink: 0;
+  }
+
+  /* ── VIEW ALL COMMENTS ── */
+  .view-all-link {
+    display: block; font-size: 12px; color: var(--text-muted);
+    font-family: 'Raleway', sans-serif; font-weight: 400;
+    text-decoration: none; margin: 8px 0 10px;
+    transition: color 0.15s;
+  }
+  .view-all-link:hover { color: var(--gold); }
+
+  /* ── VIDEO COMPOSER ── */
+  .btn-add-video {
+    background: var(--bg-3); border: 0.5px solid var(--border);
+    color: var(--text-muted); padding: 6px 14px; border-radius: 3px;
+    font-size: 12px; font-weight: 500; font-family: 'Raleway', sans-serif;
+    cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  }
+  .btn-add-video:hover { border-color: var(--border-gold); color: var(--gold); }
+  .btn-add-video.has-video { color: var(--gold); border-color: var(--border-gold); background: var(--gold-dim); }
+  .video-input-panel { display: none; margin-top: 8px; }
+  .video-url-input {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 8px 12px; border-radius: 3px;
+    font-size: 13px; font-family: 'Raleway', sans-serif;
+    outline: none; transition: border-color 0.2s;
+  }
+  .video-url-input:focus { border-color: var(--border-gold); background: var(--bg-4); }
+  .video-url-input::placeholder { color: var(--text-dim); }
+  .btn-remove-video {
+    background: none; border: none; cursor: pointer;
+    font-size: 12px; color: var(--text-muted); font-family: 'Raleway', sans-serif;
+    transition: color 0.15s; padding: 0; margin-top: 5px;
+  }
+  .btn-remove-video:hover { color: var(--text); }
+  .video-validation-msg { font-size: 11px; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -438,6 +482,13 @@
       <!-- Composer -->
       <div class="composer-card" id="composer">
         <div id="quill-editor"></div>
+        <button type="button" id="btn-add-video" class="btn-add-video">▶ Add Video</button>
+        <div id="video-input-panel" class="video-input-panel">
+          <input type="text" id="video-url-input" class="video-url-input" placeholder="Paste a YouTube or Google Drive URL" autocomplete="off">
+          <button type="button" id="btn-remove-video" class="btn-remove-video">Remove</button>
+          <div id="video-validation-msg" class="video-validation-msg"></div>
+          <div id="video-preview-area" style="margin-top:8px;"></div>
+        </div>
         <div class="composer-footer">
           <span class="composer-error" id="composer-error"></span>
           <button class="btn-post" id="btn-post">Post</button>
@@ -491,6 +542,10 @@
   let postClappers = {}; // postId → string[] of display_names
   let openCommentThreads = new Set(); // postIds with open threads
   let currentUserDisplayName = '';
+  let videoUrl = null;
+  let videoDebounceTimer = null;
+  let postCommentCounts = {}; // postId → total comment count
+  let previewCommentsMap = {}; // postId → array of up to 3 recent comments (with profiles)
 
   // ── Helpers ────────────────────────────────────────────────────────────
   function sanitizeHTML(html) {
@@ -622,6 +677,7 @@
     });
 
     document.getElementById('btn-post').addEventListener('click', submitPost);
+    initVideoComposer();
   }
 
   // ── Sidebar toggle (mobile) ────────────────────────────────────────────
@@ -782,7 +838,7 @@
 
     let query = supabase
       .from('posts')
-      .select('id, author_id, channel_id, content, is_pinned, created_at')
+      .select('id, author_id, channel_id, content, is_pinned, created_at, post_type, video_url')
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(30);
@@ -812,15 +868,16 @@
     const postIds = posts.map(p => p.id);
     const authorIds = [...new Set(posts.map(p => p.author_id))];
 
-    // Load author profiles, reactions, and comment counts in parallel
-    const [{ data: authorProfiles }, { data: reactions }, { data: mineRaw }, { data: commentCounts }] = await Promise.all([
+    // Load author profiles, reactions, comment counts, and recent comments in parallel
+    const [{ data: authorProfiles }, { data: reactions }, { data: mineRaw }, { data: commentCountRows }, { data: recentCommentRows }] = await Promise.all([
       supabase.from('profiles').select('user_id, display_name, photo_url').in('user_id', authorIds),
       supabase.from('post_reactions').select('post_id, reaction_type, user_id').in('post_id', postIds),
       supabase.from('post_reactions').select('post_id, reaction_type').in('post_id', postIds).eq('user_id', currentUser.id),
       supabase.from('comments').select('post_id').in('post_id', postIds),
+      supabase.from('comments').select('id, post_id, content, created_at, author_id').in('post_id', postIds).order('created_at', { ascending: false }),
     ]);
 
-    // Build profile map (will grow to include clappers)
+    // Build profile map (will grow to include clappers and comment authors)
     const profileMap = {};
     for (const p of (authorProfiles || [])) profileMap[p.user_id] = p;
     for (const post of posts) post.profiles = profileMap[post.author_id] || {};
@@ -856,24 +913,91 @@
       postClappers[postId] = userIds.map(uid => profileMap[uid]?.display_name || 'Member');
     }
 
-    const commentCountMap = {};
-    for (const c of (commentCounts || [])) {
-      commentCountMap[c.post_id] = (commentCountMap[c.post_id] || 0) + 1;
+    // Build total comment counts (lightweight — only post_id fetched)
+    postCommentCounts = {};
+    for (const c of (commentCountRows || [])) {
+      postCommentCounts[c.post_id] = (postCommentCounts[c.post_id] || 0) + 1;
     }
 
-    feedList.innerHTML = posts.map(post => renderPostCard(post, commentCountMap[post.id] || 0)).join('');
+    // Build preview map: top 3 per post (recentCommentRows already sorted DESC), reverse to ASC
+    previewCommentsMap = {};
+    for (const c of (recentCommentRows || [])) {
+      if (!previewCommentsMap[c.post_id]) previewCommentsMap[c.post_id] = [];
+      if (previewCommentsMap[c.post_id].length < 3) previewCommentsMap[c.post_id].push(c);
+    }
+    for (const pid of Object.keys(previewCommentsMap)) previewCommentsMap[pid].reverse();
+
+    // Fetch profiles for comment authors not already in profileMap
+    const commentAuthorIds = [...new Set((recentCommentRows || []).map(c => c.author_id))].filter(id => !profileMap[id]);
+    if (commentAuthorIds.length > 0) {
+      const { data: commentAuthorProfiles } = await supabase
+        .from('profiles').select('user_id, display_name, photo_url').in('user_id', commentAuthorIds);
+      for (const p of (commentAuthorProfiles || [])) profileMap[p.user_id] = p;
+    }
+
+    // Attach profiles to preview comments
+    for (const comments of Object.values(previewCommentsMap)) {
+      for (const c of comments) c.profiles = profileMap[c.author_id] || {};
+    }
+
+    feedList.innerHTML = posts.map(post =>
+      renderPostCard(post, postCommentCounts[post.id] || 0, previewCommentsMap[post.id] || [])
+    ).join('');
 
     startRelativeTimers(60000, userTimezone);
     attachPostListeners(posts);
   }
 
-  function renderPostCard(post, commentCount) {
+  // ── Video embed helpers ────────────────────────────────────────────────
+  function extractVideoEmbed(url) {
+    if (!url) return null;
+    const s = String(url).trim();
+    const ytMatch = s.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
+    if (ytMatch) return { embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}` };
+    const driveFileMatch = s.match(/drive\.google\.com\/file\/d\/([^/?&#]+)/);
+    if (driveFileMatch) return { embedUrl: `https://drive.google.com/file/d/${driveFileMatch[1]}/preview` };
+    const driveOpenMatch = s.match(/drive\.google\.com\/open\?(?:.*&)?id=([^&#]+)/);
+    if (driveOpenMatch) return { embedUrl: `https://drive.google.com/file/d/${driveOpenMatch[1]}/preview` };
+    return null;
+  }
+
+  function videoEmbedHtml(url) {
+    const embed = extractVideoEmbed(url);
+    if (!embed) return '';
+    return `<div style="margin-top:12px;">
+      <iframe src="${escapeHtml(embed.embedUrl)}" width="100%"
+        style="aspect-ratio:16/9;border-radius:6px;border:none;background:#000;"
+        allowfullscreen loading="lazy"></iframe>
+    </div>`;
+  }
+
+  // ── Render helpers ─────────────────────────────────────────────────────
+  function renderCommentThread(postId, totalCount, previewComments) {
+    const commentListHtml = previewComments.length > 0
+      ? previewComments.map(c => renderComment(c)).join('')
+      : '<div class="no-comments">No comments yet. Be the first!</div>';
+    const viewAllLink = totalCount > 3
+      ? `<a href="/app/post.html?id=${escapeHtml(postId)}" class="view-all-link">View all ${totalCount} comments →</a>`
+      : '';
+    return `
+      <div id="comments-${escapeHtml(postId)}">${commentListHtml}</div>
+      ${viewAllLink}
+      <div class="comment-composer">
+        <textarea class="comment-input" id="comment-input-${escapeHtml(postId)}" placeholder="Write a comment…" rows="1"></textarea>
+        <button class="btn-comment" id="btn-comment-${escapeHtml(postId)}">Post</button>
+      </div>
+    `;
+  }
+
+  function renderPostCard(post, totalCount, previewComments = []) {
     const profile = post.profiles || {};
     const authorName = profile.display_name || 'Member';
     const photoUrl = profile.photo_url || null;
     const reacted = myReactions.has(`${post.id}:clap`);
     const clapCount = postReactionCounts[post.id] || 0;
-    const commentLabel = commentCount === 1 ? '1 comment' : `${commentCount} comments`;
+    const commentLabel = totalCount === 1 ? '1 comment' : `${totalCount} comments`;
+    const isVideo = post.post_type === 'video' && post.video_url;
+    const hasText = post.content && stripHtml(post.content).trim();
 
     return `
       <div class="post-card" id="post-${post.id}" data-post-id="${post.id}" data-author-id="${escapeHtml(post.author_id)}">
@@ -881,13 +1005,15 @@
         <div class="post-meta">
           ${avatarEl(photoUrl, authorName)}
           <div class="post-author-info">
-            <div class="post-author">
+            <div class="post-author" style="display:flex;align-items:center;gap:6px;">
               <a class="author-link" href="/app/member.html?id=${escapeHtml(post.author_id)}">${escapeHtml(authorName)}</a>
+              ${isVideo ? '<span class="video-badge">▶ Video</span>' : ''}
             </div>
             <span class="post-time" data-timestamp="${escapeHtml(post.created_at)}">${relativeTime(post.created_at)}</span>
           </div>
         </div>
-        <div class="post-body">${sanitizeHTML(post.content)}</div>
+        ${hasText ? `<div class="post-body">${sanitizeHTML(post.content)}</div>` : ''}
+        ${isVideo ? videoEmbedHtml(post.video_url) : ''}
         <div class="post-actions">
           <div class="reaction-wrapper" data-post-id="${post.id}">
             <button class="reaction-btn${reacted ? ' reacted' : ''}" data-post-id="${post.id}" data-reaction="clap" aria-label="Clap">
@@ -899,7 +1025,9 @@
             ${commentLabel}
           </button>
         </div>
-        <div class="comment-thread" id="thread-${post.id}"></div>
+        <div class="comment-thread" id="thread-${post.id}">
+          ${renderCommentThread(post.id, totalCount, previewComments)}
+        </div>
       </div>
     `;
   }
@@ -915,7 +1043,26 @@
       btn.addEventListener('click', () => toggleCommentThread(btn.dataset.postId));
     });
 
+    posts.forEach(post => {
+      wireCommentComposer(post.id);
+    });
+
     attachTooltipListeners(feedList);
+  }
+
+  function wireCommentComposer(postId) {
+    const textarea = document.getElementById(`comment-input-${postId}`);
+    const btn = document.getElementById(`btn-comment-${postId}`);
+    if (textarea) {
+      textarea.addEventListener('input', () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      });
+      textarea.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(postId); }
+      });
+    }
+    if (btn) btn.addEventListener('click', () => submitComment(postId));
   }
 
   // ── Reaction tooltips ──────────────────────────────────────────────────
@@ -997,72 +1144,16 @@
   }
 
   // ── Comments ───────────────────────────────────────────────────────────
-  async function toggleCommentThread(postId) {
+  function toggleCommentThread(postId) {
     const thread = document.getElementById(`thread-${postId}`);
     if (!thread) return;
-
     if (openCommentThreads.has(postId)) {
       openCommentThreads.delete(postId);
       thread.classList.remove('open');
-      thread.innerHTML = '';
     } else {
       openCommentThreads.add(postId);
       thread.classList.add('open');
-      await loadComments(postId, thread);
     }
-  }
-
-  async function loadComments(postId, threadEl) {
-    threadEl.innerHTML = '<div class="comments-loading">Loading comments…</div>';
-
-    const { data: comments, error } = await supabase
-      .from('comments')
-      .select('id, content, created_at, author_id')
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      threadEl.innerHTML = '<div class="comments-loading">Couldn\'t load comments.</div>';
-      return;
-    }
-
-    if (comments && comments.length > 0) {
-      const commentAuthorIds = [...new Set(comments.map(c => c.author_id))];
-      const { data: commentProfiles } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, photo_url')
-        .in('user_id', commentAuthorIds);
-      const commentProfileMap = {};
-      for (const p of (commentProfiles || [])) commentProfileMap[p.user_id] = p;
-      for (const c of comments) c.profiles = commentProfileMap[c.author_id] || {};
-    }
-
-    const commentListHtml = (comments && comments.length > 0)
-      ? comments.map(c => renderComment(c)).join('')
-      : '<div class="no-comments">No comments yet. Be the first!</div>';
-
-    threadEl.innerHTML = `
-      <div id="comments-${postId}">${commentListHtml}</div>
-      <div class="comment-composer">
-        <textarea class="comment-input" id="comment-input-${postId}" placeholder="Write a comment…" rows="1"></textarea>
-        <button class="btn-comment" id="btn-comment-${postId}">Post</button>
-      </div>
-    `;
-
-    // Auto-resize textarea
-    const textarea = document.getElementById(`comment-input-${postId}`);
-    textarea.addEventListener('input', () => {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-    });
-    textarea.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        submitComment(postId);
-      }
-    });
-
-    document.getElementById(`btn-comment-${postId}`).addEventListener('click', () => submitComment(postId));
   }
 
   function renderComment(c) {
@@ -1110,23 +1201,20 @@
     textarea.value = '';
     textarea.style.height = '';
 
-    // Remove "no comments" placeholder if present
     const listEl = document.getElementById(`comments-${postId}`);
     const noComments = listEl?.querySelector('.no-comments');
     if (noComments) noComments.remove();
 
-    // Append new comment
     if (listEl) listEl.insertAdjacentHTML('beforeend', renderComment(newComment));
 
-    // Update comment count button
+    postCommentCounts[postId] = (postCommentCounts[postId] || 0) + 1;
     updateCommentCount(postId);
   }
 
   function updateCommentCount(postId) {
     const btn = document.querySelector(`.comment-toggle-btn[data-post-id="${postId}"]`);
     if (!btn) return;
-    const listEl = document.getElementById(`comments-${postId}`);
-    const count = listEl ? listEl.querySelectorAll('.comment-item').length : 0;
+    const count = postCommentCounts[postId] || 0;
     btn.textContent = count === 1 ? '1 comment' : `${count} comments`;
   }
 
@@ -1138,7 +1226,7 @@
 
     const html = quill.root.innerHTML;
     const text = stripHtml(html).trim();
-    if (!text) {
+    if (!text && !videoUrl) {
       errorEl.textContent = 'Post cannot be empty.';
       return;
     }
@@ -1150,6 +1238,8 @@
       author_id: currentUser.id,
       content: html,
       channel_id: activeChannelId || null,
+      post_type: videoUrl ? 'video' : 'text',
+      video_url: videoUrl || null,
     };
 
     const { error } = await supabase.from('posts').insert(payload);
@@ -1158,8 +1248,6 @@
     btn.innerHTML = 'Post';
 
     // TODO Phase 5: trigger server-side broadcast notification to all active members.
-    // Fetching all member IDs client-side is expensive; this should be a serverless
-    // function called here (POST /api/community/notifyPost) that handles fan-out.
 
     if (error) {
       errorEl.textContent = 'Failed to post. Please try again.';
@@ -1167,6 +1255,84 @@
     }
 
     quill.setText('');
+    resetVideoComposer();
+  }
+
+  function resetVideoComposer() {
+    videoUrl = null;
+    const input = document.getElementById('video-url-input');
+    if (input) input.value = '';
+    const panel = document.getElementById('video-input-panel');
+    if (panel) panel.style.display = 'none';
+    const btnAddVideo = document.getElementById('btn-add-video');
+    if (btnAddVideo) { btnAddVideo.textContent = '▶ Add Video'; btnAddVideo.classList.remove('has-video'); }
+    const previewArea = document.getElementById('video-preview-area');
+    if (previewArea) previewArea.innerHTML = '';
+    const validationMsg = document.getElementById('video-validation-msg');
+    if (validationMsg) validationMsg.textContent = '';
+  }
+
+  // ── Video composer ─────────────────────────────────────────────────────
+  function updateVideoPreview(url) {
+    const validationMsg = document.getElementById('video-validation-msg');
+    const previewArea = document.getElementById('video-preview-area');
+    const btnAddVideo = document.getElementById('btn-add-video');
+    if (!url) {
+      videoUrl = null;
+      validationMsg.textContent = '';
+      previewArea.innerHTML = '';
+      btnAddVideo.textContent = '▶ Add Video';
+      btnAddVideo.classList.remove('has-video');
+      return;
+    }
+    const embed = extractVideoEmbed(url);
+    if (embed) {
+      videoUrl = url;
+      validationMsg.textContent = '';
+      previewArea.innerHTML = `<iframe src="${escapeHtml(embed.embedUrl)}" width="100%"
+        style="aspect-ratio:16/9;border-radius:6px;border:none;background:#000;"
+        allowfullscreen loading="lazy"></iframe>`;
+      btnAddVideo.textContent = '▶ Video Added ✓';
+      btnAddVideo.classList.add('has-video');
+    } else {
+      videoUrl = null;
+      validationMsg.textContent = 'Please paste a YouTube or Google Drive link';
+      previewArea.innerHTML = '';
+      btnAddVideo.textContent = '▶ Add Video';
+      btnAddVideo.classList.remove('has-video');
+    }
+  }
+
+  function initVideoComposer() {
+    const btnAddVideo = document.getElementById('btn-add-video');
+    const panel = document.getElementById('video-input-panel');
+    const input = document.getElementById('video-url-input');
+    const btnRemove = document.getElementById('btn-remove-video');
+
+    btnAddVideo.addEventListener('click', () => {
+      if (videoUrl) {
+        resetVideoComposer();
+      } else {
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        if (panel.style.display === 'block') input.focus();
+      }
+    });
+
+    btnRemove.addEventListener('click', () => {
+      videoUrl = null;
+      input.value = '';
+      const validationMsg = document.getElementById('video-validation-msg');
+      const previewArea = document.getElementById('video-preview-area');
+      validationMsg.textContent = '';
+      previewArea.innerHTML = '';
+      btnAddVideo.textContent = '▶ Add Video';
+      btnAddVideo.classList.remove('has-video');
+    });
+
+    input.addEventListener('input', () => {
+      clearTimeout(videoDebounceTimer);
+      videoDebounceTimer = setTimeout(() => updateVideoPreview(input.value.trim()), 400);
+    });
   }
 
   // ── Realtime ───────────────────────────────────────────────────────────
@@ -1196,8 +1362,6 @@
   }
 
   async function handleRealtimeInsert(post) {
-    // Skip if this was our own post (already added optimistically via reload)
-    // Fetch author profile for the new post
     const { data: profile } = await supabase
       .from('profiles')
       .select('display_name, photo_url')
@@ -1205,23 +1369,22 @@
       .single();
 
     post.profiles = profile || {};
+    postCommentCounts[post.id] = 0;
+    previewCommentsMap[post.id] = [];
 
     const feedList = document.getElementById('feed-list');
 
-    // Remove empty/loading state if present
     const emptyEl = feedList.querySelector('.feed-empty, .feed-loading');
     if (emptyEl) emptyEl.remove();
 
-    // Prepend (pinned posts stay at top; new posts come after pinned)
     const firstNonPinned = feedList.querySelector('.post-card:not([data-pinned])');
-    const html = renderPostCard(post, 0);
+    const html = renderPostCard(post, 0, []);
     if (firstNonPinned && !post.is_pinned) {
       firstNonPinned.insertAdjacentHTML('beforebegin', html);
     } else {
       feedList.insertAdjacentHTML('afterbegin', html);
     }
 
-    // Attach listeners for the new card
     const newCard = document.getElementById(`post-${post.id}`);
     if (newCard) {
       newCard.querySelectorAll('.reaction-btn').forEach(btn =>
@@ -1230,6 +1393,7 @@
       newCard.querySelectorAll('.comment-toggle-btn').forEach(btn =>
         btn.addEventListener('click', () => toggleCommentThread(btn.dataset.postId))
       );
+      wireCommentComposer(post.id);
       attachTooltipListeners(newCard);
     }
   }

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.08); --red-border: rgba(224,92,92,0.25);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MAIN ── */
+  .main { max-width: 680px; margin: 0 auto; padding: 2rem 2rem 4rem; }
+
+  /* ── BACK LINK ── */
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); text-decoration: none; margin-bottom: 1.5rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--gold); }
+
+  /* ── POST CARD ── */
+  .post-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 8px; padding: 18px 20px;
+    margin-bottom: 0;
+  }
+
+  .post-pin-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold); background: var(--gold-dim); border: 0.5px solid var(--border-gold);
+    padding: 3px 8px; border-radius: 2px; margin-bottom: 10px;
+  }
+
+  .post-meta {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .post-avatar {
+    width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
+    background: var(--bg-4); border: 0.5px solid var(--border-mid);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: var(--gold); font-family: 'Raleway', sans-serif;
+    overflow: hidden;
+  }
+  .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .post-author-info { display: flex; flex-direction: column; gap: 2px; }
+  .post-author { font-size: 13px; font-weight: 600; color: var(--gold); display: flex; align-items: center; gap: 6px; }
+  .post-time { font-size: 11px; color: var(--text-dim); }
+
+  .post-body {
+    font-size: 14px; color: var(--text); line-height: 1.65;
+    margin-bottom: 14px; word-break: break-word;
+  }
+  .post-body p { margin-bottom: 0.5em; }
+  .post-body p:last-child { margin-bottom: 0; }
+  .post-body a { color: var(--gold); text-decoration: underline; }
+  .post-body ul, .post-body ol { padding-left: 1.4em; margin-bottom: 0.5em; }
+  .post-body li { margin-bottom: 0.2em; }
+  .post-body strong { font-weight: 700; }
+  .post-body em { font-style: italic; }
+
+  .post-actions {
+    display: flex; align-items: center; gap: 16px;
+    padding-top: 12px; border-top: 0.5px solid var(--border);
+  }
+  .reaction-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 0.5px solid var(--border);
+    border-radius: 20px; padding: 5px 12px;
+    font-size: 13px; color: var(--text-muted);
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.15s;
+  }
+  .reaction-btn:hover { border-color: var(--border-gold); color: var(--gold); }
+  .reaction-btn.reacted { border-color: var(--border-gold); color: var(--gold); background: var(--gold-dim); }
+  .reaction-count { font-size: 12px; font-weight: 600; min-width: 10px; }
+
+  .reaction-wrapper { position: relative; display: inline-flex; }
+  .clapper-tooltip {
+    display: none; position: absolute;
+    bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+    background: var(--bg-2); border: 1px solid var(--border-gold);
+    border-radius: 8px; padding: 8px 12px; min-width: 120px;
+    max-height: 150px; overflow-y: auto; z-index: 60; white-space: nowrap;
+    scrollbar-width: thin; scrollbar-color: var(--border-mid) transparent;
+  }
+  .clapper-tooltip.visible { display: block; }
+  .clapper-tooltip::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 7px solid transparent; border-top-color: var(--border-gold);
+  }
+  .clapper-tooltip::before {
+    content: ''; position: absolute; top: calc(100% - 1px); left: 50%; transform: translateX(-50%);
+    border: 6px solid transparent; border-top-color: var(--bg-2); z-index: 1;
+  }
+  .clapper-name { font-size: 13px; color: var(--text); display: block; padding: 2px 0; }
+  .clapper-empty { font-size: 12px; color: var(--text-dim); font-style: italic; display: block; }
+
+  /* ── VIDEO BADGE ── */
+  .video-badge {
+    display: inline-flex; align-items: center;
+    background: var(--gold-dim); color: var(--gold);
+    font-size: 0.7rem; font-weight: 600; font-family: 'Raleway', sans-serif;
+    padding: 2px 7px; border-radius: 10px; border: 0.5px solid var(--border-gold);
+    letter-spacing: 0.05em; flex-shrink: 0;
+  }
+
+  /* ── COMMENTS SECTION ── */
+  .comments-section {
+    margin-top: 1.5rem;
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 8px; padding: 18px 20px;
+  }
+  .comments-heading {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem; border-bottom: 0.5px solid var(--border);
+  }
+
+  .comment-item { display: flex; gap: 10px; margin-bottom: 12px; }
+  .comment-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--bg-4); border: 0.5px solid var(--border-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: var(--gold); font-family: 'Raleway', sans-serif;
+    overflow: hidden;
+  }
+  .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .comment-body { flex: 1; min-width: 0; }
+  .comment-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+  .comment-author { font-size: 12px; font-weight: 600; color: var(--gold); text-decoration: none; }
+  .comment-author:hover { text-decoration: underline; }
+  .comment-time { font-size: 10px; color: var(--text-dim); }
+  .comment-text { font-size: 13px; color: var(--text); line-height: 1.55; word-break: break-word; }
+
+  .no-comments-yet { font-size: 13px; color: var(--text-dim); font-style: italic; padding: 8px 0; }
+
+  /* ── COMMENT COMPOSER ── */
+  .comment-composer-section { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 0.5px solid var(--border); }
+  .comment-input-full {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 10px 13px; border-radius: 4px;
+    font-size: 13px; font-family: 'Raleway', sans-serif;
+    resize: vertical; min-height: 70px; line-height: 1.5;
+    outline: none; transition: border-color 0.2s; margin-bottom: 10px;
+  }
+  .comment-input-full::placeholder { color: var(--text-dim); }
+  .comment-input-full:focus { border-color: var(--border-gold); background: var(--bg-4); }
+  .btn-post-comment {
+    background: var(--gold); color: var(--bg); border: none;
+    padding: 9px 22px; border-radius: 2px; flex-shrink: 0;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s;
+  }
+  .btn-post-comment:hover:not(:disabled) { background: var(--gold-light); }
+  .btn-post-comment:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  a.author-link { color: var(--gold); text-decoration: none; }
+  a.author-link:hover { text-decoration: underline; }
+
+  .error-state {
+    text-align: center; padding: 3rem 1rem; font-size: 14px; color: var(--text-dim);
+  }
+
+  @media (max-width: 600px) {
+    .main { padding: 1.5rem 1.25rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <a href="/app/community.html" class="back-link">← Back to Community</a>
+    <div id="post-container"></div>
+    <div id="comments-section" style="display:none;"></div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+  import { relativeTime, startRelativeTimers } from './utils/time.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  let currentUser = null;
+  let postId = null;
+  let myReactions = new Set();
+  let clapperNames = [];
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+  function sanitizeHTML(html) {
+    const ALLOWED = new Set(['b','i','u','strong','em','a','ul','ol','li','p','br']);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    function clean(node) {
+      const toUnwrap = [];
+      for (const child of [...node.childNodes]) {
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const tag = child.tagName.toLowerCase();
+        if (!ALLOWED.has(tag)) { toUnwrap.push(child); continue; }
+        for (const attr of [...child.attributes]) {
+          if (tag === 'a' && attr.name === 'href' && /^(https?:|\/|#)/.test(attr.value)) continue;
+          child.removeAttribute(attr.name);
+        }
+        clean(child);
+      }
+      for (const el of toUnwrap) {
+        while (el.firstChild) node.insertBefore(el.firstChild, el);
+        node.removeChild(el);
+      }
+    }
+    clean(doc.body);
+    return doc.body.innerHTML;
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function getInitial(name) {
+    return String(name || '?').charAt(0).toUpperCase();
+  }
+
+  function avatarEl(photoUrl, name) {
+    if (photoUrl) {
+      return `<div class="post-avatar"><img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(name)}" loading="lazy"></div>`;
+    }
+    return `<div class="post-avatar">${escapeHtml(getInitial(name))}</div>`;
+  }
+
+  function commentAvatarEl(photoUrl, name) {
+    if (photoUrl) {
+      return `<div class="comment-avatar"><img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(name)}" loading="lazy"></div>`;
+    }
+    return `<div class="comment-avatar">${escapeHtml(getInitial(name))}</div>`;
+  }
+
+  function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
+
+  function isProfileComplete(profile) {
+    return !!(
+      profile?.display_name?.trim() &&
+      profile?.birth_year &&
+      profile?.experience?.trim() &&
+      profile?.location?.trim() &&
+      profile?.bio?.trim() &&
+      profile?.timezone?.trim()
+    );
+  }
+
+  function extractVideoEmbed(url) {
+    if (!url) return null;
+    const s = String(url).trim();
+    const ytMatch = s.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
+    if (ytMatch) return { embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}` };
+    const driveFileMatch = s.match(/drive\.google\.com\/file\/d\/([^/?&#]+)/);
+    if (driveFileMatch) return { embedUrl: `https://drive.google.com/file/d/${driveFileMatch[1]}/preview` };
+    const driveOpenMatch = s.match(/drive\.google\.com\/open\?(?:.*&)?id=([^&#]+)/);
+    if (driveOpenMatch) return { embedUrl: `https://drive.google.com/file/d/${driveOpenMatch[1]}/preview` };
+    return null;
+  }
+
+  function videoEmbedHtml(url) {
+    const embed = extractVideoEmbed(url);
+    if (!embed) return '';
+    return `<div style="margin-top:12px;">
+      <iframe src="${escapeHtml(embed.embedUrl)}" width="100%"
+        style="aspect-ratio:16/9;border-radius:6px;border:none;background:#000;"
+        allowfullscreen loading="lazy"></iframe>
+    </div>`;
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────
+  function renderPost(post, profile, reacted, clapCount) {
+    const authorName = profile?.display_name || 'Member';
+    const photoUrl = profile?.photo_url || null;
+    const isVideo = post.post_type === 'video' && post.video_url;
+    const hasText = post.content && stripHtml(post.content).trim();
+
+    return `
+      <div class="post-card" id="post-${post.id}">
+        ${post.is_pinned ? '<div class="post-pin-badge">📌 Pinned</div>' : ''}
+        <div class="post-meta">
+          ${avatarEl(photoUrl, authorName)}
+          <div class="post-author-info">
+            <div class="post-author">
+              <a class="author-link" href="/app/member.html?id=${escapeHtml(post.author_id)}">${escapeHtml(authorName)}</a>
+              ${isVideo ? '<span class="video-badge">▶ Video</span>' : ''}
+            </div>
+            <span class="post-time" data-timestamp="${escapeHtml(post.created_at)}">${relativeTime(post.created_at)}</span>
+          </div>
+        </div>
+        ${hasText ? `<div class="post-body">${sanitizeHTML(post.content)}</div>` : ''}
+        ${isVideo ? videoEmbedHtml(post.video_url) : ''}
+        <div class="post-actions">
+          <div class="reaction-wrapper" id="reaction-wrapper">
+            <button class="reaction-btn${reacted ? ' reacted' : ''}" id="clap-btn" aria-label="Clap">
+              👏 <span class="reaction-count" id="clap-count">${clapCount > 0 ? clapCount : ''}</span>
+            </button>
+            <div class="clapper-tooltip" id="clapper-tooltip"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderComment(c) {
+    const profile = c.profiles || {};
+    const name = profile.display_name || 'Member';
+    return `
+      <div class="comment-item" id="comment-${escapeHtml(c.id)}">
+        ${commentAvatarEl(profile.photo_url, name)}
+        <div class="comment-body">
+          <div class="comment-header">
+            <a class="comment-author author-link" href="/app/member.html?id=${escapeHtml(c.author_id)}">${escapeHtml(name)}</a>
+            <span class="comment-time" data-timestamp="${escapeHtml(c.created_at)}">${relativeTime(c.created_at)}</span>
+          </div>
+          <div class="comment-text">${escapeHtml(c.content)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCommentsSection(comments) {
+    const count = comments.length;
+    const commentListHtml = count > 0
+      ? comments.map(c => renderComment(c)).join('')
+      : '<div class="no-comments-yet">No comments yet. Be the first!</div>';
+
+    return `
+      <div class="comments-section">
+        <div class="comments-heading">Comments (${count})</div>
+        <div id="comment-list">${commentListHtml}</div>
+        <div class="comment-composer-section">
+          <textarea id="new-comment-input" class="comment-input-full" placeholder="Write a comment…" rows="2"></textarea>
+          <button id="btn-post-comment" class="btn-post-comment">Post Comment</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function updateCommentCount(delta) {
+    const heading = document.querySelector('.comments-heading');
+    if (!heading) return;
+    const current = parseInt(heading.textContent.match(/\d+/)?.[0] || '0');
+    heading.textContent = `Comments (${current + delta})`;
+  }
+
+  // ── Reaction ───────────────────────────────────────────────────────────
+  function wireReaction(postId) {
+    const btn = document.getElementById('clap-btn');
+    const countEl = document.getElementById('clap-count');
+    const tooltip = document.getElementById('clapper-tooltip');
+    const wrapper = document.getElementById('reaction-wrapper');
+    if (!btn || !wrapper) return;
+
+    const showTooltip = () => {
+      tooltip.innerHTML = clapperNames.length > 0
+        ? clapperNames.map(n => `<span class="clapper-name">${escapeHtml(n)}</span>`).join('')
+        : '<span class="clapper-empty">No reactions yet</span>';
+      tooltip.classList.add('visible');
+    };
+    const hideTooltip = () => tooltip.classList.remove('visible');
+
+    wrapper.addEventListener('mouseenter', showTooltip);
+    wrapper.addEventListener('mouseleave', hideTooltip);
+    wrapper.addEventListener('touchstart', () => {
+      setTimeout(showTooltip, 500);
+    }, { passive: true });
+
+    btn.addEventListener('click', async () => {
+      const reacted = myReactions.has(`${postId}:clap`);
+      let clapCount = parseInt(countEl.textContent || '0');
+      if (reacted) {
+        myReactions.delete(`${postId}:clap`);
+        clapCount = Math.max(0, clapCount - 1);
+        btn.classList.remove('reacted');
+        await supabase.from('post_reactions')
+          .delete().eq('post_id', postId).eq('user_id', currentUser.id).eq('reaction_type', 'clap');
+      } else {
+        myReactions.add(`${postId}:clap`);
+        clapCount += 1;
+        btn.classList.add('reacted');
+        await supabase.from('post_reactions')
+          .insert({ post_id: postId, user_id: currentUser.id, reaction_type: 'clap' });
+      }
+      countEl.textContent = clapCount > 0 ? clapCount : '';
+    });
+  }
+
+  // ── Comment submission ─────────────────────────────────────────────────
+  function wireComposer() {
+    const textarea = document.getElementById('new-comment-input');
+    const btn = document.getElementById('btn-post-comment');
+    if (!textarea || !btn) return;
+
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); }
+    });
+    btn.addEventListener('click', submitComment);
+  }
+
+  async function submitComment() {
+    const textarea = document.getElementById('new-comment-input');
+    const btn = document.getElementById('btn-post-comment');
+    const content = (textarea?.value || '').trim();
+    if (!content) return;
+
+    btn.disabled = true;
+    const { data: newComment, error } = await supabase
+      .from('comments')
+      .insert({ post_id: postId, author_id: currentUser.id, content })
+      .select('id, content, created_at, author_id')
+      .single();
+    btn.disabled = false;
+
+    if (error || !newComment) return;
+
+    const { data: myProfile } = await supabase
+      .from('profiles').select('user_id, display_name, photo_url').eq('user_id', currentUser.id).single();
+    newComment.profiles = myProfile || {};
+
+    textarea.value = '';
+
+    const listEl = document.getElementById('comment-list');
+    const noEl = listEl?.querySelector('.no-comments-yet');
+    if (noEl) noEl.remove();
+    if (listEl) listEl.insertAdjacentHTML('beforeend', renderComment(newComment));
+    updateCommentCount(1);
+    startRelativeTimers(5000, userTimezone);
+  }
+
+  // ── Realtime ───────────────────────────────────────────────────────────
+  let userTimezone = 'America/Chicago';
+
+  function subscribeComments() {
+    const channel = supabase
+      .channel(`post-comments:${postId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'comments',
+        filter: `post_id=eq.${postId}`,
+      }, async payload => {
+        const c = payload.new;
+        if (c.author_id === currentUser.id) return; // already appended optimistically
+        const { data: commentProfile } = await supabase
+          .from('profiles').select('user_id, display_name, photo_url').eq('user_id', c.author_id).single();
+        c.profiles = commentProfile || {};
+        const listEl = document.getElementById('comment-list');
+        const noEl = listEl?.querySelector('.no-comments-yet');
+        if (noEl) noEl.remove();
+        if (listEl) listEl.insertAdjacentHTML('beforeend', renderComment(c));
+        updateCommentCount(1);
+        startRelativeTimers(5000, userTimezone);
+      })
+      .subscribe();
+
+    window.addEventListener('beforeunload', () => supabase.removeChannel(channel), { once: true });
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+    currentUser = session.user;
+
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from('profiles').select('display_name, photo_url, is_admin, theme, bio, location, birth_year, experience, timezone').eq('user_id', currentUser.id).single(),
+      supabase.from('memberships').select('status').eq('user_id', currentUser.id).single(),
+    ]);
+
+    if (!profile?.is_admin && !isProfileComplete(profile)) {
+      window.location.href = '/app/profile.html?onboarding=true';
+      return;
+    }
+
+    const hasAccess = profile?.is_admin
+      || membership?.status === 'active'
+      || membership?.status === 'cancelling';
+    if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
+
+    userTimezone = profile?.timezone || 'America/Chicago';
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: profile?.display_name || currentUser.email.split('@')[0], isAdmin: profile?.is_admin });
+    initSubnav(null, supabase);
+    initFooter();
+
+    postId = new URLSearchParams(window.location.search).get('id');
+    if (!postId) { window.location.href = '/app/community.html'; return; }
+
+    // Fetch post
+    const { data: post, error: postError } = await supabase
+      .from('posts')
+      .select('id, author_id, channel_id, content, is_pinned, created_at, post_type, video_url')
+      .eq('id', postId)
+      .single();
+
+    if (postError || !post) { window.location.href = '/app/community.html'; return; }
+
+    // Fetch post author profile (two-query pattern)
+    const { data: authorProfiles } = await supabase
+      .from('profiles').select('user_id, display_name, photo_url').eq('user_id', post.author_id);
+    const postProfile = (authorProfiles || []).find(p => p.user_id === post.author_id) || null;
+
+    // Fetch all comments (ASC), reactions in parallel
+    const [{ data: allComments }, { data: reactions }] = await Promise.all([
+      supabase.from('comments').select('id, post_id, content, created_at, author_id').eq('post_id', postId).order('created_at', { ascending: true }),
+      supabase.from('post_reactions').select('post_id, reaction_type, user_id').eq('post_id', postId),
+    ]);
+
+    // Fetch comment author profiles (two-query pattern)
+    const commentAuthorIds = [...new Set((allComments || []).map(c => c.author_id))];
+    let commentProfileMap = {};
+    if (commentAuthorIds.length > 0) {
+      const { data: commentProfiles } = await supabase
+        .from('profiles').select('user_id, display_name, photo_url').in('user_id', commentAuthorIds);
+      for (const p of (commentProfiles || [])) commentProfileMap[p.user_id] = p;
+    }
+    for (const c of (allComments || [])) c.profiles = commentProfileMap[c.author_id] || {};
+
+    // Build reaction state
+    let clapCount = 0;
+    let reacted = false;
+    for (const r of (reactions || [])) {
+      if (r.reaction_type === 'clap') {
+        clapCount++;
+        if (r.user_id === currentUser.id) reacted = true;
+      }
+    }
+    if (reacted) myReactions.add(`${postId}:clap`);
+
+    // Build clapper names for tooltip
+    const clapperIds = (reactions || []).filter(r => r.reaction_type === 'clap').map(r => r.user_id);
+    if (clapperIds.length > 0) {
+      const { data: clapperProfiles } = await supabase
+        .from('profiles').select('user_id, display_name').in('user_id', clapperIds);
+      clapperNames = (clapperProfiles || []).map(p => p.display_name || 'Member');
+    }
+
+    // Render
+    const postContainer = document.getElementById('post-container');
+    postContainer.innerHTML = renderPost(post, postProfile, reacted, clapCount);
+
+    const commentsSection = document.getElementById('comments-section');
+    commentsSection.innerHTML = renderCommentsSection(allComments || []);
+    commentsSection.style.display = 'block';
+
+    wireReaction(postId);
+    wireComposer();
+    subscribeComments();
+    startRelativeTimers(5000, userTimezone);
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>

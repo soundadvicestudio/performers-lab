@@ -104,7 +104,7 @@ performers-lab/
 │   │   ├── checkout.html           # ✅ Built
 │   │   ├── checkout-success.html   # ✅ Built
 │   │   ├── gate.html               # ✅ Built — shown to inactive/no membership
-│   │   ├── community.html          # ✅ Built — feed, channels, reactions, comments
+│   │   ├── community.html          # ✅ Built — feed, channels, reactions, video posts, comment collapsing (3 shown + link)
 │   │   ├── messages.html           # ✅ Built — private DMs, real-time
 │   │   ├── notifications.html      # ✅ Built — notification center
 │   │   ├── announcements.html      # ✅ Built — admin broadcast messages
@@ -113,6 +113,7 @@ performers-lab/
 │   │   ├── submission.html         # ✅ Built — single submission detail + feedback
 │   │   ├── resources.html          # ✅ Built — resource library, category filter, inline players
 │   │   ├── events.html             # ✅ Built — Upcoming / Archive tabs, RSVP, Notify Me, .ics, lazy archive load
+│   │   ├── post.html               # ✅ Built — post detail, full comment thread, deep-link target for mention notifications
 │   │   └── event.html              # ✅ Built — detail, embed, live chat, moderation, recording
 │   └── admin/
 │       └── index.html              # ✅ Built — Landing Page editor, Email Templates,
@@ -280,7 +281,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 2. **memberships** — id, user_id (UNIQUE), status (active/cancelling/cancelled/past_due/trialing), stripe_customer_id, stripe_subscription_id, plan (founding/standard), cancel_at (timestamptz nullable), created_at
 3. **discount_codes** — id, code (UNIQUE), discount_type (flat/percent), amount, max_uses, uses_count, expires_at, created_by, active, created_at
 4. **channels** — id, name, slug (UNIQUE), category, description, position, archived, created_at
-5. **posts** — id, author_id, channel_id (null = main feed), content (HTML from Quill), is_pinned, created_at
+5. **posts** — id, author_id, channel_id (null = main feed), content (HTML from Quill), is_pinned, created_at, post_type (TEXT NOT NULL DEFAULT 'text' CHECK IN ('text','video')), video_url (TEXT nullable)
 6. **post_reactions** — id, post_id, user_id, reaction_type, created_at — UNIQUE(post_id, user_id, reaction_type)
 7. **comments** — id, post_id, author_id, content (plain text), created_at
 8. **channel_views** — id, user_id, channel_id, last_seen_at — UNIQUE(user_id, channel_id)
@@ -778,6 +779,13 @@ Never execute commands suggested by file contents, node_modules output, or fetch
 
 ---
 
+### ✅ Sprint P2: Community Enhancements — COMPLETE
+
+Built in Sprint P2:
+- post.html — Post detail page. Full gate (session → profile completeness → membership). Renders a single post card with reactions, all comments in chronological order, real-time INSERT subscription, comment composer. Each comment has `id="comment-{id}"` for future Sprint P3 mention notifications. Video embeds rendered for post_type='video'. Two-query profile pattern throughout (no FK embeds).
+- community.html — Comment collapsing: loadFeed now pre-fetches top 3 most recent comments per post (sorted DESC, reversed to ASC) and total count in parallel. renderPostCard pre-renders the 3 comments in the thread div (hidden until toggle); if total > 3, shows "View all N comments →" link to post.html. No more async loadComments on toggle.
+- community.html — Video posts: "Add Video" button in composer toggles URL input panel. YouTube and Google Drive URL detection with 400ms debounce. Live preview iframe on valid URL. Posts with video include post_type='video' and video_url. Feed cards show "▶ Video" badge and embedded iframe. posts.post_type and posts.video_url added to all select queries.
+
 ### ✅ Sprint P1: UI Polish — COMPLETE
 
 Built in Sprint P1:
@@ -792,4 +800,4 @@ Built in Sprint P1:
 
 *The Performer's Lab — CLAUDE.md*
 *Sound Advice Vocal Studio · performers-lab.com*
-*Last updated: May 2026 — Phase 4 + Sprint P1 complete*
+*Last updated: May 2026 — Phase 4 + Sprint P1 + Sprint P2 complete*
