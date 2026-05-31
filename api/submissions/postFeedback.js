@@ -75,7 +75,15 @@ export default async function handler(req, res) {
   );
   const memberEmail = memberAuth?.email;
 
-  if (memberEmail) {
+  // Check member's feedback email preference (null treated as true — opt-in by default)
+  const { data: prefRows } = await supabaseRequest(
+    'GET',
+    `/rest/v1/profiles?user_id=eq.${submission.member_id}&select=email_notify_feedback&limit=1`
+  );
+  const memberPref = Array.isArray(prefRows) ? prefRows[0] : null;
+  const sendFeedbackEmail = memberEmail && memberPref?.email_notify_feedback !== false;
+
+  if (sendFeedbackEmail) {
     const emailHtml = buildEmailHtml(submission.song_title, submission_id);
     await fetch('https://api.resend.com/emails', {
       method: 'POST',

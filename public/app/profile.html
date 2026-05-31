@@ -135,6 +135,32 @@
   select.field-select:focus { border-color: var(--gold); background-color: var(--bg-4); }
   select.field-select option, select.field-select optgroup { background: var(--bg-3); color: var(--text); }
   .field-helper { font-size: 11px; color: var(--text-dim); margin-top: 5px; font-weight: 300; line-height: 1.45; }
+
+  /* ── EMAIL NOTIFICATION TOGGLES ── */
+  .notify-section { margin-top: 1.75rem; padding-top: 1.5rem; border-top: 0.5px solid var(--border); }
+  .notify-section-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 4px;
+  }
+  .notify-section-desc { font-size: 12px; color: var(--text-muted); font-weight: 300; margin-bottom: 1.25rem; line-height: 1.5; }
+  .toggle-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 1.1rem; }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle-wrap { flex-shrink: 0; position: relative; width: 40px; height: 22px; margin-top: 2px; }
+  .toggle-input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    display: block; width: 40px; height: 22px; border-radius: 11px;
+    background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    cursor: pointer; transition: background 0.2s, border-color 0.2s;
+  }
+  .toggle-track::after {
+    content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text-dim); top: 3px; left: 3px; transition: left 0.2s, background 0.2s;
+  }
+  .toggle-input:checked + .toggle-track { background: var(--gold); border-color: var(--gold); }
+  .toggle-input:checked + .toggle-track::after { left: 21px; background: var(--bg); }
+  .toggle-text { flex: 1; min-width: 0; }
+  .toggle-label-text { font-size: 14px; color: var(--text); font-weight: 400; margin-bottom: 2px; display: block; cursor: pointer; }
+  .toggle-desc { font-size: 12px; color: var(--text-muted); font-weight: 300; line-height: 1.5; }
   .field-error { font-size: 11px; color: var(--red); margin-top: 4px; display: none; }
 
   /* ── SAVE ROW ── */
@@ -403,6 +429,44 @@
         </div>
       </div>
 
+      <div class="notify-section">
+        <div class="notify-section-title">Email Notifications</div>
+        <p class="notify-section-desc">In-platform notifications are always on. Control which reminder emails you receive.</p>
+
+        <div class="toggle-row">
+          <div class="toggle-wrap">
+            <input type="checkbox" class="toggle-input" id="email_notify_dm" checked>
+            <label class="toggle-track" for="email_notify_dm"></label>
+          </div>
+          <div class="toggle-text">
+            <label class="toggle-label-text" for="email_notify_dm">Direct Message Emails</label>
+            <span class="toggle-desc">Get an email when you receive a new message</span>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-wrap">
+            <input type="checkbox" class="toggle-input" id="email_notify_feedback" checked>
+            <label class="toggle-track" for="email_notify_feedback"></label>
+          </div>
+          <div class="toggle-text">
+            <label class="toggle-label-text" for="email_notify_feedback">Feedback Emails</label>
+            <span class="toggle-desc">Get an email when Jonathan posts feedback on your submission</span>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-wrap">
+            <input type="checkbox" class="toggle-input" id="email_notify_events" checked>
+            <label class="toggle-track" for="email_notify_events"></label>
+          </div>
+          <div class="toggle-text">
+            <label class="toggle-label-text" for="email_notify_events">Event Reminder Emails</label>
+            <span class="toggle-desc">Get 24-hour and morning-of reminders for sessions you've RSVP'd to</span>
+          </div>
+        </div>
+      </div>
+
       <div class="save-row">
         <button class="btn-gold" id="save-btn">Save changes</button>
         <span class="save-msg" id="save-msg"></span>
@@ -515,7 +579,7 @@
 
     const [profileRes, membershipRes, countRes] = await Promise.all([
       supabase.from('profiles')
-        .select('display_name, bio, location, photo_url, is_admin, theme, birth_year, experience, timezone')
+        .select('display_name, bio, location, photo_url, is_admin, theme, birth_year, experience, timezone, email_notify_dm, email_notify_feedback, email_notify_events')
         .eq('user_id', currentUserId)
         .single(),
       supabase.from('memberships')
@@ -547,6 +611,9 @@
     document.getElementById('input-bio').value = profile?.bio || '';
     document.getElementById('input-location').value = profile?.location || '';
     document.getElementById('input-timezone').value = profile?.timezone || 'America/Chicago';
+    document.getElementById('email_notify_dm').checked = profile?.email_notify_dm !== false;
+    document.getElementById('email_notify_feedback').checked = profile?.email_notify_feedback !== false;
+    document.getElementById('email_notify_events').checked = profile?.email_notify_events !== false;
 
     // Set max year
     document.getElementById('input-birth-year').max = new Date().getFullYear() - 10;
@@ -823,7 +890,10 @@
         photo_url: currentPhotoUrl,
         birth_year: birthYear,
         experience: experience || null,
-        timezone: timezone || null
+        timezone: timezone || null,
+        email_notify_dm: document.getElementById('email_notify_dm').checked,
+        email_notify_feedback: document.getElementById('email_notify_feedback').checked,
+        email_notify_events: document.getElementById('email_notify_events').checked
       })
       .eq('user_id', currentUserId);
 

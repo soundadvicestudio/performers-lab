@@ -19,6 +19,17 @@ export default async function handler(req, res) {
   }
 
   const recipientEmail = adminUser.email;
+
+  // Check recipient's DM email preference (null treated as true — opt-in by default)
+  const { data: prefRows } = await supabaseRequest(
+    'GET',
+    `/rest/v1/profiles?user_id=eq.${recipientUserId}&select=email_notify_dm&limit=1`
+  );
+  const pref = Array.isArray(prefRows) ? prefRows[0] : null;
+  if (pref?.email_notify_dm === false) {
+    return res.status(200).json({ success: true, skipped: 'email_notify_dm=false' });
+  }
+
   const preview = String(messagePreview || '').substring(0, 80);
   const msgUrl = `https://performers-lab.com/app/messages.html?conversation=${conversationId}`;
 
