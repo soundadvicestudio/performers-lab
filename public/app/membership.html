@@ -59,8 +59,14 @@
     white-space: nowrap; flex-shrink: 0;
   }
   .status-badge.past-due { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); }
+  .status-badge.cancelling { background: var(--gold-dim); color: var(--gold); border-color: var(--border-gold); }
   .status-badge.cancelled { background: var(--red-dim); color: var(--red); border-color: rgba(224,92,92,0.25); }
   .card-meta { display: flex; gap: 2.5rem; flex-wrap: wrap; }
+  .cancel-date-info {
+    margin-top: 1.25rem; padding-top: 1.25rem; border-top: 0.5px solid var(--border);
+    font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.6;
+  }
+  .cancel-date-info strong { color: var(--text); font-weight: 500; }
   .meta-item {}
   .meta-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
   .meta-value { font-size: 14px; color: var(--text-muted); font-weight: 300; }
@@ -150,6 +156,9 @@
           <div class="meta-value" id="status-detail">—</div>
         </div>
       </div>
+      <div class="cancel-date-info" id="cancel-date-info" style="display:none;">
+        Your access continues until <strong id="cancel-date-text">—</strong>
+      </div>
     </div>
 
     <!-- Founding member info (conditional) -->
@@ -163,7 +172,7 @@
     <!-- Cancellation policy -->
     <div class="policy-note">
       <div class="policy-note-label">Cancellation policy</div>
-      <div class="policy-note-text">Cancel anytime — no penalty. Access continues until the end of your current billing period.</div>
+      <div class="policy-note-text" id="policy-note-text">Cancel anytime — no penalty. Access continues until the end of your current billing period.</div>
     </div>
 
     <!-- Actions -->
@@ -237,7 +246,7 @@
     const [profileRes, membershipRes] = await Promise.all([
       supabase.from('profiles').select('display_name, is_admin, theme').eq('user_id', userId).single(),
       supabase.from('memberships')
-        .select('plan, status, stripe_customer_id, created_at')
+        .select('plan, status, stripe_customer_id, created_at, cancel_at')
         .eq('user_id', userId)
         .single(),
     ]);
@@ -263,6 +272,9 @@
       if (status === 'active') {
         badge.textContent  = 'Active';
         badge.className    = 'status-badge';
+      } else if (status === 'cancelling') {
+        badge.textContent  = 'Pending Cancellation';
+        badge.className    = 'status-badge cancelling';
       } else if (status === 'past_due') {
         badge.textContent  = 'Past Due';
         badge.className    = 'status-badge past-due';
@@ -275,8 +287,19 @@
       }
 
       document.getElementById('status-detail').textContent = status
-        ? status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')
+        ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
         : '—';
+
+      // Cancel date info + policy note update (cancelling status only)
+      if (status === 'cancelling' && membership.cancel_at) {
+        const cancelDate = new Date(membership.cancel_at).toLocaleDateString('en-US', {
+          month: 'long', day: 'numeric', year: 'numeric'
+        });
+        document.getElementById('cancel-date-text').textContent = cancelDate;
+        document.getElementById('cancel-date-info').style.display = 'block';
+        document.getElementById('policy-note-text').textContent =
+          `Your membership ends on ${cancelDate}. Access continues until then — no further charges will be made.`;
+      }
 
       // Member since
       if (membership.created_at) {
@@ -292,11 +315,12 @@
       }
 
       // Action buttons
-      if (status === 'active' && membership.stripe_customer_id) {
+      if ((status === 'active' || status === 'cancelling') && membership.stripe_customer_id) {
         const btn = document.getElementById('btn-portal');
         btn.dataset.customerId = membership.stripe_customer_id;
         btn.style.display = 'inline-block';
-      } else if (status === 'cancelled' || status === 'past_due') {
+      }
+      if (status === 'cancelling' || status === 'cancelled' || status === 'past_due') {
         document.getElementById('btn-reactivate').style.display = 'inline-block';
       }
     } else {

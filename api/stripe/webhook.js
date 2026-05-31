@@ -72,6 +72,29 @@ export default async function handler(req, res) {
         break;
       }
 
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        if (subscription.cancel_at_period_end) {
+          await supabaseRequest(
+            'PATCH',
+            `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}`,
+            {
+              status:    'cancelling',
+              cancel_at: subscription.cancel_at
+                ? new Date(subscription.cancel_at * 1000).toISOString()
+                : null,
+            }
+          );
+        } else {
+          await supabaseRequest(
+            'PATCH',
+            `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}`,
+            { status: 'active', cancel_at: null }
+          );
+        }
+        break;
+      }
+
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
         await supabaseRequest(

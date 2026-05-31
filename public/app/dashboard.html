@@ -210,15 +210,18 @@
 
     // Load profile and membership in parallel.
     // MEMBERSHIP GATE PATTERN — copy to all content pages (community, submit, resources, events):
-    //   if (!profile?.is_admin && membership?.status !== 'active') redirect to /app/gate.html
-    //   Account management pages (profile.html, membership.html) intentionally skip this check.
+    //   Allowed statuses: 'active', 'cancelling' (access until period end). All others → /app/gate.html
+    //   Admins bypass entirely. Account management pages (profile.html, membership.html) skip this check.
     const [{ data: profile }, { data: membership }] = await Promise.all([
       supabase.from('profiles').select('display_name, is_admin, theme').eq('user_id', user.id).single(),
       supabase.from('memberships').select('plan, status').eq('user_id', user.id).single(),
     ]);
 
-    // Membership gate — admins bypass regardless of membership status
-    if (!profile?.is_admin && membership?.status !== 'active') {
+    const hasAccess = profile?.is_admin
+      || membership?.status === 'active'
+      || membership?.status === 'cancelling';
+
+    if (!hasAccess) {
       window.location.href = '/app/gate.html';
       return;
     }
@@ -233,8 +236,15 @@
       const planLabel = membership.plan === 'founding' ? 'Founding Member — $40/mo' : 'Standard Member — $60/mo';
       document.getElementById('plan-display').textContent = planLabel;
       const badge = document.getElementById('status-badge');
-      badge.textContent = membership.status === 'active' ? 'Active' : membership.status;
-      if (membership.status !== 'active') badge.classList.add('pending');
+      if (membership.status === 'active') {
+        badge.textContent = 'Active';
+      } else if (membership.status === 'cancelling') {
+        badge.textContent = 'Pending Cancellation';
+        badge.classList.add('pending');
+      } else {
+        badge.textContent = membership.status.replace('_', ' ');
+        badge.classList.add('pending');
+      }
     }
 
     // Load next upcoming event

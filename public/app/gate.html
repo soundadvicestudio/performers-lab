@@ -142,7 +142,8 @@
     const profile = profileRes.data;
     const membership = membershipRes.data;
 
-    if (membership?.status === 'active') {
+    // cancelling = active access until period end; redirect away from gate
+    if (membership?.status === 'active' || membership?.status === 'cancelling') {
       window.location.href = '/app/dashboard.html';
       return;
     }
