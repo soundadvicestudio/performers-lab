@@ -588,6 +588,111 @@
   #email-quill-editor .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
   #email-quill-editor .ql-snow button:hover .ql-fill,
   #email-quill-editor .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
+
+  /* ── SUBMISSIONS QUEUE ── */
+  .submission-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .sub-tab {
+    background: var(--bg-3); border: 0.5px solid var(--border); border-radius: 8px; padding: 6px 16px;
+    font-size: 13px; color: var(--text-muted); font-family: 'Raleway', sans-serif;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .sub-tab:hover { border-color: var(--border-mid); color: var(--text); }
+  .sub-tab.active { background: var(--gold-dim); border-color: var(--border-gold); color: var(--gold); }
+  .sub-row {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 10px; margin-bottom: 8px; overflow: hidden; transition: border-color 0.15s;
+  }
+  .sub-row:hover { border-color: var(--border-mid); }
+  .sub-row-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 20px 24px; gap: 1rem; cursor: pointer; user-select: none;
+  }
+  .sub-member-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .sub-song-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 400; color: var(--gold); margin-bottom: 2px; }
+  .sub-artist { font-size: 13px; color: var(--text-muted); font-weight: 300; margin-bottom: 4px; }
+  .sub-submitted-time { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .sub-row-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; flex-shrink: 0; }
+  .sub-countdown { font-size: 14px; font-weight: 600; }
+  .sub-deadline-label { font-size: 11px; color: var(--text-dim); font-weight: 300; }
+  .sub-chevron { font-size: 12px; color: var(--text-dim); transition: transform 0.2s; margin-top: 4px; }
+  .sub-reviewed-badge {
+    display: inline-block; background: var(--green-dim); color: var(--green);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 2px; border: 0.5px solid rgba(76,175,132,0.25);
+  }
+  .sub-divider { border: none; border-top: 0.5px solid var(--border); margin: 0; }
+  .sub-row-expanded { padding: 20px 24px; cursor: default; }
+  .sub-row-expanded-inner { }
+  .sub-two-col { display: grid; grid-template-columns: 55% 43%; gap: 2%; }
+  .sub-section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 1rem;
+  }
+  .sub-detail-row { margin-bottom: 1rem; }
+  .sub-detail-row:last-child { margin-bottom: 0; }
+  .sub-detail-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
+  .sub-detail-value { font-size: 14px; color: var(--text); font-weight: 300; line-height: 1.55; word-break: break-word; white-space: pre-wrap; }
+  .sub-detail-value a { color: var(--gold); text-decoration: none; }
+  .sub-detail-value a:hover { text-decoration: underline; }
+  .sub-empty { text-align: center; padding: 3rem 1rem; font-size: 13px; color: var(--text-dim); font-style: italic; }
+  .sub-loading { text-align: center; padding: 2rem; color: var(--text-dim); font-size: 13px; font-style: italic; }
+  .sub-publish-btn {
+    width: 100%; background: var(--gold); color: #070707; border: none; padding: 11px; border-radius: 3px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s; margin-top: 10px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .sub-publish-btn:hover:not(:disabled) { background: var(--gold-light); }
+  .sub-publish-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .sub-edit-btn {
+    background: var(--bg-3); border: 0.5px solid var(--border-mid); color: var(--text);
+    padding: 8px 16px; border-radius: 3px; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s; margin-top: 10px; display: inline-block;
+  }
+  .sub-edit-btn:hover { border-color: var(--border-gold); color: var(--gold); }
+  .sub-save-btn {
+    background: var(--gold); color: #070707; border: none; padding: 8px 16px; border-radius: 3px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s;
+  }
+  .sub-save-btn:hover:not(:disabled) { background: var(--gold-light); }
+  .sub-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .sub-cancel-btn {
+    background: none; border: 0.5px solid var(--border-mid); color: var(--text-muted);
+    padding: 8px 16px; border-radius: 3px; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .sub-cancel-btn:hover { border-color: var(--text-dim); color: var(--text); }
+  .sub-edit-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .sub-feedback-error { font-size: 12px; color: #e05c5c; margin-top: 6px; min-height: 16px; }
+  .sub-feedback-readonly { font-size: 14px; color: var(--text); line-height: 1.7; font-weight: 300; }
+  .sub-feedback-readonly p { margin-bottom: 0.5em; }
+  .sub-feedback-readonly p:last-child { margin-bottom: 0; }
+  .sub-feedback-readonly a { color: var(--gold); text-decoration: underline; }
+  .sub-feedback-readonly ul, .sub-feedback-readonly ol { padding-left: 1.4em; margin-bottom: 0.5em; }
+  .sub-feedback-readonly strong { font-weight: 700; }
+  .sub-feedback-readonly em { font-style: italic; }
+  .sub-quill-wrap .ql-toolbar {
+    background: var(--bg-3) !important; border: 0.5px solid var(--border) !important;
+    border-bottom: none !important; border-radius: 3px 3px 0 0;
+  }
+  .sub-quill-wrap .ql-container {
+    background: var(--bg-3) !important; border: 0.5px solid var(--border) !important;
+    border-top: none !important; border-radius: 0 0 3px 3px;
+    font-family: 'Raleway', sans-serif !important; font-size: 14px !important;
+    color: var(--text) !important; min-height: 220px;
+  }
+  .sub-quill-wrap .ql-container:focus-within { border-color: var(--border-gold) !important; }
+  .sub-quill-wrap .ql-editor.ql-blank::before { color: var(--text-dim) !important; font-style: normal !important; }
+  .sub-quill-wrap .ql-snow .ql-stroke { stroke: var(--text-dim) !important; }
+  .sub-quill-wrap .ql-snow .ql-fill { fill: var(--text-dim) !important; }
+  .sub-quill-wrap .ql-snow .ql-picker { color: var(--text-dim) !important; }
+  .sub-quill-wrap .ql-snow button:hover .ql-stroke,
+  .sub-quill-wrap .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
+  .sub-quill-wrap .ql-snow button:hover .ql-fill,
+  .sub-quill-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
 </style>
 </head>
 <body>
@@ -660,6 +765,10 @@
       <div class="nav-item" data-panel="announcements" onclick="switchPanel(this,'announcements'); window.initAnnounceQuill?.()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
         Announcements
+      </div>
+      <div class="nav-item" data-panel="submissions" onclick="switchPanel(this,'submissions'); window.initSubmissions?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+        Submissions
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -1104,6 +1213,24 @@
             <div class="email-tpl-trigger">Sent when a new member verifies their email</div>
           </div>
           <button class="email-edit-btn" onclick="openEmailModal('welcome')">Edit</button>
+        </div>
+      </div>
+
+      <!-- SUBMISSIONS -->
+      <div class="panel" id="panel-submissions">
+        <div class="panel-title">Submission Queue</div>
+        <div class="panel-desc">Sorted by review deadline — earliest first.</div>
+
+        <div class="submission-tabs">
+          <button class="sub-tab active" onclick="window.switchSubTab(this,'pending')">Pending Review</button>
+          <button class="sub-tab" onclick="window.switchSubTab(this,'feedback')">Feedback Given</button>
+        </div>
+
+        <div id="sub-tab-pending">
+          <div id="pending-queue"><div class="sub-loading">Loading…</div></div>
+        </div>
+        <div id="sub-tab-feedback" style="display:none;">
+          <div id="feedback-queue"><div class="sub-loading">Loading…</div></div>
         </div>
       </div>
 
@@ -1667,6 +1794,386 @@
   document.getElementById('email-modal').addEventListener('click', function(e) {
     if (e.target === this) closeEmailModal();
   });
+
+  // ── Submissions queue ─────────────────────────────────────────────────
+
+  const ADMIN_UID = '6abb9d4d-ed5f-456e-aebb-aa76c8696c44';
+  let submissionsInitialized = false;
+  let feedbackTabLoaded = false;
+  let pendingSubmissions = [];
+  let feedbackSubmissions = [];
+  const submissionProfileMap = {};
+  const submissionQuilts = new Map();
+  const submissionCountdowns = new Map();
+  const feedbackContentMap = new Map();
+
+  window.initSubmissions = async function() {
+    if (submissionsInitialized) return;
+    submissionsInitialized = true;
+    await loadPendingQueue();
+  };
+
+  window.switchSubTab = function(btn, tab) {
+    document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('sub-tab-pending').style.display = tab === 'pending' ? 'block' : 'none';
+    document.getElementById('sub-tab-feedback').style.display = tab === 'feedback' ? 'block' : 'none';
+    if (tab === 'feedback' && !feedbackTabLoaded) {
+      feedbackTabLoaded = true;
+      loadFeedbackQueue();
+    }
+  };
+
+  async function loadPendingQueue() {
+    const container = document.getElementById('pending-queue');
+    container.innerHTML = '<div class="sub-loading">Loading submissions…</div>';
+
+    const { data: subs } = await sbClient
+      .from('submissions').select('*').eq('status', 'Pending')
+      .order('submitted_at', { ascending: true });
+
+    pendingSubmissions = subs || [];
+    await loadProfilesForSubmissions(pendingSubmissions);
+    renderQueue('pending-queue', pendingSubmissions, true);
+    await checkUrgentSubmissions(pendingSubmissions);
+  }
+
+  async function loadFeedbackQueue() {
+    const container = document.getElementById('feedback-queue');
+    container.innerHTML = '<div class="sub-loading">Loading…</div>';
+
+    const { data: subs } = await sbClient
+      .from('submissions').select('*').eq('status', 'Feedback Given')
+      .order('submitted_at', { ascending: false });
+
+    feedbackSubmissions = subs || [];
+    await loadProfilesForSubmissions(feedbackSubmissions);
+    renderQueue('feedback-queue', feedbackSubmissions, false);
+  }
+
+  async function loadProfilesForSubmissions(subs) {
+    if (!subs.length) return;
+    const memberIds = [...new Set(subs.map(s => s.member_id).filter(id => !submissionProfileMap[id]))];
+    if (!memberIds.length) return;
+    const { data: profiles } = await sbClient
+      .from('profiles').select('user_id, display_name, birth_year, experience, created_at')
+      .in('user_id', memberIds);
+    for (const p of (profiles || [])) submissionProfileMap[p.user_id] = p;
+  }
+
+  function renderQueue(containerId, subs, isPending) {
+    const container = document.getElementById(containerId);
+    if (!subs.length) {
+      const msg = isPending ? "No pending submissions. You're all caught up." : "No submissions with feedback yet.";
+      container.innerHTML = `<div class="sub-empty">${msg}</div>`;
+      return;
+    }
+    container.innerHTML = subs.map(sub => renderSubmissionRow(sub, isPending)).join('');
+    if (isPending) {
+      subs.forEach(sub => {
+        const el = document.getElementById(`countdown-${sub.id}`);
+        if (el) startCountdown(sub.id, sub.submitted_at, el);
+      });
+    }
+  }
+
+  function renderSubmissionRow(sub, isPending) {
+    const profile = submissionProfileMap[sub.member_id] || {};
+    const memberName = profile.display_name || 'Member';
+    const submittedStr = new Date(sub.submitted_at).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+    const deadlineDate = new Date(new Date(sub.submitted_at).getTime() + 48 * 3600000);
+    const ctDeadline = formatCtDeadline(deadlineDate);
+    const sId = escStr(sub.id);
+
+    const rightSection = isPending ? `
+      <div class="sub-countdown" id="countdown-${sId}"></div>
+      <div class="sub-deadline-label">Due ${escStr(ctDeadline)}</div>
+      <div class="sub-chevron" id="chevron-${sId}">▼</div>` : `
+      <div class="sub-reviewed-badge">Reviewed</div>
+      <div class="sub-chevron" id="chevron-${sId}">▼</div>`;
+
+    return `
+      <div class="sub-row" id="sub-row-${sId}">
+        <div class="sub-row-header" onclick="window.toggleSubmissionRow('${sId}')">
+          <div class="sub-row-left">
+            <div class="sub-member-name">${escStr(memberName)}</div>
+            <div class="sub-song-title">${escStr(sub.song_title)}</div>
+            <div class="sub-artist">${escStr(sub.show_artist)}</div>
+            <div class="sub-submitted-time">Submitted ${escStr(submittedStr)}</div>
+          </div>
+          <div class="sub-row-right">${rightSection}</div>
+        </div>
+        <div class="sub-row-expanded" id="expanded-${sId}" style="display:none;"></div>
+      </div>`;
+  }
+
+  window.toggleSubmissionRow = function(subId) {
+    const expanded = document.getElementById(`expanded-${subId}`);
+    const chevron = document.getElementById(`chevron-${subId}`);
+    if (!expanded || !chevron) return;
+    if (expanded.style.display === 'none') {
+      expanded.style.display = 'block';
+      chevron.style.transform = 'rotate(180deg)';
+      if (!expanded.dataset.initialized) {
+        expanded.dataset.initialized = 'true';
+        const sub = [...pendingSubmissions, ...feedbackSubmissions].find(s => s.id === subId);
+        if (sub) initExpandedContent(sub);
+      }
+    } else {
+      expanded.style.display = 'none';
+      chevron.style.transform = '';
+    }
+  };
+
+  async function initExpandedContent(sub) {
+    const el = document.getElementById(`expanded-${sub.id}`);
+    const profile = submissionProfileMap[sub.member_id] || {};
+    const isPending = sub.status === 'Pending';
+    const sId = escStr(sub.id);
+    const detailsHtml = buildDetailsHtml(sub, profile);
+    const feedbackPlaceholder = isPending
+      ? buildPendingEditorHtml(sub.id)
+      : '<div style="color:var(--text-dim);font-size:12px;font-style:italic;padding:1rem 0;">Loading feedback…</div>';
+
+    el.innerHTML = `
+      <hr class="sub-divider">
+      <div class="sub-row-expanded">
+        <div class="sub-two-col">
+          <div id="left-col-${sId}">
+            <div class="sub-section-label">Your Feedback</div>
+            ${feedbackPlaceholder}
+          </div>
+          <div>
+            <div class="sub-section-label">Submission Details</div>
+            ${detailsHtml}
+          </div>
+        </div>
+      </div>`;
+
+    if (isPending) {
+      const quill = new Quill(`#quill-editor-${sub.id}`, {
+        theme: 'snow',
+        placeholder: 'Write your coaching feedback here…',
+        modules: { toolbar: [['bold','italic','underline'],['link'],[{list:'ordered'},{list:'bullet'}]] }
+      });
+      submissionQuilts.set(sub.id, quill);
+    } else {
+      loadAndRenderFeedback(sub);
+    }
+  }
+
+  async function loadAndRenderFeedback(sub) {
+    const { data: feedbackRow } = await sbClient
+      .from('feedback').select('id, content, coach_id, created_at')
+      .eq('submission_id', sub.id).maybeSingle();
+    if (feedbackRow) feedbackContentMap.set(sub.id, feedbackRow);
+    const leftCol = document.getElementById(`left-col-${sub.id}`);
+    if (!leftCol) return;
+    leftCol.innerHTML = `<div class="sub-section-label">Your Feedback</div>${buildReadonlyFeedbackHtml(sub.id, feedbackRow?.content || '')}`;
+  }
+
+  function buildPendingEditorHtml(subId) {
+    const sId = escStr(subId);
+    return `
+      <div class="sub-quill-wrap"><div id="quill-editor-${sId}"></div></div>
+      <div class="sub-feedback-error" id="feedback-error-${sId}"></div>
+      <button class="sub-publish-btn" id="publish-btn-${sId}" onclick="window.publishFeedback('${sId}')">Publish Feedback</button>`;
+  }
+
+  function buildReadonlyFeedbackHtml(subId, content) {
+    const sId = escStr(subId);
+    return `
+      <div class="sub-feedback-readonly" id="feedback-readonly-${sId}">${content || '<em style="color:var(--text-dim)">No feedback yet.</em>'}</div>
+      <button class="sub-edit-btn" onclick="window.enterEditFeedback('${sId}')">Edit Feedback</button>`;
+  }
+
+  function buildDetailsHtml(sub, profile) {
+    const videoUrl = sub.video_url || '';
+    const videoDisplay = videoUrl.length > 50 ? videoUrl.substring(0, 49) + '…' : videoUrl;
+    let html = `
+      <div class="sub-detail-row"><div class="sub-detail-label">Style</div><div class="sub-detail-value">${escStr(sub.style)}</div></div>
+      <div class="sub-detail-row"><div class="sub-detail-label">Goal</div><div class="sub-detail-value">${escStr(sub.goal)}</div></div>
+      <div class="sub-detail-row"><div class="sub-detail-label">Video</div><div class="sub-detail-value"><a href="${escStr(videoUrl)}" target="_blank" rel="noopener">Watch: ${escStr(videoDisplay)} →</a></div></div>
+      <div class="sub-detail-row"><div class="sub-detail-label">Proud of</div><div class="sub-detail-value">${escStr(sub.proud_of)}</div></div>
+      <div class="sub-detail-row"><div class="sub-detail-label">Challenged by</div><div class="sub-detail-value">${escStr(sub.challenge)}</div></div>`;
+    if (sub.focus_moments) {
+      html += `<div class="sub-detail-row"><div class="sub-detail-label">Specific moments</div><div class="sub-detail-value">${escStr(sub.focus_moments)}</div></div>`;
+    }
+    html += `<div class="sub-detail-row"><div class="sub-detail-label">Confidence</div><div class="sub-detail-value">${sub.confidence_rating || '—'} / 5</div></div>`;
+    if (profile.created_at) {
+      html += `<div class="sub-detail-row"><div class="sub-detail-label">Member Since</div><div class="sub-detail-value">${escStr(formatMemberSince(profile.created_at))}</div></div>`;
+    }
+    if (profile.birth_year) {
+      html += `<div class="sub-detail-row"><div class="sub-detail-label">Birth Year</div><div class="sub-detail-value">${profile.birth_year}</div></div>`;
+    }
+    if (profile.experience) {
+      html += `<div class="sub-detail-row"><div class="sub-detail-label">Singing Experience</div><div class="sub-detail-value">${escStr(profile.experience)}</div></div>`;
+    }
+    return html;
+  }
+
+  window.publishFeedback = async function(subId) {
+    const quill = submissionQuilts.get(subId);
+    if (!quill) return;
+    const content = quill.root.innerHTML;
+    const errEl = document.getElementById(`feedback-error-${subId}`);
+    const btn = document.getElementById(`publish-btn-${subId}`);
+    if (!quill.getText().trim()) { errEl.textContent = 'Feedback cannot be empty.'; return; }
+    errEl.textContent = '';
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border:2px solid rgba(7,7,7,0.3);border-top-color:#070707;border-radius:50%;animation:spin 0.7s linear infinite;"></span> Publishing…`;
+
+    const { data: { user } } = await sbClient.auth.getUser();
+    const res = await fetch('/api/submissions/postFeedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_user_id: user.id, submission_id: subId, content, is_edit: false }),
+    });
+    const result = await res.json();
+    btn.disabled = false;
+    btn.innerHTML = 'Publish Feedback';
+
+    if (!res.ok || !result.success) { errEl.textContent = result.error || 'Failed to publish.'; return; }
+
+    // Replace editor with read-only
+    const leftCol = document.getElementById(`left-col-${subId}`);
+    if (leftCol) leftCol.innerHTML = `<div class="sub-section-label">Your Feedback</div>${buildReadonlyFeedbackHtml(subId, content)}`;
+
+    // Swap countdown → reviewed badge
+    const countdown = document.getElementById(`countdown-${subId}`);
+    const deadlineLabel = countdown?.nextElementSibling;
+    if (countdown) { countdown.outerHTML = '<div class="sub-reviewed-badge">Reviewed</div>'; }
+    if (deadlineLabel?.classList.contains('sub-deadline-label')) deadlineLabel.remove();
+
+    if (submissionCountdowns.has(subId)) {
+      clearInterval(submissionCountdowns.get(subId));
+      submissionCountdowns.delete(subId);
+    }
+
+    feedbackContentMap.set(subId, { content });
+    const sub = pendingSubmissions.find(s => s.id === subId);
+    if (sub) sub.status = 'Feedback Given';
+    showToast('Feedback published.');
+  };
+
+  window.enterEditFeedback = async function(subId) {
+    const leftCol = document.getElementById(`left-col-${subId}`);
+    if (!leftCol) return;
+    let existingContent = feedbackContentMap.get(subId)?.content || '';
+    if (!existingContent) {
+      const { data: row } = await sbClient.from('feedback').select('content').eq('submission_id', subId).maybeSingle();
+      existingContent = row?.content || '';
+      if (row) feedbackContentMap.set(subId, row);
+    }
+    const sId = escStr(subId);
+    leftCol.innerHTML = `
+      <div class="sub-section-label">Your Feedback</div>
+      <div class="sub-quill-wrap"><div id="quill-editor-edit-${sId}"></div></div>
+      <div class="sub-feedback-error" id="feedback-error-edit-${sId}"></div>
+      <div class="sub-edit-actions">
+        <button class="sub-cancel-btn" onclick="window.cancelFeedbackEdit('${sId}')">Cancel</button>
+        <button class="sub-save-btn" id="save-edit-btn-${sId}" onclick="window.saveFeedbackEdit('${sId}')">Save Changes</button>
+      </div>`;
+    const quill = new Quill(`#quill-editor-edit-${subId}`, {
+      theme: 'snow',
+      modules: { toolbar: [['bold','italic','underline'],['link'],[{list:'ordered'},{list:'bullet'}]] }
+    });
+    quill.root.innerHTML = existingContent;
+    submissionQuilts.set(`edit-${subId}`, quill);
+  };
+
+  window.saveFeedbackEdit = async function(subId) {
+    const quill = submissionQuilts.get(`edit-${subId}`);
+    if (!quill) return;
+    const content = quill.root.innerHTML;
+    const errEl = document.getElementById(`feedback-error-edit-${subId}`);
+    const btn = document.getElementById(`save-edit-btn-${subId}`);
+    if (!quill.getText().trim()) { errEl.textContent = 'Feedback cannot be empty.'; return; }
+    errEl.textContent = '';
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    const { data: { user } } = await sbClient.auth.getUser();
+    const res = await fetch('/api/submissions/postFeedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_user_id: user.id, submission_id: subId, content, is_edit: true }),
+    });
+    const result = await res.json();
+    btn.disabled = false; btn.textContent = 'Save Changes';
+
+    if (!res.ok || !result.success) { errEl.textContent = result.error || 'Save failed.'; return; }
+
+    const existing = feedbackContentMap.get(subId) || {};
+    feedbackContentMap.set(subId, { ...existing, content });
+    const leftCol = document.getElementById(`left-col-${subId}`);
+    if (leftCol) leftCol.innerHTML = `<div class="sub-section-label">Your Feedback</div>${buildReadonlyFeedbackHtml(subId, content)}`;
+    showToast('Feedback updated.');
+  };
+
+  window.cancelFeedbackEdit = function(subId) {
+    const leftCol = document.getElementById(`left-col-${subId}`);
+    if (!leftCol) return;
+    const content = feedbackContentMap.get(subId)?.content || '';
+    leftCol.innerHTML = `<div class="sub-section-label">Your Feedback</div>${buildReadonlyFeedbackHtml(subId, content)}`;
+  };
+
+  async function checkUrgentSubmissions(subs) {
+    const now = Date.now();
+    const urgent = subs.filter(s => {
+      const dl = new Date(s.submitted_at).getTime() + 48 * 3600000;
+      return dl - now <= 24 * 3600000 && dl > now;
+    });
+    for (const sub of urgent) {
+      const dl = new Date(sub.submitted_at).getTime() + 48 * 3600000;
+      const diff = dl - now;
+      const hours = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const memberName = (submissionProfileMap[sub.member_id] || {}).display_name || 'Member';
+
+      const { data: existing } = await sbClient.from('notifications')
+        .select('id').eq('user_id', ADMIN_UID).eq('type', 'submission_urgent')
+        .like('link', `%${sub.id}%`).limit(1);
+
+      if (!existing?.length) {
+        await sbClient.from('notifications').insert({
+          user_id: ADMIN_UID, type: 'submission_urgent',
+          title: 'Submission due soon',
+          body: `${memberName} — "${sub.song_title}" is due in ${hours}h ${mins}m`,
+          link: `/app/submission.html?id=${sub.id}`,
+          read: false,
+        });
+      }
+    }
+  }
+
+  function startCountdown(subId, submittedAt, displayEl) {
+    const deadlineMs = new Date(submittedAt).getTime() + 48 * 3600000;
+    if (submissionCountdowns.has(subId)) clearInterval(submissionCountdowns.get(subId));
+    function update() {
+      const diff = deadlineMs - Date.now();
+      if (diff <= 0) {
+        displayEl.innerHTML = '<span style="color:#e53935;">Overdue</span>';
+        clearInterval(submissionCountdowns.get(subId)); submissionCountdowns.delete(subId); return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      displayEl.innerHTML = `<span style="color:${diff <= 24*3600000 ? '#e53935' : 'var(--text-muted)'};">${h}h ${m}m remaining</span>`;
+    }
+    update();
+    submissionCountdowns.set(subId, setInterval(update, 60000));
+  }
+
+  function formatCtDeadline(date) {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago', weekday: 'long', hour: 'numeric', minute: '2-digit', hour12: true
+    }).format(date) + ' CT';
+  }
+
+  function formatMemberSince(createdAt) {
+    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(createdAt));
+  }
 </script>
 </body>
 </html>

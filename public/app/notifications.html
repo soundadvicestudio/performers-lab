@@ -34,7 +34,19 @@
   .main { max-width: 680px; margin: 0 auto; padding: 3rem 2rem; }
 
   .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
-  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 2rem; }
+
+  /* ── HEADING ROW ── */
+  .page-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 400; color: var(--text); line-height: 1.1; }
+  .clear-all-btn {
+    background: none; border: none; cursor: pointer; padding: 0;
+    font-size: 13px; color: var(--text-muted); font-family: 'Raleway', sans-serif;
+    font-weight: 400; transition: color 0.15s;
+  }
+  .clear-all-btn:hover { color: var(--text); }
 
   /* ── NOTIFICATION LIST ── */
   .notif-list { display: flex; flex-direction: column; gap: 2px; }
@@ -42,15 +54,16 @@
   .notif-row {
     display: flex; align-items: flex-start; gap: 14px;
     padding: 16px 18px;
-    border-left: 3px solid var(--border);
-    background: var(--bg);
+    border-left: 3px solid transparent;
+    background: var(--bg-2);
     border-radius: 0 6px 6px 0;
     cursor: default;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s, background 0.15s, opacity 0.2s, height 0.2s, padding 0.2s, margin 0.2s;
+    overflow: hidden;
   }
   .notif-row.unread {
     border-left-color: var(--gold);
-    background: var(--bg-2);
+    background: var(--bg-3);
   }
   .notif-row.clickable { cursor: pointer; }
   .notif-row.clickable:hover { border-left-color: var(--gold); }
@@ -67,10 +80,18 @@
   .notif-body { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.5; margin-bottom: 5px; }
   .notif-time { font-size: 11px; color: var(--text-dim); font-weight: 400; }
 
+  .notif-dismiss {
+    background: none; border: none; cursor: pointer; padding: 2px 4px;
+    font-size: 16px; color: var(--text-dim); line-height: 1;
+    flex-shrink: 0; transition: color 0.15s; align-self: flex-start;
+    font-family: 'Raleway', sans-serif; margin-top: -2px;
+  }
+  .notif-dismiss:hover { color: var(--text); }
+
   /* ── EMPTY STATE ── */
   .notif-empty {
     text-align: center; padding: 4rem 1rem;
-    font-size: 14px; color: var(--text-dim); font-style: italic;
+    font-size: 14px; color: var(--text-dim);
   }
 
   @media (max-width: 600px) {
@@ -93,7 +114,10 @@
 
   <main class="main">
     <div class="page-eyebrow">Your Account</div>
-    <div class="page-heading">Notifications</div>
+    <div class="page-header">
+      <div class="page-heading">Notifications</div>
+      <button class="clear-all-btn" id="clear-all-btn" style="display:none;">Clear all</button>
+    </div>
     <div class="notif-list" id="notif-list">
       <div class="spinner" style="margin: 3rem auto; display: block;"></div>
     </div>
@@ -123,26 +147,26 @@
     }
   });
 
+  let currentUserId = null;
+
   function escapeHtml(str) {
-    return String(str || '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = '/app/login.html'; return; }
 
-    const user = session.user;
+    currentUserId = session.user.id;
 
     const { data: profile } = await supabase
       .from('profiles')
       .select('display_name, is_admin, theme')
-      .eq('user_id', user.id)
+      .eq('user_id', currentUserId)
       .single();
 
     applyTheme(profile?.theme || 'gold');
-    initNav(supabase, { userName: profile?.display_name || user.email.split('@')[0], isAdmin: profile?.is_admin });
+    initNav(supabase, { userName: profile?.display_name || session.user.email.split('@')[0], isAdmin: profile?.is_admin });
     initSubnav(null);
     initFooter();
 
@@ -150,22 +174,21 @@
     const { data: notifications } = await supabase
       .from('notifications')
       .select('id, type, title, body, link, read, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', currentUserId)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
 
     renderNotifications(notifications || []);
 
-    // Mark all unread as read (after render so UI shows which were new)
+    // Mark all unread as read (clears bell badge, keeps notifications in list)
     const hasUnread = (notifications || []).some(n => !n.read);
     if (hasUnread) {
       await supabase
         .from('notifications')
         .update({ read: true })
-        .eq('user_id', user.id)
+        .eq('user_id', currentUserId)
         .eq('read', false);
 
-      // Tell nav to zero the badge
       window.dispatchEvent(new CustomEvent('notifications-cleared'));
     }
 
@@ -175,11 +198,15 @@
 
   function renderNotifications(notifications) {
     const list = document.getElementById('notif-list');
+    const clearBtn = document.getElementById('clear-all-btn');
 
     if (!notifications.length) {
-      list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+      list.innerHTML = '<div class="notif-empty">No notifications</div>';
+      clearBtn.style.display = 'none';
       return;
     }
+
+    clearBtn.style.display = 'block';
 
     list.innerHTML = notifications.map(n => {
       const unread = !n.read;
@@ -188,25 +215,95 @@
       const attrs = hasLink ? `role="link" tabindex="0" data-link="${escapeHtml(n.link)}"` : '';
 
       return `
-        <div class="${classes}" ${attrs}>
+        <div class="${classes}" ${attrs} data-notif-id="${escapeHtml(n.id)}">
           <div class="notif-dot"></div>
           <div class="notif-content">
             <div class="notif-title">${escapeHtml(n.title || '')}</div>
             ${n.body ? `<div class="notif-body">${escapeHtml(n.body)}</div>` : ''}
             <div class="notif-time" data-timestamp="${escapeHtml(n.created_at)}">${relativeTime(n.created_at)}</div>
           </div>
+          <button class="notif-dismiss" data-notif-id="${escapeHtml(n.id)}" aria-label="Dismiss" title="Dismiss">×</button>
         </div>
       `;
     }).join('');
 
-    // Attach click handlers for navigable rows
+    // Click handler for navigation
     list.querySelectorAll('.notif-row.clickable').forEach(row => {
-      const navigate = () => { window.location.href = row.dataset.link; };
-      row.addEventListener('click', navigate);
-      row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') navigate(); });
+      row.addEventListener('click', e => {
+        if (e.target.classList.contains('notif-dismiss')) return;
+        window.location.href = row.dataset.link;
+      });
+      row.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (e.target.classList.contains('notif-dismiss')) return;
+          window.location.href = row.dataset.link;
+        }
+      });
     });
 
+    // Dismiss buttons
+    list.querySelectorAll('.notif-dismiss').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const notifId = btn.dataset.notifId;
+        const card = btn.closest('.notif-row');
+        dismissNotification(notifId, card);
+      });
+    });
+
+    // Clear all
+    clearBtn.addEventListener('click', clearAllNotifications);
+
     startRelativeTimers();
+  }
+
+  function dismissNotification(notifId, cardEl) {
+    // Animate out
+    const h = cardEl.offsetHeight;
+    cardEl.style.height = h + 'px';
+    cardEl.offsetHeight; // force reflow
+    cardEl.style.opacity = '0';
+    cardEl.style.height = '0';
+    cardEl.style.paddingTop = '0';
+    cardEl.style.paddingBottom = '0';
+    cardEl.style.marginTop = '0';
+    cardEl.style.marginBottom = '0';
+
+    // Delete from DB (fire and forget)
+    supabase.from('notifications').delete().eq('id', notifId);
+
+    setTimeout(() => {
+      cardEl.remove();
+      checkEmptyState();
+    }, 200);
+  }
+
+  async function clearAllNotifications() {
+    const list = document.getElementById('notif-list');
+    const clearBtn = document.getElementById('clear-all-btn');
+
+    // Remove all cards from DOM immediately
+    list.innerHTML = '<div class="notif-empty">No notifications</div>';
+    clearBtn.style.display = 'none';
+
+    // Delete from DB
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', currentUserId);
+
+    // Zero the bell badge
+    window.dispatchEvent(new CustomEvent('notifications-cleared'));
+  }
+
+  function checkEmptyState() {
+    const list = document.getElementById('notif-list');
+    const clearBtn = document.getElementById('clear-all-btn');
+    const remaining = list.querySelectorAll('.notif-row');
+    if (!remaining.length) {
+      list.innerHTML = '<div class="notif-empty">No notifications</div>';
+      clearBtn.style.display = 'none';
+    }
   }
 
   init();
