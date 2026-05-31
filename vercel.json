@@ -4,9 +4,9 @@
   "outputDirectory": "public",
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/((?!api/).*)",
       "has": [{ "type": "host", "value": "www.performers-lab.com" }],
-      "destination": "https://performers-lab.com/:path*",
+      "destination": "https://performers-lab.com/$1",
       "permanent": true
     }
   ],
