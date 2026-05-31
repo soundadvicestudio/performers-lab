@@ -46,10 +46,10 @@ function injectStyles() {
     }
     .nav-bell:hover { color: var(--text-muted); }
     .nav-notif-count {
-      position: absolute; top: -5px; right: -7px;
-      background: var(--gold); color: #fff;
-      font-size: 8px; font-weight: 700; letter-spacing: 0; line-height: 1;
-      min-width: 14px; height: 14px; border-radius: 7px;
+      position: absolute; top: -6px; right: -8px;
+      background: var(--gold); color: #000;
+      font-size: 10px; font-weight: 700; letter-spacing: 0; line-height: 1;
+      min-width: 16px; height: 16px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
       padding: 0 3px; font-family: 'Raleway', sans-serif;
     }
@@ -97,4 +97,46 @@ export function initNav(supabase, { userName, isAdmin }) {
     await supabase.auth.signOut();
     window.location.href = '/app/login.html';
   });
+
+  wireNotifications(supabase);
+}
+
+function updateBell(count) {
+  const el = document.getElementById('nav-notif-count');
+  if (!el) return;
+  if (count <= 0) {
+    el.style.display = 'none';
+    el.textContent = '';
+  } else {
+    el.textContent = count > 99 ? '99+' : String(count);
+    el.style.display = 'flex';
+  }
+}
+
+async function wireNotifications(supabase) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { count } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('read', false);
+
+  updateBell(count || 0);
+
+  supabase.channel('nav-notifications')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'notifications',
+      filter: `user_id=eq.${user.id}`,
+    }, () => {
+      const el = document.getElementById('nav-notif-count');
+      const current = el ? (parseInt(el.textContent, 10) || 0) : 0;
+      updateBell(current + 1);
+    })
+    .subscribe();
+
+  window.addEventListener('notifications-cleared', () => updateBell(0));
 }

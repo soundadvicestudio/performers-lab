@@ -337,6 +337,56 @@
   @media (max-width: 600px) {
     .feed-area { padding: 1rem 0 1.5rem; }
   }
+
+  /* ── AUTHOR LINKS ── */
+  a.author-link {
+    color: var(--gold); text-decoration: none;
+  }
+  a.author-link:hover { text-decoration: underline; }
+
+  /* ── REACTION TOOLTIP ── */
+  .reaction-wrapper { position: relative; display: inline-flex; }
+
+  .clapper-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-2);
+    border: 1px solid var(--border-gold);
+    border-radius: 8px;
+    padding: 8px 12px;
+    min-width: 120px;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 60;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-mid) transparent;
+  }
+  .clapper-tooltip.visible { display: block; }
+  /* border triangle */
+  .clapper-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+    border-top-color: var(--border-gold);
+  }
+  /* fill triangle */
+  .clapper-tooltip::before {
+    content: '';
+    position: absolute;
+    top: calc(100% - 1px); left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--bg-2);
+    z-index: 1;
+  }
+  .clapper-name { font-size: 13px; color: var(--text); display: block; padding: 2px 0; }
+  .clapper-empty { font-size: 12px; color: var(--text-dim); font-style: italic; display: block; }
 </style>
 </head>
 <body>
@@ -434,7 +484,9 @@
   let quill = null;
   let myReactions = new Set(); // "postId:reaction_type"
   let postReactionCounts = {}; // postId → count
+  let postClappers = {}; // postId → string[] of display_names
   let openCommentThreads = new Set(); // postIds with open threads
+  let currentUserDisplayName = '';
 
   // ── Helpers ────────────────────────────────────────────────────────────
   function timeAgo(dateStr) {
@@ -500,8 +552,9 @@
 
     if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
 
+    currentUserDisplayName = profile?.display_name || currentUser.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
-    initNav(supabase, { userName: profile?.display_name || currentUser.email.split('@')[0], isAdmin: profile?.is_admin });
+    initNav(supabase, { userName: currentUserDisplayName, isAdmin: profile?.is_admin });
     initSubnav('Community');
     initFooter();
 
@@ -726,34 +779,48 @@
     const postIds = posts.map(p => p.id);
     const authorIds = [...new Set(posts.map(p => p.author_id))];
 
-    // Load author profiles and reactions in parallel
-    const [{ data: authorProfiles }, { data: reactions }, { data: mineRaw }] = await Promise.all([
+    // Load author profiles, reactions, and comment counts in parallel
+    const [{ data: authorProfiles }, { data: reactions }, { data: mineRaw }, { data: commentCounts }] = await Promise.all([
       supabase.from('profiles').select('user_id, display_name, photo_url').in('user_id', authorIds),
-      supabase.from('post_reactions').select('post_id, reaction_type').in('post_id', postIds),
+      supabase.from('post_reactions').select('post_id, reaction_type, user_id').in('post_id', postIds),
       supabase.from('post_reactions').select('post_id, reaction_type').in('post_id', postIds).eq('user_id', currentUser.id),
+      supabase.from('comments').select('post_id').in('post_id', postIds),
     ]);
 
-    // Merge profiles into posts
+    // Build profile map (will grow to include clappers)
     const profileMap = {};
     for (const p of (authorProfiles || [])) profileMap[p.user_id] = p;
     for (const post of posts) post.profiles = profileMap[post.author_id] || {};
 
-    // Load comment counts
-    const { data: commentCounts } = await supabase
-      .from('comments')
-      .select('post_id')
-      .in('post_id', postIds);
-
-    // Build lookup maps
+    // Build reaction counts, my reactions, and clapper user_ids per post
     postReactionCounts = {};
     myReactions = new Set();
+    postClappers = {};
 
+    const clapperUserIds = new Set();
     for (const r of (reactions || [])) {
-      const key = r.post_id;
-      postReactionCounts[key] = (postReactionCounts[key] || 0) + 1;
+      postReactionCounts[r.post_id] = (postReactionCounts[r.post_id] || 0) + 1;
+      if (r.reaction_type === 'clap') {
+        if (!postClappers[r.post_id]) postClappers[r.post_id] = [];
+        postClappers[r.post_id].push(r.user_id);
+        clapperUserIds.add(r.user_id);
+      }
     }
     for (const r of (mineRaw || [])) {
       myReactions.add(`${r.post_id}:${r.reaction_type}`);
+    }
+
+    // Fetch clapper profiles not already in profileMap
+    const newClapperIds = [...clapperUserIds].filter(id => !profileMap[id]);
+    if (newClapperIds.length > 0) {
+      const { data: clapperProfiles } = await supabase
+        .from('profiles').select('user_id, display_name').in('user_id', newClapperIds);
+      for (const p of (clapperProfiles || [])) profileMap[p.user_id] = p;
+    }
+
+    // Resolve clapper user_ids → display_names
+    for (const [postId, userIds] of Object.entries(postClappers)) {
+      postClappers[postId] = userIds.map(uid => profileMap[uid]?.display_name || 'Member');
     }
 
     const commentCountMap = {};
@@ -781,15 +848,20 @@
         <div class="post-meta">
           ${avatarEl(photoUrl, authorName)}
           <div class="post-author-info">
-            <div class="post-author">${escapeHtml(authorName)}</div>
+            <div class="post-author">
+              <a class="author-link" href="/app/member.html?id=${escapeHtml(post.author_id)}">${escapeHtml(authorName)}</a>
+            </div>
             <div class="post-time">${timeAgo(post.created_at)}</div>
           </div>
         </div>
         <div class="post-body">${post.content}</div>
         <div class="post-actions">
-          <button class="reaction-btn${reacted ? ' reacted' : ''}" data-post-id="${post.id}" data-reaction="clap" aria-label="Clap">
-            👏 <span class="reaction-count">${clapCount > 0 ? clapCount : ''}</span>
-          </button>
+          <div class="reaction-wrapper" data-post-id="${post.id}">
+            <button class="reaction-btn${reacted ? ' reacted' : ''}" data-post-id="${post.id}" data-reaction="clap" aria-label="Clap">
+              👏 <span class="reaction-count">${clapCount > 0 ? clapCount : ''}</span>
+            </button>
+            <div class="clapper-tooltip" id="tooltip-${post.id}"></div>
+          </div>
           <button class="comment-toggle-btn" data-post-id="${post.id}">
             ${commentLabel}
           </button>
@@ -800,16 +872,56 @@
   }
 
   function attachPostListeners(posts) {
-    // Reaction buttons
-    document.querySelectorAll('.reaction-btn').forEach(btn => {
+    const feedList = document.getElementById('feed-list');
+
+    feedList.querySelectorAll('.reaction-btn').forEach(btn => {
       btn.addEventListener('click', () => toggleReaction(btn.dataset.postId, btn.dataset.reaction, btn));
     });
 
-    // Comment toggles
-    document.querySelectorAll('.comment-toggle-btn').forEach(btn => {
+    feedList.querySelectorAll('.comment-toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => toggleCommentThread(btn.dataset.postId));
     });
+
+    attachTooltipListeners(feedList);
   }
+
+  // ── Reaction tooltips ──────────────────────────────────────────────────
+  function attachTooltipListeners(container) {
+    container.querySelectorAll('.reaction-wrapper').forEach(wrapper => {
+      const tooltip = wrapper.querySelector('.clapper-tooltip');
+      if (!tooltip) return;
+      const postId = wrapper.dataset.postId;
+      let longPressTimer = null;
+
+      wrapper.addEventListener('mouseenter', () => showTooltip(tooltip, postId));
+      wrapper.addEventListener('mouseleave', () => hideTooltip(tooltip));
+
+      wrapper.addEventListener('touchstart', () => {
+        longPressTimer = setTimeout(() => showTooltip(tooltip, postId), 500);
+      }, { passive: true });
+      wrapper.addEventListener('touchend', () => clearTimeout(longPressTimer), { passive: true });
+      wrapper.addEventListener('touchmove', () => clearTimeout(longPressTimer), { passive: true });
+    });
+  }
+
+  function showTooltip(tooltip, postId) {
+    const names = postClappers[postId] || [];
+    tooltip.innerHTML = names.length > 0
+      ? names.map(n => `<span class="clapper-name">${escapeHtml(n)}</span>`).join('')
+      : '<span class="clapper-empty">No reactions yet</span>';
+    tooltip.classList.add('visible');
+  }
+
+  function hideTooltip(tooltip) {
+    tooltip.classList.remove('visible');
+  }
+
+  document.addEventListener('touchstart', e => {
+    document.querySelectorAll('.clapper-tooltip.visible').forEach(t => {
+      const wrapper = t.closest('.reaction-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) hideTooltip(t);
+    });
+  }, { passive: true });
 
   // ── Reactions ──────────────────────────────────────────────────────────
   async function toggleReaction(postId, reactionType, btn) {
@@ -822,10 +934,19 @@
       myReactions.delete(key);
       postReactionCounts[postId] = Math.max(0, (postReactionCounts[postId] || 1) - 1);
       btn.classList.remove('reacted');
+      if (reactionType === 'clap') {
+        postClappers[postId] = (postClappers[postId] || []).filter(n => n !== currentUserDisplayName);
+      }
     } else {
       myReactions.add(key);
       postReactionCounts[postId] = (postReactionCounts[postId] || 0) + 1;
       btn.classList.add('reacted');
+      if (reactionType === 'clap') {
+        if (!postClappers[postId]) postClappers[postId] = [];
+        if (!postClappers[postId].includes(currentUserDisplayName)) {
+          postClappers[postId].push(currentUserDisplayName);
+        }
+      }
     }
     const newCount = postReactionCounts[postId] || 0;
     countEl.textContent = newCount > 0 ? newCount : '';
@@ -919,7 +1040,7 @@
         ${commentAvatarEl(profile.photo_url, name)}
         <div class="comment-body">
           <div class="comment-header">
-            <span class="comment-author">${escapeHtml(name)}</span>
+            <a class="comment-author author-link" href="/app/member.html?id=${escapeHtml(c.author_id)}">${escapeHtml(name)}</a>
             <span class="comment-time">${timeAgo(c.created_at)}</span>
           </div>
           <div class="comment-text">${escapeHtml(c.content)}</div>
@@ -1072,6 +1193,7 @@
       newCard.querySelectorAll('.comment-toggle-btn').forEach(btn =>
         btn.addEventListener('click', () => toggleCommentThread(btn.dataset.postId))
       );
+      attachTooltipListeners(newCard);
     }
   }
 

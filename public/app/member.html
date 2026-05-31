@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Member — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MAIN ── */
+  .main { max-width: 600px; margin: 0 auto; padding: 3rem 2rem; }
+
+  /* ── BACK LINK ── */
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); text-decoration: none; margin-bottom: 2.5rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--gold); }
+  .back-link::before { content: '←'; font-size: 13px; }
+
+  /* ── PROFILE CARD ── */
+  .profile-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 8px; padding: 2.5rem 2rem;
+    position: relative; overflow: hidden;
+  }
+  .profile-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  /* ── AVATAR ── */
+  .member-avatar {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--bg-4); border: 1px solid var(--border-gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 400;
+    color: var(--gold); overflow: hidden; margin: 0 auto 1.25rem;
+  }
+  .member-avatar img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .member-avatar img.loaded { display: block; }
+
+  /* ── NAME + META ── */
+  .member-name {
+    font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400;
+    color: var(--text); text-align: center; margin-bottom: 0.5rem; letter-spacing: 0.02em;
+  }
+
+  .member-meta {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    margin-bottom: 1.5rem;
+  }
+  .member-location {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 14px; color: var(--text-muted); font-weight: 300;
+  }
+  .member-location svg { flex-shrink: 0; color: var(--text-dim); }
+  .member-since { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+  .member-count { font-size: 14px; color: var(--gold); font-weight: 500; }
+
+  /* ── BIO ── */
+  .member-bio-wrap { margin-bottom: 1.5rem; }
+  .member-bio {
+    font-size: 15px; color: var(--text-muted); font-weight: 300; line-height: 1.7;
+    word-break: break-word;
+  }
+  .member-bio.clamped {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .read-more-btn {
+    background: none; border: none; cursor: pointer; padding: 0;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--gold); font-family: 'Raleway', sans-serif;
+    margin-top: 6px; display: block; transition: color 0.2s;
+  }
+  .read-more-btn:hover { color: var(--gold-light); }
+
+  /* ── EDIT OWN PROFILE LINK ── */
+  .edit-own-link {
+    display: block; text-align: center;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); text-decoration: none; border-top: 0.5px solid var(--border);
+    padding-top: 1.25rem; margin-top: 1.25rem;
+    transition: color 0.2s;
+  }
+  .edit-own-link:hover { color: var(--gold); }
+
+  /* ── NOT FOUND ── */
+  .not-found {
+    text-align: center; padding: 4rem 1rem;
+    font-size: 15px; color: var(--text-dim); font-style: italic;
+  }
+
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem; }
+    .profile-card { padding: 2rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <a href="/app/community.html" class="back-link">Back to community</a>
+    <div id="member-content"></div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function getInitial(name) {
+    return String(name || '?').charAt(0).toUpperCase();
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    const currentUserId = session.user.id;
+
+    // Read ?id= from URL
+    const params = new URLSearchParams(window.location.search);
+    const memberId = params.get('id');
+    if (!memberId) { window.location.href = '/app/community.html'; return; }
+
+    // Load current user profile for nav
+    const { data: myProfile } = await supabase
+      .from('profiles')
+      .select('display_name, is_admin, theme')
+      .eq('user_id', currentUserId)
+      .single();
+
+    applyTheme(myProfile?.theme || 'gold');
+    initNav(supabase, { userName: myProfile?.display_name || session.user.email.split('@')[0], isAdmin: myProfile?.is_admin });
+    initSubnav(null);
+    initFooter();
+
+    // Load member profile and submission count in parallel
+    const [{ data: profile }, { count: submissionCount }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('display_name, photo_url, bio, location, created_at')
+        .eq('user_id', memberId)
+        .single(),
+      supabase
+        .from('submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('member_id', memberId),
+    ]);
+
+    const content = document.getElementById('member-content');
+
+    if (!profile) {
+      content.innerHTML = '<div class="not-found">Member not found.</div>';
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      return;
+    }
+
+    const name = profile.display_name || 'Member';
+    document.title = `${name} — The Performer's Lab`;
+
+    const memberSince = new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const count = submissionCount ?? 0;
+    const isOwnProfile = memberId === currentUserId;
+
+    const hasBio = !!profile.bio;
+    const bioNeedsExpand = hasBio && profile.bio.length > 160;
+
+    content.innerHTML = `
+      <div class="profile-card">
+        <div class="member-avatar" id="member-avatar">
+          ${profile.photo_url
+            ? `<img id="member-photo" src="${escapeHtml(profile.photo_url)}" alt="${escapeHtml(name)}">`
+            : escapeHtml(getInitial(name))
+          }
+        </div>
+
+        <div class="member-name">${escapeHtml(name)}</div>
+
+        <div class="member-meta">
+          ${profile.location ? `
+            <div class="member-location">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${escapeHtml(profile.location)}
+            </div>` : ''}
+          <div class="member-since">Member since ${escapeHtml(memberSince)}</div>
+          <div class="member-count">${count} ${count === 1 ? 'performance' : 'performances'} submitted</div>
+        </div>
+
+        ${hasBio ? `
+          <div class="member-bio-wrap">
+            <div class="member-bio${bioNeedsExpand ? ' clamped' : ''}" id="member-bio">${escapeHtml(profile.bio)}</div>
+            ${bioNeedsExpand ? '<button class="read-more-btn" id="read-more-btn">Read more</button>' : ''}
+          </div>` : ''}
+
+        ${isOwnProfile ? `
+          <a href="/app/profile.html" class="edit-own-link">Edit your profile →</a>` : ''}
+      </div>
+    `;
+
+    // Photo load handler
+    const img = document.getElementById('member-photo');
+    if (img) img.onload = () => img.classList.add('loaded');
+
+    // Read more toggle
+    const readMoreBtn = document.getElementById('read-more-btn');
+    if (readMoreBtn) {
+      readMoreBtn.addEventListener('click', () => {
+        const bio = document.getElementById('member-bio');
+        bio.classList.remove('clamped');
+        readMoreBtn.remove();
+      });
+    }
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
