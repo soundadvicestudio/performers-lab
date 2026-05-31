@@ -3285,6 +3285,9 @@
     }
     const evt = evtUpcomingData.find(e => e.id === eventId);
     if (evt) { evt.status = 'live'; evt.daily_room_url = json.room_url; }
+    if (json.host_token) {
+      sessionStorage.setItem(`host_token_${eventId}`, json.host_token);
+    }
     const counts = await fetchRsvpCounts(evtUpcomingData.map(e => e.id));
     renderUpcomingList(counts);
     showToast('Session is now live.');

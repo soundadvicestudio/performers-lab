@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Lab — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--gold-dim); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .main { max-width: 1140px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+  /* ── TWO-COLUMN LAYOUT ── */
+  .event-layout {
+    display: grid;
+    grid-template-columns: 1fr minmax(300px, 340px);
+    gap: 24px;
+    align-items: start;
+  }
+  .event-main { min-width: 0; }
+  .event-sidebar {
+    position: sticky; top: 80px;
+    max-height: calc(100vh - 96px); overflow-y: auto;
+  }
+
+  /* ── STATUS BADGES ── */
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76,175,132,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(76,175,132,0); }
+  }
+  .live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); flex-shrink: 0;
+    animation: live-pulse 1.5s ease-in-out infinite;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 3px; margin-bottom: 1rem;
+  }
+  .badge-live { background: var(--green-dim); color: var(--green); border: 0.5px solid rgba(76,175,132,0.3); }
+  .badge-upcoming { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
+  .badge-completed { background: var(--bg-3); color: var(--text-muted); border: 0.5px solid var(--border-mid); }
+
+  /* ── EVENT INFO CARD ── */
+  .event-info-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 2rem; margin-bottom: 1.5rem;
+    transition: border-color 0.2s;
+  }
+  .event-info-card.live { border-color: rgba(76,175,132,0.35); }
+  .event-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; color: var(--text); line-height: 1.15; margin-bottom: 6px; }
+  .event-topic { font-size: 14px; color: var(--text-muted); font-weight: 300; margin-bottom: 1.25rem; }
+  .event-desc { font-size: 15px; color: var(--text-muted); font-weight: 300; line-height: 1.7; }
+
+  /* ── TIME DISPLAY ── */
+  .event-time-block { margin-bottom: 1.25rem; }
+  .time-primary { font-size: 14px; color: var(--text); font-weight: 500; margin-bottom: 3px; }
+  .time-local { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+
+  /* ── RSVP / NOTIFY TOGGLES ── */
+  .rsvp-section { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 0.5px solid var(--border); }
+  .rsvp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .btn-rsvp, .btn-notify {
+    border-radius: 3px; padding: 8px 18px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .btn-rsvp { background: none; border: 0.5px solid var(--border-gold); color: var(--gold); }
+  .btn-rsvp:not(:disabled):hover { background: var(--gold-dim); }
+  .btn-rsvp.rsvpd { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+  .btn-rsvp.rsvpd:not(:disabled):hover { background: var(--gold-light); }
+  .btn-rsvp:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-notify { background: none; border: 0.5px solid var(--border-mid); color: var(--text-dim); }
+  .btn-notify:not(:disabled):hover { border-color: var(--border-gold); color: var(--text-muted); }
+  .btn-notify.notified { background: var(--gold-dim); border-color: var(--border-gold); color: var(--gold); }
+  .btn-notify:disabled { opacity: 0.38; cursor: not-allowed; }
+  .rsvp-count { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .rsvp-hint { font-size: 11px; color: var(--text-dim); font-weight: 300; line-height: 1.5; margin-top: 6px; }
+
+  /* ── CAL LINK ── */
+  .btn-cal {
+    display: inline-block; margin-top: 1rem;
+    font-size: 11px; color: var(--text-dim); font-weight: 500; letter-spacing: 0.06em;
+    background: none; border: none; cursor: pointer;
+    font-family: 'Raleway', sans-serif; padding: 0; transition: color 0.2s;
+  }
+  .btn-cal:hover { color: var(--gold); }
+
+  /* ── EMBED AREA ── */
+  .embed-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .embed-container {
+    width: 100%; aspect-ratio: 16 / 9;
+    background: var(--bg-2); border-radius: 8px; overflow: hidden;
+  }
+  .embed-placeholder {
+    width: 100%; aspect-ratio: 16 / 9;
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0.75rem;
+    padding: 2rem; text-align: center;
+  }
+  .embed-placeholder-icon { color: var(--text-dim); opacity: 0.5; }
+  .embed-placeholder-text { font-size: 15px; color: var(--text-muted); font-weight: 300; }
+  .embed-placeholder-sub { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+  .embed-ext-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--gold); color: var(--bg); border: none;
+    padding: 10px 22px; border-radius: 3px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    text-decoration: none; font-family: 'Raleway', sans-serif; transition: background 0.2s;
+    margin: 1.5rem;
+  }
+  .embed-ext-link:hover { background: var(--gold-light); }
+
+  /* ── CHAT PANEL ── */
+  .chat-panel {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 10px; overflow: hidden;
+  }
+  .chat-panel-header {
+    padding: 1rem 1.25rem; border-bottom: 0.5px solid var(--border);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .chat-panel-body {
+    height: 360px; display: flex; align-items: center; justify-content: center;
+  }
+  .chat-loading-text { font-size: 13px; color: var(--text-dim); font-style: italic; }
+
+  @media (max-width: 900px) {
+    .event-layout { grid-template-columns: 1fr; }
+    .event-sidebar { position: static; }
+    .chat-panel-body { height: 400px; }
+    .event-title { font-size: 26px; }
+  }
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <div class="event-layout" id="event-layout">
+      <div class="event-main" id="event-main">
+        <!-- Rendered by JS -->
+      </div>
+      <div class="event-sidebar">
+        <div class="chat-panel" id="chat-panel">
+          <div class="chat-panel-header">Session Chat</div>
+          <div class="chat-panel-body">
+            <span class="chat-loading-text">Chat loading…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+  import { relativeTime } from './utils/time.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
+
+  const eventId = new URLSearchParams(location.search).get('id');
+  if (!eventId) location.href = '/app/events.html';
+
+  function isProfileComplete(profile) {
+    return !!(
+      profile?.display_name?.trim() &&
+      profile?.birth_year &&
+      profile?.experience?.trim() &&
+      profile?.location?.trim() &&
+      profile?.bio?.trim() &&
+      profile?.timezone?.trim()
+    );
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatCtDate(isoString) {
+    if (!isoString) return '—';
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'long', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(new Date(isoString)) + ' CT';
+  }
+
+  function formatLocalTime(isoString, tz) {
+    const d = new Date(isoString);
+    const timePart = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(d);
+    const shortAbbr = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' })
+      .formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
+    const longName = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'long' })
+      .formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
+    return `${timePart} your time (${longName} · ${shortAbbr})`;
+  }
+
+  function toIcsDate(d) {
+    return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  }
+
+  function slugify(str) {
+    return String(str || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  function extractYouTubeId(url) {
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
+      if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('/')[0] || null;
+    } catch (e) {}
+    return null;
+  }
+
+  function convertDriveUrl(url) {
+    return url.replace(/\/view(\?.*)?$/, '/preview');
+  }
+
+  function downloadIcs(evt) {
+    const now = toIcsDate(new Date());
+    const start = toIcsDate(new Date(evt.starts_at));
+    const end = toIcsDate(new Date(new Date(evt.starts_at).getTime() + 90 * 60000));
+    const desc = `${(evt.topic || '').replace(/\n/g,'\\n')}\\n\\n${(evt.description || '').replace(/\n/g,'\\n')}`;
+    const ics = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0',
+      "PRODID:-//The Performer's Lab//EN",
+      'BEGIN:VEVENT',
+      `UID:${evt.id}@performers-lab.com`,
+      `DTSTAMP:${now}`, `DTSTART:${start}`, `DTEND:${end}`,
+      `SUMMARY:${evt.title} — The Performer's Lab`,
+      `DESCRIPTION:${desc}`,
+      `URL:https://performers-lab.com/app/event.html?id=${evt.id}`,
+      'END:VEVENT', 'END:VCALENDAR',
+    ].join('\r\n');
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `performers-lab-${slugify(evt.title)}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  let currentUserId = null;
+  let userProfile = null;
+  let userIsAdmin = false;
+  let currentEvent = null;
+  let currentRsvp = null;
+  let currentRsvpCount = 0;
+
+  function buildStatusBadge(status) {
+    if (status === 'live') return `<div class="badge badge-live"><span class="live-dot"></span>&nbsp;Live Now</div>`;
+    if (status === 'upcoming') return `<div class="badge badge-upcoming">Upcoming</div>`;
+    return `<div class="badge badge-completed">Completed</div>`;
+  }
+
+  function buildTimeBlock(event) {
+    if (event.status === 'completed') return '';
+    const tz = userProfile?.timezone;
+    const showLocal = tz && tz !== 'America/Chicago';
+    return `<div class="event-time-block" id="event-time-block">
+      <div class="time-primary">${formatCtDate(event.starts_at)}</div>
+      ${showLocal ? `<div class="time-local">${escHtml(formatLocalTime(event.starts_at, tz))}</div>` : ''}
+    </div>`;
+  }
+
+  function buildRsvpSection(event) {
+    if (event.status !== 'upcoming') return '';
+    const hasRsvp = !!currentRsvp;
+    const hasNotify = currentRsvp?.notify === true;
+    return `<div class="rsvp-section" id="rsvp-section">
+      <div class="rsvp-row">
+        <button class="btn-rsvp${hasRsvp ? ' rsvpd' : ''}" id="btn-rsvp"
+          onclick="window.toggleRsvp()">
+          ${hasRsvp ? "RSVP'd ✓" : 'RSVP'}
+        </button>
+        <button class="btn-notify${hasNotify ? ' notified' : ''}" id="btn-notify"
+          ${!hasRsvp ? 'disabled' : ''}
+          onclick="window.toggleNotify()">
+          ${hasNotify ? 'Notified 🔔' : 'Notify Me 🔔'}
+        </button>
+        <span class="rsvp-count" id="rsvp-count">${currentRsvpCount} going</span>
+      </div>
+      <div class="rsvp-hint">RSVP to get a 24-hour reminder · Notify Me for a morning-of reminder</div>
+      <button class="btn-cal" onclick="window.triggerIcsDownload()">Add to Calendar</button>
+    </div>`;
+  }
+
+  function buildEmbed(event) {
+    const status = event.status;
+
+    if (status === 'upcoming') {
+      return `<div class="embed-placeholder">
+        <div class="embed-placeholder-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+        </div>
+        <div class="embed-placeholder-text">This session hasn't started yet.</div>
+        <div class="embed-placeholder-sub">${formatCtDate(event.starts_at)}</div>
+      </div>`;
+    }
+
+    if (status === 'live') {
+      if (!event.daily_room_url) {
+        return `<div class="embed-placeholder">
+          <div class="embed-placeholder-text">Session starting…</div>
+        </div>`;
+      }
+      let src = event.daily_room_url;
+      if (userIsAdmin) {
+        const token = sessionStorage.getItem(`host_token_${event.id}`);
+        if (token) src = `${event.daily_room_url}?t=${token}`;
+      }
+      return `<div class="embed-container">
+        <iframe
+          id="daily-frame"
+          src="${escHtml(src)}"
+          allow="camera; microphone; fullscreen; display-capture"
+          style="width:100%;height:100%;border:none;"
+        ></iframe>
+      </div>`;
+    }
+
+    if (status === 'completed') {
+      if (!event.recording_url) {
+        return `<div class="embed-placeholder">
+          <div class="embed-placeholder-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+            </svg>
+          </div>
+          <div class="embed-placeholder-text">Recording coming soon.</div>
+        </div>`;
+      }
+
+      const ytId = extractYouTubeId(event.recording_url);
+      if (ytId) {
+        return `<div class="embed-container">
+          <iframe
+            src="https://www.youtube.com/embed/${escHtml(ytId)}"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            style="width:100%;height:100%;border:none;"
+          ></iframe>
+        </div>`;
+      }
+
+      if (event.recording_url.includes('drive.google.com')) {
+        const previewUrl = convertDriveUrl(event.recording_url);
+        return `<div class="embed-container">
+          <iframe
+            src="${escHtml(previewUrl)}"
+            allow="autoplay"
+            allowfullscreen
+            style="width:100%;height:100%;border:none;"
+          ></iframe>
+        </div>`;
+      }
+
+      return `<div class="embed-placeholder">
+        <div class="embed-placeholder-text">Session recording available</div>
+        <a href="${escHtml(event.recording_url)}" class="embed-ext-link" target="_blank" rel="noopener noreferrer">Watch Recording →</a>
+      </div>`;
+    }
+
+    return '';
+  }
+
+  function renderPage() {
+    const event = currentEvent;
+    const mainEl = document.getElementById('event-main');
+    mainEl.innerHTML = `
+      <div class="event-info-card${event.status === 'live' ? ' live' : ''}" id="event-info-card">
+        <div id="event-status-badge">${buildStatusBadge(event.status)}</div>
+        <div class="event-title">${escHtml(event.title)}</div>
+        <div class="event-topic">${escHtml(event.topic)}</div>
+        ${buildTimeBlock(event)}
+        <div class="event-desc">${escHtml(event.description)}</div>
+        ${buildRsvpSection(event)}
+      </div>
+      <div id="event-embed-area">${buildEmbed(event)}</div>
+    `;
+  }
+
+  function applyStatusUpdate(updatedEvent) {
+    currentEvent = { ...currentEvent, ...updatedEvent };
+    const event = currentEvent;
+
+    document.title = `${event.title} — The Performer's Lab`;
+
+    const badgeEl = document.getElementById('event-status-badge');
+    if (badgeEl) badgeEl.innerHTML = buildStatusBadge(event.status);
+
+    const card = document.getElementById('event-info-card');
+    if (card) card.classList.toggle('live', event.status === 'live');
+
+    const timeEl = document.getElementById('event-time-block');
+    const newTimeHtml = buildTimeBlock(event);
+    if (timeEl) {
+      timeEl.outerHTML = newTimeHtml;
+    } else {
+      const descEl = document.querySelector('.event-desc');
+      if (descEl && newTimeHtml) descEl.insertAdjacentHTML('beforebegin', newTimeHtml);
+    }
+
+    const rsvpEl = document.getElementById('rsvp-section');
+    if (event.status !== 'upcoming' && rsvpEl) rsvpEl.remove();
+
+    const embedEl = document.getElementById('event-embed-area');
+    if (embedEl) embedEl.innerHTML = buildEmbed(event);
+  }
+
+  function subscribeToEventUpdates() {
+    const channel = supabase
+      .channel(`event-status-${eventId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'events',
+        filter: `id=eq.${eventId}`,
+      }, (payload) => {
+        applyStatusUpdate(payload.new);
+      })
+      .subscribe();
+
+    window.addEventListener('beforeunload', () => {
+      supabase.removeAllChannels();
+    });
+  }
+
+  window.triggerIcsDownload = function() {
+    if (currentEvent) downloadIcs(currentEvent);
+  };
+
+  window.toggleRsvp = async function() {
+    const btn = document.getElementById('btn-rsvp');
+    const notifyBtn = document.getElementById('btn-notify');
+    const countEl = document.getElementById('rsvp-count');
+    if (!btn) return;
+
+    const hasRsvp = !!currentRsvp;
+    if (hasRsvp) {
+      btn.disabled = true;
+      const { error } = await supabase
+        .from('event_rsvps')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', currentUserId);
+      btn.disabled = false;
+      if (error) return;
+      currentRsvp = null;
+      currentRsvpCount = Math.max(0, currentRsvpCount - 1);
+      btn.className = 'btn-rsvp';
+      btn.textContent = 'RSVP';
+      if (notifyBtn) { notifyBtn.disabled = true; notifyBtn.className = 'btn-notify'; notifyBtn.textContent = 'Notify Me 🔔'; }
+      if (countEl) countEl.textContent = `${currentRsvpCount} going`;
+    } else {
+      btn.disabled = true;
+      const { error } = await supabase
+        .from('event_rsvps')
+        .upsert({ event_id: eventId, user_id: currentUserId, notify: false }, { onConflict: 'event_id,user_id', ignoreDuplicates: true });
+      btn.disabled = false;
+      if (error) return;
+      currentRsvp = { notify: false };
+      currentRsvpCount += 1;
+      btn.className = 'btn-rsvp rsvpd';
+      btn.textContent = "RSVP'd ✓";
+      if (notifyBtn) notifyBtn.disabled = false;
+      if (countEl) countEl.textContent = `${currentRsvpCount} going`;
+    }
+  };
+
+  window.toggleNotify = async function() {
+    if (!currentRsvp) return;
+    const btn = document.getElementById('btn-notify');
+    if (!btn || btn.disabled) return;
+
+    const newNotify = !(currentRsvp.notify === true);
+    btn.disabled = true;
+    const { error } = await supabase
+      .from('event_rsvps')
+      .update({ notify: newNotify })
+      .eq('event_id', eventId)
+      .eq('user_id', currentUserId);
+    btn.disabled = false;
+    if (error) return;
+
+    currentRsvp.notify = newNotify;
+    if (newNotify) {
+      btn.className = 'btn-notify notified';
+      btn.textContent = 'Notified 🔔';
+    } else {
+      btn.className = 'btn-notify';
+      btn.textContent = 'Notify Me 🔔';
+    }
+  };
+
+  async function init() {
+    if (!eventId) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { location.href = '/app/login.html'; return; }
+    currentUserId = session.user.id;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, is_admin, theme, bio, location, birth_year, experience, timezone')
+      .eq('user_id', currentUserId)
+      .single();
+
+    if (!profile?.is_admin && !isProfileComplete(profile)) {
+      location.href = '/app/profile.html?onboarding=true';
+      return;
+    }
+
+    if (!profile?.is_admin) {
+      const { data: membership } = await supabase
+        .from('memberships').select('status').eq('user_id', currentUserId).single();
+      const status = membership?.status;
+      if (status !== 'active' && status !== 'cancelling') {
+        location.href = '/app/gate.html';
+        return;
+      }
+    }
+
+    userProfile = profile;
+    userIsAdmin = !!profile?.is_admin;
+
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: profile?.display_name || session.user.email.split('@')[0], isAdmin: profile?.is_admin });
+    initSubnav('live-lab');
+    initFooter();
+
+    const [
+      { data: eventData },
+      { data: myRsvpData },
+      { count: rsvpCount },
+    ] = await Promise.all([
+      supabase.from('events').select('*').eq('id', eventId).single(),
+      supabase.from('event_rsvps').select('notify').eq('event_id', eventId).eq('user_id', currentUserId).maybeSingle(),
+      supabase.from('event_rsvps').select('*', { count: 'exact', head: true }).eq('event_id', eventId),
+    ]);
+
+    if (!eventData) { location.href = '/app/events.html'; return; }
+
+    currentEvent = eventData;
+    currentRsvp = myRsvpData || null;
+    currentRsvpCount = rsvpCount || 0;
+
+    document.title = `${eventData.title} — The Performer's Lab`;
+
+    renderPage();
+    subscribeToEventUpdates();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -65,6 +65,35 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: 'Daily.co did not return a room URL' });
   }
 
+  // ── Generate host meeting token ────────────────────────────────────────
+  let host_token = null;
+  try {
+    const tokenRes = await fetch('https://api.daily.co/v1/meeting-tokens', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.DAILY_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        properties: {
+          room_name: dailyData.name,
+          is_owner: true,
+          enable_screenshare: true,
+          start_video_off: false,
+          start_audio_off: false,
+        },
+      }),
+    });
+    if (tokenRes.ok) {
+      const tokenData = await tokenRes.json();
+      host_token = tokenData.token || null;
+    } else {
+      console.error('Daily.co meeting token error:', await tokenRes.text());
+    }
+  } catch (e) {
+    console.error('Daily.co meeting token exception:', e.message);
+  }
+
   // ── Update event row ───────────────────────────────────────────────────
   const { ok: patchOk } = await supabaseRequest(
     'PATCH',
@@ -76,5 +105,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Room created but failed to update event record' });
   }
 
-  return res.status(200).json({ success: true, room_url });
+  return res.status(200).json({ success: true, room_url, host_token });
 }
