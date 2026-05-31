@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseRequest } from '../lib/supabaseAdmin.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,26 +13,21 @@ export default async function handler(req, res) {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    { realtime: { enabled: false }, global: { fetch: fetch } }
-  );
 
   try {
     let couponId = null;
     let discountCodeDbId = null;
 
     if (discountCode) {
-      const { data: code } = await supabase
-        .from('discount_codes')
-        .select('id, discount_type, amount, max_uses, uses_count, expires_at, active')
-        .eq('code', discountCode)
-        .single();
+      const { data: codes } = await supabaseRequest(
+        'GET',
+        `/rest/v1/discount_codes?code=eq.${encodeURIComponent(discountCode)}&active=eq.true&select=id,discount_type,amount,max_uses,uses_count,expires_at`
+      );
+
+      const code = Array.isArray(codes) && codes.length > 0 ? codes[0] : null;
 
       const valid =
         code &&
-        code.active === true &&
         (code.expires_at === null || new Date(code.expires_at) > new Date()) &&
         (code.max_uses === null || code.uses_count < code.max_uses);
 
