@@ -103,13 +103,27 @@
   }
   .read-more-btn:hover { color: var(--gold-light); }
 
+  /* ── ACTIONS ROW ── */
+  .member-actions {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    border-top: 0.5px solid var(--border); padding-top: 1.25rem; margin-top: 1.25rem;
+  }
+  .btn-send-msg {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--gold); color: #070707; border: none;
+    padding: 11px 28px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-send-msg:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-send-msg:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
   /* ── EDIT OWN PROFILE LINK ── */
   .edit-own-link {
-    display: block; text-align: center;
     font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--text-dim); text-decoration: none; border-top: 0.5px solid var(--border);
-    padding-top: 1.25rem; margin-top: 1.25rem;
-    transition: color 0.2s;
+    color: var(--text-dim); text-decoration: none; transition: color 0.2s;
+    display: block; text-align: center;
   }
   .edit-own-link:hover { color: var(--gold); }
 
@@ -176,15 +190,18 @@
     return String(name || '?').charAt(0).toUpperCase();
   }
 
+  let currentUserId = null;
+  let memberId = null;
+
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = '/app/login.html'; return; }
 
-    const currentUserId = session.user.id;
+    currentUserId = session.user.id;
 
     // Read ?id= from URL
     const params = new URLSearchParams(window.location.search);
-    const memberId = params.get('id');
+    memberId = params.get('id');
     if (!memberId) { window.location.href = '/app/community.html'; return; }
 
     // Load current user profile for nav
@@ -258,8 +275,15 @@
             ${bioNeedsExpand ? '<button class="read-more-btn" id="read-more-btn">Read more</button>' : ''}
           </div>` : ''}
 
-        ${isOwnProfile ? `
-          <a href="/app/profile.html" class="edit-own-link">Edit your profile →</a>` : ''}
+        <div class="member-actions">
+          ${!isOwnProfile ? `
+            <button class="btn-send-msg" id="btn-send-msg">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send Message
+            </button>` : ''}
+          ${isOwnProfile ? `
+            <a href="/app/profile.html" class="edit-own-link">Edit your profile →</a>` : ''}
+        </div>
       </div>
     `;
 
@@ -277,8 +301,49 @@
       });
     }
 
+    // Send Message button
+    const sendMsgBtn = document.getElementById('btn-send-msg');
+    if (sendMsgBtn) {
+      sendMsgBtn.addEventListener('click', () => openOrCreateConversation(memberId));
+    }
+
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+  }
+
+  async function openOrCreateConversation(otherUserId) {
+    const btn = document.getElementById('btn-send-msg');
+    if (btn) { btn.disabled = true; btn.textContent = 'Opening…'; }
+
+    // Check for existing conversation
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('id, participant_1_id, participant_2_id')
+      .or(`participant_1_id.eq.${currentUserId},participant_2_id.eq.${currentUserId}`);
+
+    const existing = (convs || []).find(c =>
+      (c.participant_1_id === currentUserId && c.participant_2_id === otherUserId) ||
+      (c.participant_1_id === otherUserId && c.participant_2_id === currentUserId)
+    );
+
+    if (existing) {
+      window.location.href = `/app/messages.html?conversation=${existing.id}`;
+      return;
+    }
+
+    // Create new conversation
+    const { data: newConv } = await supabase
+      .from('conversations')
+      .insert({ participant_1_id: currentUserId, participant_2_id: otherUserId })
+      .select('id')
+      .single();
+
+    if (newConv) {
+      window.location.href = `/app/messages.html?conversation=${newConv.id}`;
+    } else if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+    }
   }
 
   init();

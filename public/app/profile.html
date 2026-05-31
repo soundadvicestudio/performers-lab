@@ -32,7 +32,6 @@
   .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-
   /* ── MAIN ── */
   .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
 
@@ -73,9 +72,11 @@
     width: 96px; height: 96px; border-radius: 50%;
     background: var(--bg-3); border: 0.5px solid var(--border-gold);
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; position: relative;
+    overflow: hidden; position: relative; cursor: pointer;
     font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; color: var(--gold);
+    transition: border-color 0.2s;
   }
+  .photo-avatar:hover { border-color: var(--gold); }
   .photo-avatar img { width: 100%; height: 100%; object-fit: cover; display: none; }
   .photo-avatar img.loaded { display: block; }
   .photo-change {
@@ -148,6 +149,61 @@
   }
   .stat-label { font-size: 12px; color: var(--text-dim); font-weight: 300; }
 
+  /* ── CROP MODAL ── */
+  .crop-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 1rem;
+  }
+  .crop-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 16px; padding: 24px;
+    width: 100%; max-width: 360px;
+  }
+  .crop-card-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 1.25rem; text-align: center;
+  }
+  .crop-viewport-wrap { display: flex; justify-content: center; margin-bottom: 1.25rem; }
+  .crop-viewport {
+    width: 240px; height: 240px; border-radius: 50%;
+    border: 2px solid var(--gold); overflow: hidden;
+    cursor: grab; background: var(--bg-4); flex-shrink: 0;
+    user-select: none;
+  }
+  .crop-viewport:active { cursor: grabbing; }
+  #crop-canvas { display: block; width: 240px; height: 240px; }
+  .crop-zoom-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem;
+  }
+  .crop-zoom-label { font-size: 11px; color: var(--text-dim); font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+  input[type="range"]#crop-zoom-slider {
+    flex: 1; accent-color: var(--gold); cursor: pointer;
+  }
+  .crop-actions { display: flex; gap: 10px; }
+  .btn-cancel-crop {
+    flex: 1; background: none; border: 0.5px solid var(--border-mid);
+    color: var(--text-muted); padding: 11px; border-radius: 2px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .btn-cancel-crop:hover { border-color: var(--text-dim); color: var(--text); }
+  .btn-save-crop {
+    flex: 2; background: var(--gold); color: #070707;
+    border: none; padding: 11px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-save-crop:hover:not(:disabled) { background: var(--gold-light); }
+  .btn-save-crop:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-spinner {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid rgba(7,7,7,0.3); border-top-color: #070707;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+
   @media (max-width: 640px) {
     .main { padding: 2rem 1.25rem; }
     .profile-layout { flex-direction: column; align-items: stretch; }
@@ -182,13 +238,13 @@
 
         <!-- Photo -->
         <div class="photo-col">
-          <div class="photo-avatar" id="photo-avatar">
+          <div class="photo-avatar" id="photo-avatar" title="Click to change photo">
             <img id="photo-img" alt="Profile photo">
             <span id="photo-initial">—</span>
           </div>
-          <button class="photo-change" onclick="document.getElementById('photo-file').click()">Change photo</button>
+          <button class="photo-change" id="photo-change-btn">Change photo</button>
           <input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp">
-          <div class="photo-hint">JPG, PNG or WebP<br>Recommended 400×400px</div>
+          <div class="photo-hint">Click avatar or button<br>to change photo</div>
         </div>
 
         <!-- Fields -->
@@ -209,7 +265,7 @@
       </div>
 
       <div class="save-row">
-        <button class="btn-gold" id="save-btn" onclick="saveProfile()">Save changes</button>
+        <button class="btn-gold" id="save-btn">Save changes</button>
         <span class="save-msg" id="save-msg"></span>
       </div>
     </div>
@@ -242,14 +298,39 @@
   <div id="app-footer"></div>
 </div>
 
+<!-- Crop modal (outside #app so it overlays everything) -->
+<div id="crop-modal" style="display:none;">
+  <div class="crop-overlay">
+    <div class="crop-card">
+      <div class="crop-card-title">Adjust Photo</div>
+      <div class="crop-viewport-wrap">
+        <div class="crop-viewport" id="crop-viewport">
+          <canvas id="crop-canvas" width="240" height="240"></canvas>
+        </div>
+      </div>
+      <div class="crop-zoom-row">
+        <span class="crop-zoom-label">1×</span>
+        <input type="range" id="crop-zoom-slider" min="100" max="400" value="100" step="1">
+        <span class="crop-zoom-label">4×</span>
+      </div>
+      <div class="crop-actions">
+        <button class="btn-cancel-crop" id="btn-cancel-crop">Cancel</button>
+        <button class="btn-save-crop" id="btn-save-crop">Save Photo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   import { initNav } from './components/nav.js';
   import { initSubnav } from './components/subnav.js';
   import { initFooter } from './components/footer.js';
   import { applyTheme } from './components/theme.js';
+
   const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
     auth: {
       storageKey: 'sb-performers-lab-auth',
@@ -263,13 +344,21 @@
   let currentUserId = null;
   let currentPhotoUrl = null;
 
+  // ── Crop state ────────────────────────────────────────────────────────
+  let cropImg = null;
+  let cropZoom = 1;
+  let cropPanX = 0;
+  let cropPanY = 0;
+  let cropDragging = false;
+  let cropLastX = 0;
+  let cropLastY = 0;
+
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = '/app/login.html'; return; }
 
     currentUserId = session.user.id;
 
-    // Run profile, membership, and submission count queries in parallel
     const [profileRes, membershipRes, countRes] = await Promise.all([
       supabase.from('profiles')
         .select('display_name, bio, location, photo_url, is_admin, theme')
@@ -289,23 +378,28 @@
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
     initSubnav(null);
+
     document.getElementById('input-name').value = profile?.display_name || '';
     document.getElementById('input-bio').value = profile?.bio || '';
     document.getElementById('input-location').value = profile?.location || '';
 
-    // Photo
     currentPhotoUrl = profile?.photo_url || null;
     setPhotoPreview(currentPhotoUrl, name);
 
-    // Wire up file picker
-    document.getElementById('photo-file').addEventListener('change', e => {
+    // Wire photo triggers
+    const fileInput = document.getElementById('photo-file');
+    const triggerFile = () => fileInput.click();
+    document.getElementById('photo-avatar').addEventListener('click', triggerFile);
+    document.getElementById('photo-change-btn').addEventListener('click', triggerFile);
+
+    fileInput.addEventListener('change', e => {
       const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = ev => setPhotoPreview(ev.target.result, name, true);
-        reader.readAsDataURL(file);
-      }
+      if (file) openCropModal(file);
+      fileInput.value = ''; // reset so same file can be re-selected
     });
+
+    // Wire save button
+    document.getElementById('save-btn').addEventListener('click', saveProfile);
 
     // Membership
     const membership = membershipRes.data;
@@ -320,15 +414,15 @@
       document.getElementById('info-plan').textContent = 'No active membership';
     }
 
-    // Submission count
     document.getElementById('stat-submissions').textContent = countRes.count ?? 0;
 
+    initCropModal();
     initFooter();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
   }
 
-  function setPhotoPreview(src, name, isPending) {
+  function setPhotoPreview(src, name) {
     const img = document.getElementById('photo-img');
     const initial = document.getElementById('photo-initial');
     if (src) {
@@ -342,26 +436,175 @@
     }
   }
 
-  async function uploadPhoto(file) {
-    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
-    const path = `${currentUserId}/avatar.${ext}`;
-    const { error } = await supabase.storage
-      .from('avatars')
-      .upload(path, file, { upsert: true, contentType: file.type });
-
-    if (error) {
-      // Bucket not found or storage not configured
-      if (error.statusCode === '404' || error.message?.toLowerCase().includes('bucket')) {
-        return { error: "Photo uploads aren't available yet — the storage bucket hasn't been created." };
-      }
-      return { error: `Upload failed: ${error.message}` };
-    }
-
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-    return { url: urlData.publicUrl };
+  // ── Crop modal ────────────────────────────────────────────────────────
+  function openCropModal(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        cropImg = img;
+        // Initial zoom to fill the 240px viewport
+        const minFill = Math.max(240 / img.naturalWidth, 240 / img.naturalHeight);
+        cropZoom = Math.min(Math.max(minFill, 1), 4);
+        cropPanX = 0;
+        cropPanY = 0;
+        document.getElementById('crop-zoom-slider').value = Math.round(cropZoom * 100);
+        document.getElementById('crop-modal').style.display = 'block';
+        renderCropPreview();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 
-  window.saveProfile = async function() {
+  function closeCropModal() {
+    document.getElementById('crop-modal').style.display = 'none';
+    cropImg = null;
+  }
+
+  function clampPan() {
+    if (!cropImg) return;
+    const hw = (cropImg.naturalWidth * cropZoom) / 2;
+    const hh = (cropImg.naturalHeight * cropZoom) / 2;
+    const maxX = Math.max(0, hw - 120);
+    const maxY = Math.max(0, hh - 120);
+    cropPanX = Math.max(-maxX, Math.min(maxX, cropPanX));
+    cropPanY = Math.max(-maxY, Math.min(maxY, cropPanY));
+  }
+
+  function renderCropPreview() {
+    const canvas = document.getElementById('crop-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 240, 240);
+    if (!cropImg) return;
+    const w = cropImg.naturalWidth * cropZoom;
+    const h = cropImg.naturalHeight * cropZoom;
+    const x = 120 + cropPanX - w / 2;
+    const y = 120 + cropPanY - h / 2;
+    ctx.drawImage(cropImg, x, y, w, h);
+  }
+
+  function initCropModal() {
+    const viewport = document.getElementById('crop-viewport');
+    const slider = document.getElementById('crop-zoom-slider');
+
+    // Zoom slider
+    slider.addEventListener('input', e => {
+      cropZoom = parseInt(e.target.value, 10) / 100;
+      clampPan();
+      renderCropPreview();
+    });
+
+    // Mouse drag
+    viewport.addEventListener('mousedown', e => {
+      cropDragging = true;
+      cropLastX = e.clientX;
+      cropLastY = e.clientY;
+      viewport.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!cropDragging) return;
+      cropPanX += e.clientX - cropLastX;
+      cropPanY += e.clientY - cropLastY;
+      cropLastX = e.clientX;
+      cropLastY = e.clientY;
+      clampPan();
+      renderCropPreview();
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (cropDragging) {
+        cropDragging = false;
+        viewport.style.cursor = 'grab';
+      }
+    });
+
+    // Touch drag
+    viewport.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      cropDragging = true;
+      cropLastX = t.clientX;
+      cropLastY = t.clientY;
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', e => {
+      if (!cropDragging || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      cropPanX += t.clientX - cropLastX;
+      cropPanY += t.clientY - cropLastY;
+      cropLastX = t.clientX;
+      cropLastY = t.clientY;
+      clampPan();
+      renderCropPreview();
+      e.preventDefault();
+    }, { passive: false });
+
+    viewport.addEventListener('touchend', () => { cropDragging = false; }, { passive: true });
+
+    // Buttons
+    document.getElementById('btn-cancel-crop').addEventListener('click', closeCropModal);
+    document.getElementById('btn-save-crop').addEventListener('click', saveCrop);
+  }
+
+  async function saveCrop() {
+    if (!cropImg) return;
+
+    const btn = document.getElementById('btn-save-crop');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> Saving…';
+
+    // Build 300×300 output canvas
+    const out = document.createElement('canvas');
+    out.width = 300;
+    out.height = 300;
+    const ctx = out.getContext('2d');
+
+    const srcW = 240 / cropZoom;
+    const srcH = 240 / cropZoom;
+    const srcX = cropImg.naturalWidth / 2 - cropPanX / cropZoom - srcW / 2;
+    const srcY = cropImg.naturalHeight / 2 - cropPanY / cropZoom - srcH / 2;
+
+    ctx.drawImage(cropImg, srcX, srcY, srcW, srcH, 0, 0, 300, 300);
+
+    out.toBlob(async blob => {
+      if (!blob) {
+        btn.disabled = false;
+        btn.textContent = 'Save Photo';
+        return;
+      }
+
+      const path = `${currentUserId}/avatar.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+
+      if (uploadError) {
+        showMsg('Upload failed: ' + uploadError.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Save Photo';
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+      // Add cache-buster to force reload; store clean URL in DB
+      const cleanUrl = urlData.publicUrl;
+      const displayUrl = cleanUrl + '?t=' + Date.now();
+
+      await supabase.from('profiles')
+        .update({ photo_url: cleanUrl })
+        .eq('user_id', currentUserId);
+
+      currentPhotoUrl = cleanUrl;
+      setPhotoPreview(displayUrl, document.getElementById('input-name').value || '');
+      closeCropModal();
+      showMsg('Photo saved ✓', 'success');
+    }, 'image/jpeg', 0.85);
+  }
+
+  // ── Profile save (text fields only) ──────────────────────────────────
+  async function saveProfile() {
     const name = document.getElementById('input-name').value.trim();
     const bio  = document.getElementById('input-bio').value.trim();
     const loc  = document.getElementById('input-location').value.trim();
@@ -372,28 +615,17 @@
     btn.disabled = true;
     showMsg('Saving…', 'saving');
 
-    // Upload new photo if one was selected
-    let photoUrl = currentPhotoUrl;
-    const fileInput = document.getElementById('photo-file');
-    if (fileInput.files[0]) {
-      const result = await uploadPhoto(fileInput.files[0]);
-      if (result.error) { showMsg(result.error, 'error'); btn.disabled = false; return; }
-      photoUrl = result.url;
-      fileInput.value = '';
-    }
-
     const { error } = await supabase
       .from('profiles')
-      .update({ display_name: name, bio: bio || null, location: loc || null, photo_url: photoUrl })
+      .update({ display_name: name, bio: bio || null, location: loc || null, photo_url: currentPhotoUrl })
       .eq('user_id', currentUserId);
 
     btn.disabled = false;
     if (error) { showMsg('Could not save: ' + error.message, 'error'); return; }
 
-    currentPhotoUrl = photoUrl;
     document.getElementById('nav-name').textContent = name;
     showMsg('Changes saved ✓', 'success');
-  };
+  }
 
   function showMsg(text, type) {
     const el = document.getElementById('save-msg');
