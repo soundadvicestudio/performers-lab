@@ -800,6 +800,112 @@
   .sub-delete-btn-cancel:hover:not(:disabled) { border-color: var(--border-mid); }
   .sub-delete-btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
   .sub-delete-error { font-size: 12px; color: #e53935; margin-top: 8px; text-align: right; }
+
+  /* ── EVENTS MANAGEMENT ── */
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76,175,132,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(76,175,132,0); }
+  }
+  .evt-live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); flex-shrink: 0;
+    animation: live-pulse 1.5s ease-in-out infinite;
+  }
+  .evt-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 10px; margin-bottom: 12px; overflow: hidden; transition: border-color 0.15s;
+  }
+  .evt-card:hover { border-color: var(--border-mid); }
+  .evt-card.live { border-color: rgba(76,175,132,0.3); }
+  .evt-card-main { padding: 20px 24px; }
+  .evt-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 10px; }
+  .evt-card-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .evt-card-topic { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 400; color: var(--gold); margin-bottom: 2px; }
+  .evt-card-date { font-size: 12px; color: var(--text-muted); font-weight: 300; }
+  .evt-card-desc { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.55; margin-bottom: 14px; }
+  .evt-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 3px;
+  }
+  .evt-badge.upcoming { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
+  .evt-badge.live { background: var(--green-dim); color: var(--green); border: 0.5px solid rgba(76,175,132,0.25); }
+  .evt-rsvp-count { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .evt-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .evt-go-live-btn {
+    background: var(--gold); color: var(--bg); border: none;
+    padding: 8px 18px; border-radius: 3px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s;
+  }
+  .evt-go-live-btn:hover:not(:disabled) { background: var(--gold-light); }
+  .evt-go-live-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .evt-end-btn {
+    background: none; border: 0.5px solid rgba(229,57,53,0.5); color: rgba(229,57,53,0.8);
+    padding: 7px 14px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .evt-end-btn:hover:not(:disabled) { background: rgba(229,57,53,0.06); border-color: rgba(229,57,53,0.7); }
+  .evt-end-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .evt-edit-btn, .evt-delete-btn {
+    background: var(--bg-3); border: 0.5px solid var(--border-mid); color: var(--text-muted);
+    padding: 7px 14px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .evt-edit-btn:hover { border-color: var(--border-gold); color: var(--gold); }
+  .evt-delete-btn:hover { border-color: rgba(229,57,53,0.4); color: rgba(229,57,53,0.8); }
+  .evt-room-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 10px;
+    padding: 10px 12px; background: var(--bg-3); border: 0.5px solid var(--border-gold);
+    border-radius: 4px;
+  }
+  .evt-room-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); flex-shrink: 0; }
+  .evt-room-url-input { flex: 1; background: none; border: none; color: var(--text-muted); font-size: 12px; font-family: 'Raleway', sans-serif; outline: none; min-width: 0; cursor: text; }
+  .evt-copy-btn {
+    background: none; border: 0.5px solid var(--border-gold); color: var(--gold);
+    padding: 4px 12px; border-radius: 2px; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: background 0.15s; flex-shrink: 0;
+  }
+  .evt-copy-btn:hover { background: var(--gold-dim); }
+  .evt-inline-edit { padding: 16px 24px 20px; border-top: 0.5px solid var(--border); background: var(--bg-3); }
+  .evt-inline-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .evt-inline-datetime {
+    width: 100%; background: var(--bg-4); border: 0.5px solid var(--border);
+    color: var(--text); padding: 9px 12px; border-radius: 3px;
+    font-size: 13px; font-family: 'Raleway', sans-serif; font-weight: 300;
+    transition: border-color 0.2s; outline: none; color-scheme: dark;
+  }
+  .evt-inline-datetime:focus { border-color: var(--gold); }
+  .evt-inline-actions { display: flex; gap: 8px; }
+  .evt-inline-error { font-size: 12px; color: #e05c5c; margin-top: 6px; min-height: 16px; }
+  .evt-confirm-wrap { margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
+  .evt-confirm-text { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5; font-weight: 300; }
+  .evt-confirm-btns { display: flex; gap: 8px; }
+  .evt-create-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .evt-create-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .evt-create-title { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); margin-bottom: 1.25rem; }
+  .evt-create-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .evt-datetime-input {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border);
+    color: var(--text); padding: 9px 12px; border-radius: 3px;
+    font-size: 13px; font-family: 'Raleway', sans-serif; font-weight: 300;
+    transition: border-color 0.2s; outline: none; color-scheme: dark;
+  }
+  .evt-datetime-input:focus { border-color: var(--gold); background: var(--bg-4); }
+  .evt-create-error { font-size: 12px; color: #e05c5c; margin-top: 6px; min-height: 16px; }
+  .evt-recording-row { display: flex; gap: 8px; align-items: flex-end; }
+  .evt-recording-row input { flex: 1; }
+  .evt-rec-error { font-size: 12px; color: #e05c5c; margin-top: 5px; min-height: 14px; }
 </style>
 </head>
 <body>
@@ -876,6 +982,10 @@
       <div class="nav-item" data-panel="submissions" onclick="switchPanel(this,'submissions'); window.initSubmissions?.()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
         Submissions
+      </div>
+      <div class="nav-item" data-panel="events" onclick="switchPanel(this,'events'); window.initEvents?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Events
       </div>
       <div class="nav-item" data-panel="resources" onclick="switchPanel(this,'resources'); window.initResources?.()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -1373,6 +1483,50 @@
 
         <div id="res-form-container" style="display:none;"></div>
         <div id="res-list"><div class="sub-loading">Loading…</div></div>
+      </div>
+
+      <!-- EVENTS -->
+      <div class="panel" id="panel-events">
+        <div class="panel-title">Lab Sessions</div>
+        <div class="panel-desc">Schedule and manage live masterclass sessions for members.</div>
+
+        <div class="submission-tabs">
+          <button class="sub-tab active" id="evt-tab-upcoming" onclick="window.switchEvtTab('upcoming')">Upcoming</button>
+          <button class="sub-tab" id="evt-tab-past" onclick="window.switchEvtTab('past')">Past</button>
+        </div>
+
+        <!-- Upcoming view -->
+        <div id="evt-view-upcoming">
+          <div class="evt-create-card">
+            <div class="evt-create-title">Schedule a Session</div>
+            <div class="evt-create-grid">
+              <div class="field">
+                <label class="field-label">Title</label>
+                <input type="text" id="evt-new-title" placeholder="June Masterclass">
+              </div>
+              <div class="field">
+                <label class="field-label">Topic</label>
+                <input type="text" id="evt-new-topic" placeholder="Belt Mix Technique">
+              </div>
+            </div>
+            <div class="field" style="margin-bottom:12px;">
+              <label class="field-label">Description</label>
+              <textarea id="evt-new-desc" placeholder="What will members learn in this session?" style="min-height:70px;"></textarea>
+            </div>
+            <div class="field" style="margin-bottom:1.25rem;">
+              <label class="field-label">Starts At</label>
+              <input type="datetime-local" id="evt-new-starts" class="evt-datetime-input">
+            </div>
+            <button class="action-btn primary" id="evt-create-btn" onclick="window.createEvent()">Schedule Session</button>
+            <div class="evt-create-error" id="evt-create-error"></div>
+          </div>
+          <div id="evt-upcoming-list"><div class="sub-loading">Loading…</div></div>
+        </div>
+
+        <!-- Past view -->
+        <div id="evt-view-past" style="display:none;">
+          <div id="evt-past-list"><div class="sub-loading">Loading…</div></div>
+        </div>
       </div>
 
     </div>
@@ -2876,6 +3030,361 @@
       setTimeout(() => { item.remove(); renderAdminResList(); }, 200);
     }
     showToast('Resource deleted.');
+  };
+
+  // ── Events Management ──────────────────────────────────────────────────
+  let evtUpcomingData = [];
+  let evtPastData = [];
+  let evtInitialized = false;
+  let evtPastInitialized = false;
+
+  function isoToLocalInputValue(isoString) {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+  }
+
+  function formatEvtDate(isoString) {
+    if (!isoString) return '—';
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'long', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(new Date(isoString)) + ' CT';
+  }
+
+  function evtEsc(s) {
+    return String(s || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  window.switchEvtTab = function(tab) {
+    document.getElementById('evt-tab-upcoming').classList.toggle('active', tab === 'upcoming');
+    document.getElementById('evt-tab-past').classList.toggle('active', tab === 'past');
+    document.getElementById('evt-view-upcoming').style.display = tab === 'upcoming' ? '' : 'none';
+    document.getElementById('evt-view-past').style.display = tab === 'past' ? '' : 'none';
+    if (tab === 'past' && !evtPastInitialized) loadPastEvents();
+  };
+
+  window.initEvents = async function() {
+    if (evtInitialized) return;
+    evtInitialized = true;
+    await loadUpcomingEvents();
+  };
+
+  async function fetchRsvpCounts(eventIds) {
+    if (!eventIds.length) return {};
+    const { data } = await sbClient.from('event_rsvps').select('event_id').in('event_id', eventIds);
+    const map = {};
+    (data || []).forEach(r => { map[r.event_id] = (map[r.event_id] || 0) + 1; });
+    return map;
+  }
+
+  async function loadUpcomingEvents() {
+    const listEl = document.getElementById('evt-upcoming-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="sub-loading">Loading…</div>';
+    const { data, error } = await sbClient
+      .from('events').select('*')
+      .in('status', ['upcoming', 'live'])
+      .order('starts_at', { ascending: true });
+    if (error) { listEl.innerHTML = '<div class="sub-empty">Failed to load events.</div>'; return; }
+    evtUpcomingData = data || [];
+    const counts = await fetchRsvpCounts(evtUpcomingData.map(e => e.id));
+    renderUpcomingList(counts);
+  }
+
+  async function loadPastEvents() {
+    evtPastInitialized = true;
+    const listEl = document.getElementById('evt-past-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="sub-loading">Loading…</div>';
+    const { data, error } = await sbClient
+      .from('events').select('*')
+      .eq('status', 'completed')
+      .order('starts_at', { ascending: false });
+    if (error) { listEl.innerHTML = '<div class="sub-empty">Failed to load past sessions.</div>'; return; }
+    evtPastData = data || [];
+    const counts = await fetchRsvpCounts(evtPastData.map(e => e.id));
+    renderPastList(counts);
+  }
+
+  function renderUpcomingList(counts) {
+    const listEl = document.getElementById('evt-upcoming-list');
+    if (!listEl) return;
+    if (!evtUpcomingData.length) {
+      listEl.innerHTML = '<div class="sub-empty">No upcoming sessions scheduled.</div>';
+      return;
+    }
+    listEl.innerHTML = evtUpcomingData.map(evt => {
+      const isLive = evt.status === 'live';
+      const count = counts[evt.id] || 0;
+      return `<div class="evt-card${isLive ? ' live' : ''}" id="evt-card-${evt.id}">
+        <div class="evt-card-main" id="evt-main-${evt.id}">
+          <div class="evt-card-top">
+            <div style="flex:1;min-width:0;">
+              <div class="evt-card-title">${evtEsc(evt.title)}</div>
+              <div class="evt-card-topic">${evtEsc(evt.topic)}</div>
+              <div class="evt-card-date">${formatEvtDate(evt.starts_at)}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+              ${isLive
+                ? `<span class="evt-badge live"><span class="evt-live-dot"></span>&nbsp;Live</span>`
+                : `<span class="evt-badge upcoming">Upcoming</span>`}
+              <span class="evt-rsvp-count">${count} RSVP${count !== 1 ? 's' : ''}</span>
+            </div>
+          </div>
+          <div class="evt-card-desc">${evtEsc(evt.description)}</div>
+          ${evt.daily_room_url ? `
+          <div class="evt-room-row">
+            <span class="evt-room-label">Room</span>
+            <input class="evt-room-url-input" type="text" id="evt-room-url-${evt.id}" value="${evtEsc(evt.daily_room_url)}" readonly>
+            <button class="evt-copy-btn" onclick="window.copyEvtRoomUrl('${evt.id}')">Copy</button>
+          </div>` : ''}
+          <div class="evt-actions" style="margin-top:14px;">
+            <button class="evt-go-live-btn" id="evt-golive-btn-${evt.id}"
+              onclick="window.goLive('${evt.id}')"
+              ${isLive ? 'disabled' : ''}>${isLive ? '▶&nbsp;Live' : '▶&nbsp;Go Live'}</button>
+            ${isLive ? `<button class="evt-end-btn" id="evt-end-btn-${evt.id}" onclick="window.showEndConfirm('${evt.id}')">End Session</button>` : ''}
+            <button class="evt-edit-btn" onclick="window.toggleEvtEdit('${evt.id}')">Edit</button>
+            <button class="evt-delete-btn" onclick="window.showEvtDelete('${evt.id}')">Delete</button>
+          </div>
+          <div id="evt-end-confirm-${evt.id}" style="display:none;" class="evt-confirm-wrap">
+            <div class="evt-confirm-text">End this session and mark it as completed? The room URL will be cleared.</div>
+            <div class="evt-confirm-btns">
+              <button class="sub-cancel-btn" onclick="window.hideEvtConfirms('${evt.id}')">Cancel</button>
+              <button class="evt-end-btn" id="evt-end-yes-${evt.id}" onclick="window.endSession('${evt.id}')">Yes, End Session</button>
+            </div>
+          </div>
+          <div id="evt-del-confirm-${evt.id}" style="display:none;" class="evt-confirm-wrap">
+            <div class="evt-confirm-text">Delete this event? This cannot be undone. RSVPs will also be deleted.</div>
+            <div class="evt-confirm-btns">
+              <button class="sub-cancel-btn" onclick="window.hideEvtConfirms('${evt.id}')">Cancel</button>
+              <button class="sub-delete-btn-yes" id="evt-del-yes-${evt.id}" onclick="window.deleteEvt('${evt.id}')">Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+        <div class="evt-inline-edit" id="evt-edit-form-${evt.id}" style="display:none;">
+          <div class="evt-inline-edit-grid">
+            <div class="field">
+              <label class="field-label">Title</label>
+              <input type="text" id="evt-edit-title-${evt.id}" value="${evtEsc(evt.title)}">
+            </div>
+            <div class="field">
+              <label class="field-label">Topic</label>
+              <input type="text" id="evt-edit-topic-${evt.id}" value="${evtEsc(evt.topic)}">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:12px;">
+            <label class="field-label">Description</label>
+            <textarea id="evt-edit-desc-${evt.id}">${evtEsc(evt.description)}</textarea>
+          </div>
+          <div class="field" style="margin-bottom:1rem;">
+            <label class="field-label">Starts At</label>
+            <input type="datetime-local" class="evt-inline-datetime"
+              id="evt-edit-starts-${evt.id}" value="${isoToLocalInputValue(evt.starts_at)}">
+          </div>
+          <div class="evt-inline-actions">
+            <button class="action-btn primary" id="evt-edit-save-${evt.id}" onclick="window.saveEvtEdit('${evt.id}')">Save</button>
+            <button class="sub-cancel-btn" onclick="window.toggleEvtEdit('${evt.id}')">Cancel</button>
+          </div>
+          <div class="evt-inline-error" id="evt-edit-error-${evt.id}"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderPastList(counts) {
+    const listEl = document.getElementById('evt-past-list');
+    if (!listEl) return;
+    if (!evtPastData.length) {
+      listEl.innerHTML = '<div class="sub-empty">No past sessions yet.</div>';
+      return;
+    }
+    listEl.innerHTML = evtPastData.map(evt => {
+      const count = counts[evt.id] || 0;
+      return `<div class="evt-card" id="evt-past-card-${evt.id}">
+        <div class="evt-card-main">
+          <div class="evt-card-top">
+            <div>
+              <div class="evt-card-title">${evtEsc(evt.title)}</div>
+              <div class="evt-card-topic">${evtEsc(evt.topic)}</div>
+              <div class="evt-card-date">${formatEvtDate(evt.starts_at)}</div>
+            </div>
+            <span class="evt-rsvp-count" style="flex-shrink:0;">${count} RSVP${count !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label class="field-label">Recording URL</label>
+            <div class="evt-recording-row">
+              <input type="text" id="evt-rec-${evt.id}"
+                value="${evtEsc(evt.recording_url || '')}"
+                placeholder="Paste YouTube or Drive URL">
+              <button class="action-btn primary" id="evt-rec-save-${evt.id}"
+                onclick="window.saveRecordingUrl('${evt.id}')">Save</button>
+            </div>
+            <div class="evt-rec-error" id="evt-rec-error-${evt.id}"></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  window.createEvent = async function() {
+    const title = document.getElementById('evt-new-title').value.trim();
+    const topic = document.getElementById('evt-new-topic').value.trim();
+    const desc = document.getElementById('evt-new-desc').value.trim();
+    const startsAt = document.getElementById('evt-new-starts').value;
+    const errEl = document.getElementById('evt-create-error');
+    const btn = document.getElementById('evt-create-btn');
+    errEl.textContent = '';
+    if (!title || !topic || !desc || !startsAt) { errEl.textContent = 'All fields are required.'; return; }
+    btn.disabled = true; btn.textContent = 'Scheduling…';
+    const { error } = await sbClient.from('events').insert({
+      title, topic, description: desc,
+      starts_at: new Date(startsAt).toISOString(),
+      status: 'upcoming', daily_room_url: null,
+    });
+    btn.disabled = false; btn.textContent = 'Schedule Session';
+    if (error) { errEl.textContent = 'Failed to schedule session. Please try again.'; return; }
+    document.getElementById('evt-new-title').value = '';
+    document.getElementById('evt-new-topic').value = '';
+    document.getElementById('evt-new-desc').value = '';
+    document.getElementById('evt-new-starts').value = '';
+    await loadUpcomingEvents();
+    showToast('Session scheduled.');
+  };
+
+  window.goLive = async function(eventId) {
+    const btn = document.getElementById(`evt-golive-btn-${eventId}`);
+    if (btn) { btn.disabled = true; btn.textContent = '▶ Starting…'; }
+    const { data: { user } } = await sbClient.auth.getUser();
+    if (!user) {
+      showToast('Authentication error.');
+      if (btn) { btn.disabled = false; btn.textContent = '▶ Go Live'; }
+      return;
+    }
+    const res = await fetch('/api/events/createRoom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_user_id: user.id, event_id: eventId }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      showToast('Error: ' + (json.error || 'Failed to create room'));
+      if (btn) { btn.disabled = false; btn.textContent = '▶ Go Live'; }
+      return;
+    }
+    const evt = evtUpcomingData.find(e => e.id === eventId);
+    if (evt) { evt.status = 'live'; evt.daily_room_url = json.room_url; }
+    const counts = await fetchRsvpCounts(evtUpcomingData.map(e => e.id));
+    renderUpcomingList(counts);
+    showToast('Session is now live.');
+  };
+
+  window.copyEvtRoomUrl = function(eventId) {
+    const input = document.getElementById(`evt-room-url-${eventId}`);
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => showToast('Room URL copied.'));
+  };
+
+  window.showEndConfirm = function(eventId) {
+    document.getElementById(`evt-end-confirm-${eventId}`).style.display = '';
+    document.getElementById(`evt-del-confirm-${eventId}`).style.display = 'none';
+    document.getElementById(`evt-edit-form-${eventId}`).style.display = 'none';
+  };
+
+  window.showEvtDelete = function(eventId) {
+    document.getElementById(`evt-del-confirm-${eventId}`).style.display = '';
+    document.getElementById(`evt-end-confirm-${eventId}`).style.display = 'none';
+    document.getElementById(`evt-edit-form-${eventId}`).style.display = 'none';
+  };
+
+  window.hideEvtConfirms = function(eventId) {
+    document.getElementById(`evt-end-confirm-${eventId}`).style.display = 'none';
+    document.getElementById(`evt-del-confirm-${eventId}`).style.display = 'none';
+  };
+
+  window.endSession = async function(eventId) {
+    const btn = document.getElementById(`evt-end-yes-${eventId}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Ending…'; }
+    const { error } = await sbClient.from('events')
+      .update({ status: 'completed', daily_room_url: null }).eq('id', eventId);
+    if (error) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Yes, End Session'; }
+      showToast('Failed to end session.'); return;
+    }
+    evtUpcomingData = evtUpcomingData.filter(e => e.id !== eventId);
+    const counts = await fetchRsvpCounts(evtUpcomingData.map(e => e.id));
+    renderUpcomingList(counts);
+    evtPastInitialized = false;
+    showToast('Session ended and moved to Past.');
+  };
+
+  window.deleteEvt = async function(eventId) {
+    const btn = document.getElementById(`evt-del-yes-${eventId}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+    const { error } = await sbClient.from('events').delete().eq('id', eventId);
+    if (error) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Yes, Delete'; }
+      showToast('Failed to delete event.'); return;
+    }
+    const card = document.getElementById(`evt-card-${eventId}`);
+    if (card) {
+      card.style.transition = 'opacity 0.2s';
+      card.style.opacity = '0';
+      setTimeout(() => {
+        card.remove();
+        evtUpcomingData = evtUpcomingData.filter(e => e.id !== eventId);
+        if (!evtUpcomingData.length)
+          document.getElementById('evt-upcoming-list').innerHTML = '<div class="sub-empty">No upcoming sessions scheduled.</div>';
+      }, 200);
+    }
+    showToast('Event deleted.');
+  };
+
+  window.toggleEvtEdit = function(eventId) {
+    const form = document.getElementById(`evt-edit-form-${eventId}`);
+    const isHidden = form.style.display === 'none';
+    form.style.display = isHidden ? '' : 'none';
+    if (isHidden) {
+      document.getElementById(`evt-end-confirm-${eventId}`).style.display = 'none';
+      document.getElementById(`evt-del-confirm-${eventId}`).style.display = 'none';
+      document.getElementById(`evt-edit-error-${eventId}`).textContent = '';
+    }
+  };
+
+  window.saveEvtEdit = async function(eventId) {
+    const title = document.getElementById(`evt-edit-title-${eventId}`).value.trim();
+    const topic = document.getElementById(`evt-edit-topic-${eventId}`).value.trim();
+    const desc = document.getElementById(`evt-edit-desc-${eventId}`).value.trim();
+    const startsAt = document.getElementById(`evt-edit-starts-${eventId}`).value;
+    const errEl = document.getElementById(`evt-edit-error-${eventId}`);
+    const btn = document.getElementById(`evt-edit-save-${eventId}`);
+    errEl.textContent = '';
+    if (!title || !topic || !desc || !startsAt) { errEl.textContent = 'All fields are required.'; return; }
+    btn.disabled = true; btn.textContent = 'Saving…';
+    const { error } = await sbClient.from('events')
+      .update({ title, topic, description: desc, starts_at: new Date(startsAt).toISOString() })
+      .eq('id', eventId);
+    btn.disabled = false; btn.textContent = 'Save';
+    if (error) { errEl.textContent = 'Failed to save. Please try again.'; return; }
+    await loadUpcomingEvents();
+    showToast('Event updated.');
+  };
+
+  window.saveRecordingUrl = async function(eventId) {
+    const input = document.getElementById(`evt-rec-${eventId}`);
+    const btn = document.getElementById(`evt-rec-save-${eventId}`);
+    const errEl = document.getElementById(`evt-rec-error-${eventId}`);
+    if (!input || !btn) return;
+    errEl.textContent = '';
+    btn.disabled = true; btn.textContent = 'Saving…';
+    const { error } = await sbClient.from('events')
+      .update({ recording_url: input.value.trim() || null }).eq('id', eventId);
+    btn.disabled = false; btn.textContent = 'Save';
+    if (error) { errEl.textContent = 'Failed to save.'; return; }
+    showToast('Recording URL saved.');
   };
 </script>
 </body>
