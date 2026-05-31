@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resources — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.1);
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+  .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; color: var(--gold); line-height: 1.1; margin-bottom: 6px; }
+  .page-subheading { font-size: 14px; color: var(--text-muted); font-weight: 300; margin-bottom: 2rem; }
+
+  /* ── FILTER PILLS ── */
+  .filter-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 2rem; }
+  .filter-pill {
+    background: var(--bg-3); border: 0.5px solid var(--border); border-radius: 8px;
+    padding: 6px 16px; font-size: 13px; color: var(--text-muted); cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.15s;
+  }
+  .filter-pill:hover { border-color: var(--border-mid); color: var(--text); }
+  .filter-pill.active { background: var(--gold-dim); border-color: var(--border-gold); color: var(--gold); }
+
+  /* ── CATEGORY GROUP ── */
+  .cat-group { margin-bottom: 2.5rem; }
+  .cat-group-heading {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem; border-bottom: 0.5px solid var(--border);
+  }
+
+  /* ── RESOURCE CARD ── */
+  .res-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 20px 24px; margin-bottom: 1rem;
+  }
+  .res-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+  .res-title { font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .res-type-badge {
+    background: var(--bg-3); border: 0.5px solid var(--border); border-radius: 4px;
+    padding: 3px 8px; font-size: 11px; color: var(--text-dim);
+    font-family: 'Raleway', sans-serif; white-space: nowrap; flex-shrink: 0;
+  }
+  .res-body { margin-top: 12px; font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.65; }
+  .res-body p { margin-bottom: 0.5em; }
+  .res-body p:last-child { margin-bottom: 0; }
+  .res-body a { color: var(--gold); text-decoration: underline; }
+  .res-body ul, .res-body ol { padding-left: 1.4em; margin-bottom: 0.5em; }
+  .res-body li { margin-bottom: 0.2em; }
+  .res-body strong { font-weight: 600; }
+  .res-body em { font-style: italic; }
+
+  /* ── DOWNLOAD BUTTON ── */
+  .download-btn {
+    display: inline-block; background: var(--bg-3); border: 0.5px solid var(--border);
+    color: var(--text); padding: 8px 16px; border-radius: 8px;
+    font-size: 13px; font-family: 'Raleway', sans-serif; text-decoration: none;
+    margin-top: 10px; transition: border-color 0.15s;
+  }
+  .download-btn:hover { border-color: var(--border-mid); }
+
+  /* ── EMPTY STATES ── */
+  .res-empty { text-align: center; padding: 4rem 1rem; font-size: 14px; color: var(--text-dim); }
+
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem; }
+    .res-card { padding: 16px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <div class="page-eyebrow">Member Library</div>
+    <div class="page-heading">Resources</div>
+    <div class="page-subheading">Tools, recordings, and materials to support your training.</div>
+    <div class="filter-pills" id="filter-pills"></div>
+    <div id="resource-list"><div class="spinner" style="margin:3rem auto;display:block;"></div></div>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: { storageKey: 'sb-performers-lab-auth', storage: window.localStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+  });
+
+  let allResources = [];
+  let allCategories = [];
+  let activeFilter = 'all';
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+
+  function isProfileComplete(profile) {
+    return !!(profile?.display_name?.trim() && profile?.birth_year && profile?.experience?.trim() && profile?.location?.trim() && profile?.bio?.trim());
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function sanitizeHTML(html) {
+    const ALLOWED = new Set(['b','i','u','strong','em','a','ul','ol','li','p','br']);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    function clean(node) {
+      const toUnwrap = [];
+      for (const child of [...node.childNodes]) {
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const tag = child.tagName.toLowerCase();
+        if (!ALLOWED.has(tag)) { toUnwrap.push(child); continue; }
+        for (const attr of [...child.attributes]) {
+          if (tag === 'a' && attr.name === 'href' && /^(https?:|\/|#)/.test(attr.value)) continue;
+          child.removeAttribute(attr.name);
+        }
+        clean(child);
+      }
+      for (const el of toUnwrap) {
+        while (el.firstChild) node.insertBefore(el.firstChild, el);
+        node.removeChild(el);
+      }
+    }
+    clean(doc.body);
+    return doc.body.innerHTML;
+  }
+
+  function extractYouTubeId(url) {
+    const patterns = [/youtu\.be\/([^?&#]+)/, /youtube\.com\/embed\/([^?&#]+)/, /[?&]v=([^&#]+)/];
+    for (const p of patterns) { const m = url.match(p); if (m) return m[1]; }
+    return null;
+  }
+
+  function driveEmbedUrl(url) {
+    const m = url.match(/\/file\/d\/([^\/]+)\//);
+    return m ? `https://drive.google.com/file/d/${m[1]}/preview` : url;
+  }
+
+  function getTypeBadgeLabel(type) {
+    const labels = { 'link-youtube': 'YouTube', 'link-drive': 'Drive', 'pdf': 'PDF', 'mp3': 'MP3', 'image': 'Image', 'slides': 'Slides' };
+    return labels[type] || '';
+  }
+
+  // ── Rendering ──────────────────────────────────────────────────────────
+
+  function renderFilterPills() {
+    const container = document.getElementById('filter-pills');
+    if (!allResources.length) { container.innerHTML = ''; return; }
+
+    const usedCatIds = new Set(allResources.map(r => r.category_id).filter(Boolean));
+    const usedCats = allCategories.filter(c => usedCatIds.has(c.id));
+
+    const pills = [
+      `<button class="filter-pill active" data-cat="all" onclick="window.__setFilter('all')">All (${allResources.length})</button>`,
+      ...usedCats.map(c => {
+        const count = allResources.filter(r => r.category_id === c.id).length;
+        return `<button class="filter-pill" data-cat="${escapeHtml(c.id)}" onclick="window.__setFilter('${escapeHtml(c.id)}')">${escapeHtml(c.name)} (${count})</button>`;
+      })
+    ];
+    container.innerHTML = pills.join('');
+  }
+
+  window.__setFilter = function(catId) {
+    activeFilter = catId;
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.dataset.cat === catId));
+    renderResourceList(catId);
+  };
+
+  function renderResourceList(catId) {
+    const container = document.getElementById('resource-list');
+    const filtered = catId === 'all' ? allResources : allResources.filter(r => r.category_id === catId);
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="res-empty">${catId === 'all' ? 'No resources yet. Check back soon.' : 'No resources in this category yet.'}</div>`;
+      return;
+    }
+
+    // Group by category in category order
+    const groups = {};
+    for (const r of filtered) { const k = r.category_id || '__none__'; if (!groups[k]) groups[k] = []; groups[k].push(r); }
+
+    const orderedKeys = [
+      ...allCategories.filter(c => groups[c.id]).map(c => c.id),
+      ...(groups['__none__'] ? ['__none__'] : [])
+    ];
+
+    let html = '';
+    for (const k of orderedKeys) {
+      if (!groups[k]) continue;
+      const cat = allCategories.find(c => c.id === k);
+      const catName = cat ? cat.name : 'Uncategorized';
+      html += `<div class="cat-group">`;
+      if (catId === 'all') html += `<div class="cat-group-heading">${escapeHtml(catName)}</div>`;
+      html += groups[k].map(r => renderCard(r)).join('');
+      html += `</div>`;
+    }
+    container.innerHTML = html;
+  }
+
+  function renderCard(r) {
+    const badge = getTypeBadgeLabel(r.resource_type);
+    const bodyHtml = r.body ? `<div class="res-body">${sanitizeHTML(r.body)}</div>` : '';
+    const playerHtml = renderPlayer(r);
+    return `
+      <div class="res-card">
+        <div class="res-card-header">
+          <div class="res-title">${escapeHtml(r.title)}</div>
+          ${badge ? `<span class="res-type-badge">${escapeHtml(badge)}</span>` : ''}
+        </div>
+        ${bodyHtml}
+        ${playerHtml}
+      </div>`;
+  }
+
+  function renderPlayer(r) {
+    const url = r.file_url || '';
+    if (!url || !r.resource_type) return '';
+
+    switch (r.resource_type) {
+      case 'link-youtube': {
+        const vid = extractYouTubeId(url);
+        if (!vid) return '';
+        return `<iframe width="100%" height="280" src="https://www.youtube.com/embed/${encodeURIComponent(vid)}" frameborder="0" allowfullscreen style="border-radius:8px;margin-top:12px;display:block;"></iframe>`;
+      }
+      case 'link-drive': {
+        const embed = driveEmbedUrl(url);
+        return `<iframe src="${escapeHtml(embed)}" width="100%" height="400" frameborder="0" allowfullscreen style="border-radius:8px;margin-top:12px;display:block;"></iframe>`;
+      }
+      case 'pdf':
+        return `<iframe src="${escapeHtml(url)}" width="100%" height="500" frameborder="0" style="border-radius:8px;margin-top:12px;display:block;"></iframe>
+          <a href="${escapeHtml(url)}" download class="download-btn" target="_blank">Download PDF ↓</a>`;
+      case 'mp3':
+        return `<audio controls style="width:100%;margin-top:12px;"><source src="${escapeHtml(url)}" type="audio/mpeg"></audio>`;
+      case 'image':
+        return `<img src="${escapeHtml(url)}" alt="${escapeHtml(r.title)}" style="width:100%;border-radius:8px;margin-top:12px;max-height:500px;object-fit:contain;display:block;">`;
+      case 'slides': {
+        if (url.includes('docs.google.com/presentation')) {
+          const embed = url.replace(/\/(edit|pub|preview)(\?.*)?$/, '/embed');
+          return `<iframe src="${escapeHtml(embed)}" width="100%" height="400" frameborder="0" allowfullscreen style="border-radius:8px;margin-top:12px;display:block;"></iframe>`;
+        }
+        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="download-btn">Open slides ↗</a>`;
+      }
+      default: return '';
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    const userId = session.user.id;
+
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from('profiles').select('display_name, is_admin, theme, bio, location, birth_year, experience').eq('user_id', userId).single(),
+      supabase.from('memberships').select('status').eq('user_id', userId).single(),
+    ]);
+
+    if (!profile?.is_admin && !isProfileComplete(profile)) {
+      window.location.href = '/app/profile.html?onboarding=true'; return;
+    }
+
+    const hasAccess = profile?.is_admin || membership?.status === 'active' || membership?.status === 'cancelling';
+    if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
+
+    const name = profile?.display_name || session.user.email.split('@')[0];
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initSubnav('resources');
+    initFooter();
+
+    const resourceQuery = profile?.is_admin
+      ? supabase.from('resources').select('*').order('position', { ascending: true })
+      : supabase.from('resources').select('*').eq('published', true).order('position', { ascending: true });
+
+    const [{ data: resources }, { data: categories }] = await Promise.all([
+      resourceQuery,
+      supabase.from('categories').select('*').order('position', { ascending: true })
+    ]);
+
+    allResources = resources || [];
+    allCategories = categories || [];
+
+    renderFilterPills();
+    renderResourceList('all');
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>

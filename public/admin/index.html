@@ -694,6 +694,78 @@
   .sub-quill-wrap .ql-snow button:hover .ql-fill,
   .sub-quill-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
 
+  /* ── RESOURCE MANAGEMENT ── */
+  .res-cat-section { background: var(--bg-2); border: 0.5px solid var(--border); border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden; }
+  .res-cat-toggle-btn {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 0.85rem 1.25rem; background: none; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--text-muted); font-family: 'Raleway', sans-serif; transition: color 0.15s;
+  }
+  .res-cat-toggle-btn:hover { color: var(--text); }
+  #res-cat-panel { padding: 0 1.25rem 1.25rem; border-top: 0.5px solid var(--border); }
+  .res-cat-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border); }
+  .res-cat-row:last-child { border-bottom: none; }
+  .res-cat-name-display { flex: 1; font-size: 13px; color: var(--text); cursor: pointer; padding: 3px 0; transition: color 0.15s; }
+  .res-cat-name-display:hover { color: var(--gold); }
+  .res-inline-input { background: var(--bg-3); border: 0.5px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: 3px; font-size: 13px; font-family: 'Raleway', sans-serif; outline: none; flex: 1; }
+  .res-inline-input:focus { border-color: var(--gold); background: var(--bg-4); }
+  .res-cat-btn { background: none; border: none; cursor: pointer; padding: 3px 6px; font-size: 14px; color: var(--text-dim); transition: color 0.15s; font-family: 'Raleway', sans-serif; }
+  .res-cat-btn:hover:not(:disabled) { color: var(--gold); }
+  .res-cat-btn.del:hover:not(:disabled) { color: #e53935; }
+  .res-cat-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+  .res-add-cat-row { display: flex; gap: 8px; margin-top: 1rem; }
+  .res-cat-error { font-size: 12px; color: #e53935; margin-top: 6px; min-height: 16px; }
+  .res-list-header { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+  .res-empty { text-align: center; padding: 3rem 1rem; font-size: 13px; color: var(--text-dim); font-style: italic; }
+  .res-form-panel { background: var(--bg-2); border: 0.5px solid var(--border-gold); border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+  .res-form-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg,transparent,var(--gold),transparent); }
+  .res-form-title { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); margin-bottom: 1.25rem; }
+  .res-form-field { margin-bottom: 1.25rem; }
+  .res-form-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .res-form-input, .res-form-select { width: 100%; background: var(--bg-3); border: 0.5px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 3px; font-size: 13px; font-family: 'Raleway', sans-serif; font-weight: 300; transition: border-color 0.2s; outline: none; }
+  .res-form-input:focus, .res-form-select:focus { border-color: var(--gold); background: var(--bg-4); }
+  .res-form-select option { background: var(--bg-3); }
+  .res-current-file { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .res-form-error { font-size: 12px; color: #e53935; margin-top: 5px; }
+  .res-form-actions { display: flex; align-items: center; gap: 12px; margin-top: 1.5rem; }
+  .res-save-btn { background: var(--gold); color: #070707; border: none; padding: 10px 24px; border-radius: 2px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; font-family: 'Raleway', sans-serif; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+  .res-save-btn:hover:not(:disabled) { background: var(--gold-light); }
+  .res-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .res-cancel-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 13px; font-family: 'Raleway', sans-serif; padding: 0; transition: color 0.15s; }
+  .res-cancel-btn:hover { color: var(--text); }
+  .res-toggle-wrap { display: flex; align-items: center; gap: 10px; }
+  .res-toggle-input { display: none; }
+  .res-toggle-label { width: 40px; height: 22px; border-radius: 11px; cursor: pointer; background: var(--bg-3); border: 0.5px solid var(--border-mid); position: relative; transition: all 0.2s; display: block; }
+  .res-toggle-label::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: var(--text-dim); top: 2px; left: 2px; transition: all 0.2s; }
+  .res-toggle-input:checked + .res-toggle-label { background: var(--gold-dim); border-color: var(--border-gold); }
+  .res-toggle-input:checked + .res-toggle-label::after { left: 20px; background: var(--gold); }
+  .res-toggle-text { font-size: 13px; color: var(--text-muted); }
+  .res-quill-wrap .ql-toolbar { background: var(--bg-3) !important; border: 0.5px solid var(--border) !important; border-bottom: none !important; border-radius: 3px 3px 0 0; }
+  .res-quill-wrap .ql-container { background: var(--bg-3) !important; border: 0.5px solid var(--border) !important; border-top: none !important; border-radius: 0 0 3px 3px; font-family: 'Raleway', sans-serif !important; font-size: 14px !important; color: var(--text) !important; min-height: 160px; }
+  .res-quill-wrap .ql-container:focus-within { border-color: var(--border-gold) !important; }
+  .res-quill-wrap .ql-editor.ql-blank::before { color: var(--text-dim) !important; font-style: normal !important; }
+  .res-quill-wrap .ql-snow .ql-stroke { stroke: var(--text-dim) !important; }
+  .res-quill-wrap .ql-snow .ql-fill { fill: var(--text-dim) !important; }
+  .res-quill-wrap .ql-snow .ql-picker { color: var(--text-dim) !important; }
+  .res-quill-wrap .ql-snow button:hover .ql-stroke, .res-quill-wrap .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
+  .res-quill-wrap .ql-snow button:hover .ql-fill, .res-quill-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
+  .res-item { background: var(--bg-2); border: 0.5px solid var(--border); border-radius: 6px; margin-bottom: 8px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; transition: border-color 0.15s; }
+  .res-item:hover { border-color: var(--border-mid); }
+  .res-item-body { flex: 1; min-width: 0; }
+  .res-item-badges { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
+  .res-item-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .res-item-meta { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .res-type-badge { background: var(--bg-3); border: 0.5px solid var(--border); border-radius: 3px; padding: 2px 7px; font-size: 10px; color: var(--text-dim); font-family: 'Raleway', sans-serif; }
+  .res-pub-badge { border-radius: 3px; padding: 2px 7px; font-size: 10px; font-family: 'Raleway', sans-serif; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .res-pub-badge.published { background: var(--green-dim); color: var(--green); border: 0.5px solid rgba(76,175,132,0.25); }
+  .res-pub-badge.draft { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
+  .res-item-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .res-order-btn { background: none; border: 0.5px solid var(--border); color: var(--text-dim); padding: 3px 7px; border-radius: 3px; cursor: pointer; font-size: 12px; transition: all 0.15s; }
+  .res-order-btn:hover:not(:disabled) { border-color: var(--border-gold); color: var(--gold); }
+  .res-order-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .res-cat-group-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 0.5px solid var(--border); }
+  .res-cat-group { margin-bottom: 1.5rem; }
+
   /* ── DELETE SUBMISSION ── */
   .sub-delete-row {
     display: flex; justify-content: flex-end; align-items: flex-start;
@@ -804,6 +876,10 @@
       <div class="nav-item" data-panel="submissions" onclick="switchPanel(this,'submissions'); window.initSubmissions?.()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
         Submissions
+      </div>
+      <div class="nav-item" data-panel="resources" onclick="switchPanel(this,'resources'); window.initResources?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Resources
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -1267,6 +1343,36 @@
         <div id="sub-tab-feedback" style="display:none;">
           <div id="feedback-queue"><div class="sub-loading">Loading…</div></div>
         </div>
+      </div>
+
+      <!-- RESOURCES -->
+      <div class="panel" id="panel-resources">
+        <div class="panel-title">Resource Library</div>
+        <div class="panel-desc">Manage resources available to members in the platform.</div>
+
+        <div class="res-cat-section">
+          <button class="res-cat-toggle-btn" onclick="window.toggleResCategories()">
+            <span>Manage Categories</span>
+            <span id="res-cat-chevron" style="transition:transform 0.2s;font-size:12px;">▼</span>
+          </button>
+          <div id="res-cat-panel" style="display:none;">
+            <div id="res-cat-list" style="margin-top:0.75rem;"></div>
+            <div class="res-add-cat-row">
+              <input type="text" class="res-inline-input" id="res-new-cat-input"
+                placeholder="New category name…"
+                onkeydown="if(event.key==='Enter')window.addResCategory()">
+              <button class="action-btn" onclick="window.addResCategory()">Add</button>
+            </div>
+            <div class="res-cat-error" id="res-cat-error"></div>
+          </div>
+        </div>
+
+        <div class="res-list-header">
+          <button class="action-btn primary" id="res-new-btn" onclick="window.showResForm(null)">+ New Resource</button>
+        </div>
+
+        <div id="res-form-container" style="display:none;"></div>
+        <div id="res-list"><div class="sub-loading">Loading…</div></div>
       </div>
 
     </div>
@@ -2287,6 +2393,490 @@
   function formatMemberSince(createdAt) {
     return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(createdAt));
   }
+
+  // ── Resources ─────────────────────────────────────────────────────────
+
+  let resInitialized = false;
+  let resCatsExpanded = false;
+  let resAll = [];
+  let resCats = [];
+  let resEditingId = null;
+  let resQuill = null;
+
+  window.initResources = async function() {
+    if (resInitialized) return;
+    resInitialized = true;
+    await reloadResData();
+  };
+
+  async function reloadResData() {
+    const [{ data: resources }, { data: cats }] = await Promise.all([
+      sbClient.from('resources').select('*').order('position', { ascending: true }),
+      sbClient.from('categories').select('*').order('position', { ascending: true })
+    ]);
+    resAll = resources || [];
+    resCats = cats || [];
+    renderAdminResList();
+    renderResCats();
+  }
+
+  // ── Categories ─────────────────────────────────────────────────────────
+
+  window.toggleResCategories = function() {
+    resCatsExpanded = !resCatsExpanded;
+    const panel = document.getElementById('res-cat-panel');
+    const chevron = document.getElementById('res-cat-chevron');
+    if (panel) panel.style.display = resCatsExpanded ? 'block' : 'none';
+    if (chevron) chevron.style.transform = resCatsExpanded ? 'rotate(180deg)' : '';
+  };
+
+  function renderResCats() {
+    const list = document.getElementById('res-cat-list');
+    if (!list) return;
+    if (!resCats.length) {
+      list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 0;">No categories yet.</div>';
+      return;
+    }
+    list.innerHTML = resCats.map((cat, idx) => {
+      const hasRes = resAll.some(r => r.category_id === cat.id);
+      const sId = escStr(cat.id);
+      return `
+        <div class="res-cat-row" id="cat-row-${sId}">
+          <div class="res-cat-name-display" id="cat-name-${sId}"
+            title="Click to rename" onclick="window.startEditCat('${sId}')">${escStr(cat.name)}</div>
+          <div style="display:flex;gap:2px;flex-shrink:0;">
+            <button class="res-cat-btn" ${idx===0?'disabled':''} onclick="window.moveCatUp('${sId}')">↑</button>
+            <button class="res-cat-btn" ${idx===resCats.length-1?'disabled':''} onclick="window.moveCatDown('${sId}')">↓</button>
+            <button class="res-cat-btn del" ${hasRes?`disabled title="Remove all resources from this category first."`:''}
+              onclick="window.deleteCat('${sId}')">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.startEditCat = function(catId) {
+    const nameEl = document.getElementById(`cat-name-${catId}`);
+    if (!nameEl) return;
+    const cat = resCats.find(c => c.id === catId);
+    if (!cat) return;
+    const orig = cat.name; const sId = escStr(catId);
+    nameEl.outerHTML = `<input type="text" class="res-inline-input" id="cat-edit-${sId}"
+      value="${escStr(orig)}"
+      onblur="window.saveInlineCat('${sId}',this.value,'${escStr(orig)}')"
+      onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')window.cancelInlineCat('${sId}','${escStr(orig)}')">`;
+    const inp = document.getElementById(`cat-edit-${catId}`);
+    if (inp) { inp.focus(); inp.select(); }
+  };
+
+  window.cancelInlineCat = function(catId, orig) {
+    const editEl = document.getElementById(`cat-edit-${catId}`);
+    if (!editEl) return;
+    const sId = escStr(catId);
+    editEl.outerHTML = `<div class="res-cat-name-display" id="cat-name-${sId}"
+      title="Click to rename" onclick="window.startEditCat('${sId}')">${escStr(orig)}</div>`;
+  };
+
+  window.saveInlineCat = async function(catId, newName, orig) {
+    newName = newName.trim();
+    if (!newName) { window.cancelInlineCat(catId, orig); return; }
+    if (newName === orig) { window.cancelInlineCat(catId, orig); return; }
+    if (resCats.find(c => c.name === newName && c.id !== catId)) {
+      showToast('A category with that name already exists.');
+      window.cancelInlineCat(catId, orig); return;
+    }
+    const { error } = await sbClient.from('categories').update({ name: newName }).eq('id', catId);
+    if (error) { showToast('Failed to save.'); window.cancelInlineCat(catId, orig); return; }
+    const cat = resCats.find(c => c.id === catId);
+    if (cat) cat.name = newName;
+    const sId = escStr(catId);
+    const editEl = document.getElementById(`cat-edit-${catId}`);
+    if (editEl) editEl.outerHTML = `<div class="res-cat-name-display" id="cat-name-${sId}"
+      title="Click to rename" onclick="window.startEditCat('${sId}')">${escStr(newName)}</div>`;
+    renderAdminResList();
+  };
+
+  window.moveCatUp = async function(catId) {
+    const idx = resCats.findIndex(c => c.id === catId);
+    if (idx <= 0) return;
+    await swapCatPos(resCats[idx-1], resCats[idx]);
+  };
+  window.moveCatDown = async function(catId) {
+    const idx = resCats.findIndex(c => c.id === catId);
+    if (idx < 0 || idx >= resCats.length-1) return;
+    await swapCatPos(resCats[idx], resCats[idx+1]);
+  };
+  async function swapCatPos(a, b) {
+    const [pa, pb] = [a.position, b.position];
+    await Promise.all([
+      sbClient.from('categories').update({ position: pb }).eq('id', a.id),
+      sbClient.from('categories').update({ position: pa }).eq('id', b.id)
+    ]);
+    a.position = pb; b.position = pa;
+    resCats.sort((x,y) => x.position - y.position);
+    renderResCats(); renderAdminResList();
+  }
+
+  window.deleteCat = async function(catId) {
+    if (resAll.some(r => r.category_id === catId)) return;
+    const { error } = await sbClient.from('categories').delete().eq('id', catId);
+    if (error) { showToast('Delete failed.'); return; }
+    resCats = resCats.filter(c => c.id !== catId);
+    renderResCats();
+    showToast('Category deleted.');
+  };
+
+  window.addResCategory = async function() {
+    const input = document.getElementById('res-new-cat-input');
+    const errEl = document.getElementById('res-cat-error');
+    const name = (input?.value || '').trim();
+    if (errEl) errEl.textContent = '';
+    if (!name) { if (errEl) errEl.textContent = 'Name is required.'; return; }
+    if (resCats.find(c => c.name === name)) { if (errEl) errEl.textContent = 'Name already in use.'; return; }
+    const maxPos = resCats.length ? Math.max(...resCats.map(c => c.position)) + 1 : 0;
+    const { data, error } = await sbClient.from('categories').insert({ name, position: maxPos }).select().single();
+    if (error || !data) { if (errEl) errEl.textContent = 'Failed to add category.'; return; }
+    resCats.push(data);
+    if (input) input.value = '';
+    renderResCats();
+    showToast('Category added.');
+  };
+
+  // ── Resource form ──────────────────────────────────────────────────────
+
+  window.showResForm = function(resourceId) {
+    resEditingId = resourceId;
+    const r = resourceId ? resAll.find(x => x.id === resourceId) : null;
+    const title = r ? 'Edit Resource' : 'New Resource';
+    const btnLabel = r ? 'Save Changes' : 'Save Resource';
+
+    const catOpts = resCats.map(c =>
+      `<option value="${escStr(c.id)}" ${r?.category_id===c.id?'selected':''}>${escStr(c.name)}</option>`
+    ).join('');
+
+    const typeOpts = [
+      ['link-youtube','YouTube Link'],['link-drive','Google Drive Link'],
+      ['pdf','PDF Upload'],['mp3','MP3 Upload'],
+      ['image','Image Upload'],['slides','Google Slides / Presentation']
+    ].map(([v,l]) => `<option value="${v}" ${r?.resource_type===v?'selected':''}>${l}</option>`).join('');
+
+    const linkTypes = ['link-youtube','link-drive','slides'];
+    const isLink = linkTypes.includes(r?.resource_type);
+    const isFile = r?.resource_type && !isLink;
+    const showUrl = isLink; const showFile = isFile;
+
+    const urlPlaceholders = {
+      'link-youtube':'https://youtu.be/… or youtube.com/watch?v=…',
+      'link-drive':'https://drive.google.com/file/d/…/view',
+      'slides':'https://docs.google.com/presentation/d/…/edit'
+    };
+
+    const fileAccepts = { 'pdf':'.pdf', 'mp3':'.mp3,audio/*', 'image':'.jpg,.jpeg,.png,.gif,.webp,image/*' };
+    const fileAccept = fileAccepts[r?.resource_type] || '';
+    const existingFile = isFile && r?.file_url ? `<div class="res-current-file">Current: ${escStr(r.file_url.split('/').pop())} <span>(upload to replace)</span></div>` : '';
+
+    const container = document.getElementById('res-form-container');
+    container.innerHTML = `
+      <div class="res-form-panel">
+        <div class="res-form-title">${escStr(title)}</div>
+        <div class="res-form-field">
+          <label class="res-form-label">Title *</label>
+          <input type="text" class="res-form-input" id="res-f-title" value="${escStr(r?.title||'')}" maxlength="200">
+          <div class="res-form-error" id="res-err-title"></div>
+        </div>
+        <div class="res-form-field">
+          <label class="res-form-label">Category *</label>
+          <select class="res-form-select" id="res-f-cat">
+            <option value="" disabled ${!r?.category_id?'selected':''}>Select a category</option>
+            ${catOpts}
+          </select>
+          <div class="res-form-error" id="res-err-cat"></div>
+        </div>
+        <div class="res-form-field">
+          <label class="res-form-label">Resource Type *</label>
+          <select class="res-form-select" id="res-f-type" onchange="window.updateResFormType()">
+            <option value="" disabled ${!r?.resource_type?'selected':''}>Select type</option>
+            ${typeOpts}
+          </select>
+          <div class="res-form-error" id="res-err-type"></div>
+        </div>
+        <div class="res-form-field" id="res-url-field" style="display:${showUrl?'block':'none'};">
+          <label class="res-form-label">URL *</label>
+          <input type="text" class="res-form-input" id="res-f-url"
+            value="${escStr(isLink?r?.file_url||'':'')}"
+            placeholder="${escStr(urlPlaceholders[r?.resource_type]||'URL…')}">
+          <div class="res-form-error" id="res-err-url"></div>
+        </div>
+        <div class="res-form-field" id="res-file-field" style="display:${showFile?'block':'none'};">
+          <label class="res-form-label">Upload File${r&&isFile&&r.file_url?'':' *'}</label>
+          ${existingFile}
+          <input type="file" class="res-form-input" id="res-f-file" accept="${escStr(fileAccept)}" style="padding:6px 12px;cursor:pointer;">
+          <div class="res-form-error" id="res-err-file"></div>
+        </div>
+        <div class="res-form-field">
+          <label class="res-form-label">Description <span style="color:var(--text-dim);font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <div class="res-quill-wrap"><div id="res-quill-body"></div></div>
+        </div>
+        <div class="res-form-field">
+          <label class="res-form-label">Status</label>
+          <div class="res-toggle-wrap">
+            <input type="checkbox" class="res-toggle-input" id="res-f-pub" ${r?.published?'checked':''}
+              onchange="document.getElementById('res-toggle-text').textContent=this.checked?'Published':'Draft'">
+            <label for="res-f-pub" class="res-toggle-label"></label>
+            <span class="res-toggle-text" id="res-toggle-text">${r?.published?'Published':'Draft'}</span>
+          </div>
+        </div>
+        <div class="res-form-error" id="res-err-general"></div>
+        <div class="res-form-actions">
+          <button class="res-save-btn" id="res-save-btn" onclick="window.saveResResource()">${escStr(btnLabel)}</button>
+          <button class="res-cancel-btn" onclick="window.hideResForm()">Cancel</button>
+        </div>
+      </div>`;
+    container.style.display = 'block';
+    const newBtn = document.getElementById('res-new-btn');
+    if (newBtn) newBtn.style.display = 'none';
+
+    resQuill = new Quill('#res-quill-body', {
+      theme: 'snow',
+      placeholder: 'Add a description or notes about this resource…',
+      modules: { toolbar: [['bold','italic','underline'],['link'],[{list:'ordered'},{list:'bullet'}]] }
+    });
+    if (r?.body) resQuill.root.innerHTML = r.body;
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  window.updateResFormType = function() {
+    const type = document.getElementById('res-f-type')?.value;
+    const linkTypes = ['link-youtube','link-drive','slides'];
+    const isLink = linkTypes.includes(type);
+    const isFile = type && !isLink;
+    const urlField = document.getElementById('res-url-field');
+    const fileField = document.getElementById('res-file-field');
+    if (urlField) urlField.style.display = isLink ? 'block' : 'none';
+    if (fileField) fileField.style.display = isFile ? 'block' : 'none';
+    const urlInput = document.getElementById('res-f-url');
+    if (urlInput) {
+      const ph = { 'link-youtube':'https://youtu.be/… or youtube.com/watch?v=…', 'link-drive':'https://drive.google.com/file/d/…/view', 'slides':'https://docs.google.com/presentation/d/…/edit' };
+      urlInput.placeholder = ph[type] || 'URL…';
+    }
+    const fileInput = document.getElementById('res-f-file');
+    if (fileInput) {
+      const acc = { 'pdf':'.pdf', 'mp3':'.mp3,audio/*', 'image':'.jpg,.jpeg,.png,.gif,.webp,image/*' };
+      fileInput.accept = acc[type] || '';
+    }
+  };
+
+  window.hideResForm = function() {
+    const container = document.getElementById('res-form-container');
+    if (container) { container.style.display = 'none'; container.innerHTML = ''; }
+    const newBtn = document.getElementById('res-new-btn');
+    if (newBtn) newBtn.style.display = 'block';
+    resQuill = null; resEditingId = null;
+  };
+
+  window.saveResResource = async function() {
+    const errG = document.getElementById('res-err-general');
+    if (errG) errG.textContent = '';
+
+    const title = (document.getElementById('res-f-title')?.value||'').trim();
+    const catId = document.getElementById('res-f-cat')?.value||'';
+    const type = document.getElementById('res-f-type')?.value||'';
+    const urlVal = (document.getElementById('res-f-url')?.value||'').trim();
+    const fileInput = document.getElementById('res-f-file');
+    const published = document.getElementById('res-f-pub')?.checked||false;
+    const bodyHtml = resQuill ? resQuill.root.innerHTML : '';
+    const bodyText = resQuill ? resQuill.getText().trim() : '';
+
+    let hasErrors = false;
+    const setErr = (id, msg) => { const e = document.getElementById(id); if (e) e.textContent = msg; if (msg) hasErrors = true; };
+
+    if (!title) setErr('res-err-title', 'Title is required.');
+    if (!catId) setErr('res-err-cat', 'Please select a category.');
+    if (!type) setErr('res-err-type', 'Please select a type.');
+
+    const linkTypes = ['link-youtube','link-drive','slides'];
+    const isLink = linkTypes.includes(type);
+    const existingUrl = resEditingId ? resAll.find(r => r.id === resEditingId)?.file_url : null;
+
+    if (isLink && !urlVal) setErr('res-err-url', 'URL is required.');
+    if (!isLink && type && !fileInput?.files?.[0] && !existingUrl && !bodyText) {
+      if (errG) errG.textContent = 'Please add a description, upload a file, or provide a URL.';
+      hasErrors = true;
+    }
+    if (hasErrors) return;
+
+    const btn = document.getElementById('res-save-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border:2px solid rgba(7,7,7,0.3);border-top-color:#070707;border-radius:50%;animation:spin 0.7s linear infinite;"></span> Saving…`;
+
+    let fileUrl = isLink ? urlVal : (existingUrl || null);
+
+    if (!isLink && fileInput?.files?.[0]) {
+      const file = fileInput.files[0];
+      const folder = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36));
+      const path = `${folder}/${file.name}`;
+      const { error: upErr } = await sbClient.storage.from('resources').upload(path, file, { upsert: true });
+      if (upErr) {
+        btn.disabled = false; btn.innerHTML = resEditingId ? 'Save Changes' : 'Save Resource';
+        if (errG) errG.textContent = 'Upload failed: ' + upErr.message; return;
+      }
+      const { data: urlData } = sbClient.storage.from('resources').getPublicUrl(path);
+      fileUrl = urlData.publicUrl;
+    }
+
+    const { data: { user } } = await sbClient.auth.getUser();
+    const maxPos = resAll.length ? Math.max(...resAll.map(r => r.position||0)) + 1 : 0;
+    const payload = { title, category_id: catId||null, resource_type: type||null, file_url: fileUrl||null, body: bodyText ? bodyHtml : null, published };
+
+    let data, error;
+    if (resEditingId) {
+      ({ data, error } = await sbClient.from('resources').update(payload).eq('id', resEditingId).select().single());
+    } else {
+      payload.position = maxPos; payload.created_by = user.id;
+      ({ data, error } = await sbClient.from('resources').insert(payload).select().single());
+    }
+
+    btn.disabled = false; btn.innerHTML = resEditingId ? 'Save Changes' : 'Save Resource';
+    if (error || !data) { if (errG) errG.textContent = error?.message || 'Save failed.'; return; }
+
+    if (resEditingId) { const idx = resAll.findIndex(r => r.id === resEditingId); if (idx>=0) resAll[idx] = data; }
+    else resAll.push(data);
+
+    window.hideResForm();
+    renderAdminResList();
+    showToast(resEditingId ? 'Resource updated.' : 'Resource saved.');
+  };
+
+  // ── Resource list ──────────────────────────────────────────────────────
+
+  function renderAdminResList() {
+    const container = document.getElementById('res-list');
+    if (!container) return;
+    if (!resAll.length) { container.innerHTML = '<div class="res-empty">No resources yet. Create your first resource above.</div>'; return; }
+
+    const sorted = [...resAll].sort((a,b) => (a.position||0)-(b.position||0));
+    const groups = {};
+    for (const r of sorted) { const k = r.category_id||'__none__'; if (!groups[k]) groups[k]=[]; groups[k].push(r); }
+
+    const orderedKeys = [
+      ...resCats.filter(c => groups[c.id]).map(c => c.id),
+      ...(groups['__none__'] ? ['__none__'] : [])
+    ];
+
+    let html = '';
+    for (const k of orderedKeys) {
+      if (!groups[k]) continue;
+      const cat = resCats.find(c => c.id === k);
+      html += `<div class="res-cat-group">
+        <div class="res-cat-group-label">${escStr(cat ? cat.name : 'Uncategorized')}</div>`;
+      html += groups[k].map(r => renderResItem(r, groups[k])).join('');
+      html += `</div>`;
+    }
+    container.innerHTML = html;
+  }
+
+  function renderResItem(r, catGroup) {
+    const sId = escStr(r.id);
+    const typeLabels = { 'link-youtube':'YouTube','link-drive':'Drive','pdf':'PDF','mp3':'MP3','image':'Image','slides':'Slides' };
+    const cat = resCats.find(c => c.id === r.category_id);
+    const catIdx = catGroup.findIndex(x => x.id === r.id);
+    const isFirst = catIdx === 0; const isLast = catIdx === catGroup.length - 1;
+    return `
+      <div class="res-item" id="res-item-${sId}">
+        <div class="res-item-body">
+          <div class="res-item-badges">
+            <span class="res-type-badge">${escStr(typeLabels[r.resource_type]||r.resource_type||'—')}</span>
+            <span class="res-pub-badge ${r.published?'published':'draft'}">${r.published?'Published':'Draft'}</span>
+          </div>
+          <div class="res-item-title">${escStr(r.title)}</div>
+          <div class="res-item-meta">${escStr(cat?cat.name:'Uncategorized')}</div>
+        </div>
+        <div class="res-item-actions">
+          <button class="res-order-btn" ${isFirst?'disabled':''} onclick="window.moveResUp('${sId}')">↑</button>
+          <button class="res-order-btn" ${isLast?'disabled':''} onclick="window.moveResDown('${sId}')">↓</button>
+          <button class="action-btn" style="padding:5px 12px;font-size:10px;" onclick="window.showResForm('${sId}')">Edit</button>
+          <div id="res-del-wrap-${sId}">
+            <button class="sub-delete-btn" style="font-size:12px;padding:5px 12px;border-radius:6px;"
+              onclick="window.deleteRes('${sId}')">Delete</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  window.moveResUp = async function(resId) {
+    const r = resAll.find(x => x.id === resId); if (!r) return;
+    const grp = resAll.filter(x => x.category_id === r.category_id).sort((a,b) => (a.position||0)-(b.position||0));
+    const idx = grp.findIndex(x => x.id === resId);
+    if (idx <= 0) return;
+    await swapResPos(grp[idx-1], grp[idx]);
+  };
+  window.moveResDown = async function(resId) {
+    const r = resAll.find(x => x.id === resId); if (!r) return;
+    const grp = resAll.filter(x => x.category_id === r.category_id).sort((a,b) => (a.position||0)-(b.position||0));
+    const idx = grp.findIndex(x => x.id === resId);
+    if (idx < 0 || idx >= grp.length-1) return;
+    await swapResPos(grp[idx], grp[idx+1]);
+  };
+  async function swapResPos(a, b) {
+    const [pa, pb] = [a.position||0, b.position||0];
+    await Promise.all([
+      sbClient.from('resources').update({ position: pb }).eq('id', a.id),
+      sbClient.from('resources').update({ position: pa }).eq('id', b.id)
+    ]);
+    a.position = pb; b.position = pa;
+    renderAdminResList();
+  }
+
+  window.deleteRes = function(resId) {
+    const wrap = document.getElementById(`res-del-wrap-${resId}`);
+    if (!wrap) return;
+    const sId = escStr(resId);
+    wrap.innerHTML = `
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:300;">Delete this resource permanently?</div>
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
+          <button class="sub-delete-btn-cancel" onclick="window.cancelDeleteRes('${sId}')">Cancel</button>
+          <button class="sub-delete-btn-yes" id="res-del-yes-${sId}" onclick="window.confirmDeleteRes('${sId}')">Yes, Delete</button>
+        </div>
+        <div class="sub-delete-error" id="res-del-err-${sId}"></div>
+      </div>`;
+  };
+
+  window.cancelDeleteRes = function(resId) {
+    const wrap = document.getElementById(`res-del-wrap-${resId}`);
+    if (!wrap) return;
+    const sId = escStr(resId);
+    wrap.innerHTML = `<button class="sub-delete-btn" style="font-size:12px;padding:5px 12px;border-radius:6px;"
+      onclick="window.deleteRes('${sId}')">Delete</button>`;
+  };
+
+  window.confirmDeleteRes = async function(resId) {
+    const yesBtn = document.getElementById(`res-del-yes-${resId}`);
+    const errEl = document.getElementById(`res-del-err-${resId}`);
+    if (yesBtn) { yesBtn.disabled = true; yesBtn.textContent = 'Deleting…'; }
+
+    const resource = resAll.find(r => r.id === resId);
+    if (resource?.file_url && resource.file_url.includes('supabase.co/storage')) {
+      const m = resource.file_url.match(/\/object\/public\/resources\/(.+)/);
+      if (m) await sbClient.storage.from('resources').remove([m[1]]);
+    }
+
+    const { error } = await sbClient.from('resources').delete().eq('id', resId);
+    if (error) {
+      console.error('Delete resource error:', error);
+      if (yesBtn) { yesBtn.disabled = false; yesBtn.textContent = 'Yes, Delete'; }
+      if (errEl) errEl.textContent = 'Delete failed. Please try again.';
+      return;
+    }
+
+    resAll = resAll.filter(r => r.id !== resId);
+    const item = document.getElementById(`res-item-${resId}`);
+    if (item) {
+      item.style.transition = 'opacity 0.2s';
+      item.style.opacity = '0';
+      setTimeout(() => { item.remove(); renderAdminResList(); }, 200);
+    }
+    showToast('Resource deleted.');
+  };
 </script>
 </body>
 </html>
