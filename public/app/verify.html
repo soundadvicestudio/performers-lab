@@ -132,6 +132,26 @@
 
   if (session) {
     show('screen-success');
+
+    // Send welcome email only on fresh verification (URL carries a token)
+    const _hash = new URLSearchParams(window.location.hash.replace('#', ''));
+    const _qs   = new URLSearchParams(window.location.search);
+    const isFreshVerification =
+      _hash.has('access_token') || _hash.get('type') === 'signup' ||
+      _qs.has('token_hash')     || _qs.get('type') === 'signup';
+
+    if (isFreshVerification) {
+      fetch('/api/auth/sendWelcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: session.user.id,
+          displayName: session.user.user_metadata?.display_name
+            || session.user.email.split('@')[0]
+        })
+      }).catch(err => console.error('Welcome email error:', err));
+    }
+
     // Redirect to dashboard after 2 seconds
     setTimeout(() => window.location.href = '/app/dashboard.html', 2000);
   } else {
