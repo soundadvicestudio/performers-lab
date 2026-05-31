@@ -195,7 +195,12 @@
     border: 2px solid rgba(7,7,7,0.3); border-top-color: #070707;
     border-radius: 50%; animation: spin 0.7s linear infinite;
   }
-  .form-submit-error { font-size: 12px; color: var(--red); margin-top: 8px; text-align: center; }
+  .form-submit-error {
+    background: var(--bg-3); border: 1px solid #e53935;
+    border-radius: 8px; padding: 12px 16px;
+    font-size: 14px; font-family: 'Raleway', sans-serif; color: #e53935;
+    margin-top: 8px; display: none;
+  }
 
   /* ── HISTORY ── */
   .history-heading {
@@ -617,6 +622,9 @@
     const display = document.getElementById('confidence-display');
     slider.addEventListener('input', () => { display.textContent = slider.value; });
 
+    // Clear error banner when user starts correcting any field
+    document.getElementById('submit-form').addEventListener('input', hideFormBanner);
+
     // Form submit
     document.getElementById('submit-form').addEventListener('submit', e => {
       e.preventDefault();
@@ -631,12 +639,23 @@
     el.style.display = msg ? 'block' : 'none';
   }
 
+  function showFormBanner(msg) {
+    const el = document.getElementById('form-submit-error');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideFormBanner() {
+    const el = document.getElementById('form-submit-error');
+    if (el) el.style.display = 'none';
+  }
+
   function clearFormErrors() {
     ['song-title','show-artist','style','video-url','proud-of','challenge'].forEach(id => setFieldError(id, ''));
     const goalErr = document.getElementById('error-goal');
     if (goalErr) { goalErr.textContent = ''; goalErr.style.display = 'none'; }
-    const submitErr = document.getElementById('form-submit-error');
-    if (submitErr) submitErr.textContent = '';
+    hideFormBanner();
   }
 
   async function handleFormSubmit() {
@@ -653,32 +672,43 @@
     const selectedGoal = document.querySelector('input[name="goal"]:checked');
 
     let hasErrors = false;
+    let firstInvalidField = null;
 
-    if (!songTitle) { setFieldError('song-title', 'Song title is required.'); hasErrors = true; }
-    if (!showArtist) { setFieldError('show-artist', 'Show or artist is required.'); hasErrors = true; }
-    if (!style) { setFieldError('style', 'Style is required.'); hasErrors = true; }
+    function trackFirst(inputId) {
+      if (!firstInvalidField) firstInvalidField = document.getElementById(inputId);
+    }
+
+    if (!songTitle) { setFieldError('song-title', 'Song title is required.'); trackFirst('f-song-title'); hasErrors = true; }
+    if (!showArtist) { setFieldError('show-artist', 'Show or artist is required.'); trackFirst('f-show-artist'); hasErrors = true; }
+    if (!style) { setFieldError('style', 'Style is required.'); trackFirst('f-style'); hasErrors = true; }
     if (!videoUrl) {
-      setFieldError('video-url', 'Video link is required.'); hasErrors = true;
+      setFieldError('video-url', 'Video link is required.'); trackFirst('f-video-url'); hasErrors = true;
     } else if (!isValidVideoUrl(videoUrl)) {
-      setFieldError('video-url', 'Please enter a valid YouTube or Google Drive link.'); hasErrors = true;
+      setFieldError('video-url', 'Please enter a valid YouTube or Google Drive link.'); trackFirst('f-video-url'); hasErrors = true;
     }
     if (!selectedGoal) {
       const goalErr = document.getElementById('error-goal');
       goalErr.textContent = 'Please select a goal.'; goalErr.style.display = 'block';
-      hasErrors = true;
+      trackFirst('goal-grid'); hasErrors = true;
     }
     if (!proudOf) {
-      setFieldError('proud-of', 'This field is required.'); hasErrors = true;
+      setFieldError('proud-of', 'This field is required.'); trackFirst('f-proud-of'); hasErrors = true;
     } else if (proudOf.length < 20) {
-      setFieldError('proud-of', 'Please enter at least 20 characters.'); hasErrors = true;
+      setFieldError('proud-of', 'Please enter at least 20 characters.'); trackFirst('f-proud-of'); hasErrors = true;
     }
     if (!challenge) {
-      setFieldError('challenge', 'This field is required.'); hasErrors = true;
+      setFieldError('challenge', 'This field is required.'); trackFirst('f-challenge'); hasErrors = true;
     } else if (challenge.length < 20) {
-      setFieldError('challenge', 'Please enter at least 20 characters.'); hasErrors = true;
+      setFieldError('challenge', 'Please enter at least 20 characters.'); trackFirst('f-challenge'); hasErrors = true;
     }
 
-    if (hasErrors) return;
+    if (hasErrors) {
+      if (firstInvalidField) {
+        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      showFormBanner('Please fix the errors above before submitting.');
+      return;
+    }
 
     const btn = document.getElementById('btn-submit');
     btn.disabled = true;
@@ -704,10 +734,10 @@
       .single();
 
     if (error) {
+      console.error('Submission error:', error);
       btn.disabled = false;
       btn.innerHTML = 'Submit for Review';
-      const submitErr = document.getElementById('form-submit-error');
-      if (submitErr) submitErr.textContent = 'Submission failed. Please try again.';
+      showFormBanner('Submission failed. Please try again or contact support if this continues.');
       return;
     }
 
