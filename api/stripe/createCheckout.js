@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     }
 
     const metadata = { price_id: priceId };
-    if (discountCodeDbId) metadata.discount_code_id = discountCodeDbId;
+    if (discountCodeDbId != null) metadata.discount_code_id = discountCodeDbId;
 
     const sessionParams = {
       mode: 'subscription',
