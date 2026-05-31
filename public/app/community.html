@@ -698,7 +698,7 @@
       .from('posts')
       .select(`
         id, author_id, channel_id, content, is_pinned, created_at,
-        profiles!posts_author_id_fkey(display_name, photo_url)
+        profiles!author_id(display_name, photo_url)
       `)
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
