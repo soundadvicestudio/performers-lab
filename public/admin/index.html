@@ -693,6 +693,41 @@
   .sub-quill-wrap .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
   .sub-quill-wrap .ql-snow button:hover .ql-fill,
   .sub-quill-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
+
+  /* ── DELETE SUBMISSION ── */
+  .sub-delete-row {
+    display: flex; justify-content: flex-end; align-items: flex-start;
+    flex-direction: column;
+    margin-top: 1.25rem; padding-top: 1.25rem;
+    border-top: 0.5px solid var(--border);
+  }
+  .sub-delete-btn {
+    background: transparent; border: 1px solid #e53935; color: #e53935;
+    font-size: 13px; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: background 0.15s; align-self: flex-end;
+  }
+  .sub-delete-btn:hover { background: rgba(229,57,53,0.08); }
+  .sub-delete-confirm { width: 100%; }
+  .sub-delete-confirm-text {
+    font-size: 12px; color: var(--text-muted); font-weight: 300; margin-bottom: 10px;
+    line-height: 1.55; text-align: right;
+  }
+  .sub-delete-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .sub-delete-btn-yes {
+    background: transparent; border: 1px solid #e53935; color: #e53935;
+    font-size: 13px; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: background 0.15s;
+  }
+  .sub-delete-btn-yes:hover:not(:disabled) { background: rgba(229,57,53,0.08); }
+  .sub-delete-btn-yes:disabled { opacity: 0.5; cursor: not-allowed; }
+  .sub-delete-btn-cancel {
+    background: var(--bg-3); border: 0.5px solid var(--border); color: var(--text);
+    font-size: 13px; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: border-color 0.15s;
+  }
+  .sub-delete-btn-cancel:hover:not(:disabled) { border-color: var(--border-mid); }
+  .sub-delete-btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+  .sub-delete-error { font-size: 12px; color: #e53935; margin-top: 8px; text-align: right; }
 </style>
 </head>
 <body>
@@ -1950,6 +1985,9 @@
             ${detailsHtml}
           </div>
         </div>
+        <div class="sub-delete-row" id="delete-row-${sId}">
+          <button class="sub-delete-btn" onclick="window.deleteSubmission('${sId}')">Delete Submission</button>
+        </div>
       </div>`;
 
     if (isPending) {
@@ -2006,7 +2044,8 @@
       html += `<div class="sub-detail-row"><div class="sub-detail-label">Member Since</div><div class="sub-detail-value">${escStr(formatMemberSince(profile.created_at))}</div></div>`;
     }
     if (profile.birth_year) {
-      html += `<div class="sub-detail-row"><div class="sub-detail-label">Birth Year</div><div class="sub-detail-value">${profile.birth_year}</div></div>`;
+      const age = new Date().getFullYear() - profile.birth_year;
+      html += `<div class="sub-detail-row"><div class="sub-detail-label">Age</div><div class="sub-detail-value">${age}</div></div>`;
     }
     if (profile.experience) {
       html += `<div class="sub-detail-row"><div class="sub-detail-label">Singing Experience</div><div class="sub-detail-value">${escStr(profile.experience)}</div></div>`;
@@ -2147,6 +2186,80 @@
       }
     }
   }
+
+  window.deleteSubmission = function(subId) {
+    const deleteRow = document.getElementById(`delete-row-${subId}`);
+    if (!deleteRow) return;
+    const sId = escStr(subId);
+    deleteRow.innerHTML = `
+      <div class="sub-delete-confirm">
+        <div class="sub-delete-confirm-text">
+          ⚠ This will permanently delete the submission and any feedback. This cannot be undone.
+        </div>
+        <div class="sub-delete-confirm-actions">
+          <button class="sub-delete-btn-cancel" id="delete-cancel-${sId}" onclick="window.cancelDeleteSubmission('${sId}')">Cancel</button>
+          <button class="sub-delete-btn-yes" id="delete-yes-${sId}" onclick="window.confirmDeleteSubmission('${sId}')">Yes, Delete</button>
+        </div>
+        <div class="sub-delete-error" id="delete-error-${sId}"></div>
+      </div>`;
+  };
+
+  window.cancelDeleteSubmission = function(subId) {
+    const deleteRow = document.getElementById(`delete-row-${subId}`);
+    if (!deleteRow) return;
+    const sId = escStr(subId);
+    deleteRow.innerHTML = `<button class="sub-delete-btn" onclick="window.deleteSubmission('${sId}')">Delete Submission</button>`;
+  };
+
+  window.confirmDeleteSubmission = async function(subId) {
+    const cancelBtn = document.getElementById(`delete-cancel-${subId}`);
+    const yesBtn = document.getElementById(`delete-yes-${subId}`);
+    const errEl = document.getElementById(`delete-error-${subId}`);
+
+    if (cancelBtn) cancelBtn.disabled = true;
+    if (yesBtn) { yesBtn.disabled = true; yesBtn.textContent = 'Deleting…'; }
+
+    const { error } = await sbClient.from('submissions').delete().eq('id', subId);
+
+    if (error) {
+      console.error('Delete submission error:', error);
+      if (cancelBtn) cancelBtn.disabled = false;
+      if (yesBtn) { yesBtn.disabled = false; yesBtn.textContent = 'Yes, Delete'; }
+      if (errEl) errEl.textContent = 'Delete failed. Please try again.';
+      return;
+    }
+
+    // Remove from local state
+    pendingSubmissions = pendingSubmissions.filter(s => s.id !== subId);
+    feedbackSubmissions = feedbackSubmissions.filter(s => s.id !== subId);
+
+    // Stop any running countdown
+    if (submissionCountdowns.has(subId)) {
+      clearInterval(submissionCountdowns.get(subId));
+      submissionCountdowns.delete(subId);
+    }
+
+    // Fade out and remove the card
+    const row = document.getElementById(`sub-row-${subId}`);
+    if (row) {
+      row.style.transition = 'opacity 0.2s';
+      row.style.opacity = '0';
+      setTimeout(() => {
+        row.remove();
+        // Show empty state if either queue is now empty
+        const pendingQueue = document.getElementById('pending-queue');
+        if (pendingQueue && !pendingQueue.querySelector('.sub-row')) {
+          pendingQueue.innerHTML = "<div class=\"sub-empty\">No pending submissions. You're all caught up.</div>";
+        }
+        const feedbackQueue = document.getElementById('feedback-queue');
+        if (feedbackQueue && !feedbackQueue.querySelector('.sub-row')) {
+          feedbackQueue.innerHTML = '<div class="sub-empty">No submissions with feedback yet.</div>';
+        }
+      }, 200);
+    }
+
+    showToast('Submission deleted.');
+  };
 
   function startCountdown(subId, submittedAt, displayEl) {
     const deadlineMs = new Date(submittedAt).getTime() + 48 * 3600000;

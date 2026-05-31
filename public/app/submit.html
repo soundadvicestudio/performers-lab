@@ -312,8 +312,11 @@
     }
   });
 
+  const ADMIN_USER_ID = '6abb9d4d-ed5f-456e-aebb-aa76c8696c44';
+
   let countdownInterval = null;
   let currentUserId = null;
+  let currentUserDisplayName = null;
 
   // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -741,6 +744,19 @@
       return;
     }
 
+    // Notify admin of new submission (fire and forget — never blocks member flow)
+    // Notification types: 'new_submission' — new member submission received, admin only
+    supabase.from('notifications').insert({
+      user_id: ADMIN_USER_ID,
+      type: 'new_submission',
+      title: 'New submission received',
+      body: `${currentUserDisplayName} submitted "${songTitle}" for review`,
+      link: '/admin',
+      read: false,
+    }).then(({ error: notifErr }) => {
+      if (notifErr) console.error('Admin notification error:', notifErr);
+    });
+
     renderStatusView(newSub);
     showToast('Submission received! You\'ll hear from us within 48 hours.');
     await loadHistory(currentUserId);
@@ -813,6 +829,7 @@
     if (!hasAccess) { window.location.href = '/app/gate.html'; return; }
 
     const name = profile?.display_name || session.user.email.split('@')[0];
+    currentUserDisplayName = name;
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
     initSubnav('submit');
