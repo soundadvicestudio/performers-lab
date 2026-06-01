@@ -53,7 +53,7 @@ Billing is monthly recurring via Stripe. Discount codes are admin-created with c
 | Email | Resend.com | Domain verified at performers-lab.com |
 | Hosting | Vercel | Auto-deploys from GitHub main branch |
 | Video submissions | YouTube / Google Drive links | Members paste unlisted URLs — no internal video storage |
-| File storage | Supabase Storage | avatars bucket (profile photos), resources bucket (PDFs, MP3s, images) |
+| File storage | Supabase Storage | avatars bucket (profile photos), resources bucket (PDFs, MP3s, images), post-audio bucket (voice memos + audio posts) |
 | Cron | cron-job.org | Free tier — two jobs for event reminders, CRON_SECRET protected |
 
 **Monthly cost at launch:** ~$0–$25/mo (Vercel free, Supabase free→$25, Daily.co pay-as-you-go ~$0.004/participant-min, Resend free tier, Stripe 2.9%+30¢/transaction)
@@ -83,13 +83,17 @@ performers-lab/
 │   │   ├── createRoom.js           # ✅ Creates Daily.co room + host owner token
 │   │   ├── sendReminders.js        # ✅ 24hr reminder — RSVPed members, email + notification
 │   │   └── sendMorningNotify.js    # ✅ Morning-of — Notify Me members, email + notification
+│   ├── notifications/
+│   │   └── batchNotify.js          # ✅ Serverless batched notification handler — service role,
+│   │                               #    bypasses RLS, handles post_reply/post_liked/comment_liked
+│   │                               #    INSERT and UPDATE with context_id batching
 │   └── env.js                      # ✅ Injects public env vars to browser
 ├── public/
 │   ├── index.html                  # ✅ Public marketing site (gold/dark aesthetic)
 │   ├── 404.html                    # ✅ Custom 404 page
 │   ├── app/
 │   │   ├── components/
-│   │   │   ├── nav.js              # ✅ Top nav — bell + speech bubble badges
+│   │   │   ├── nav.js              # ✅ Top nav — red bell badge, Realtime INSERT+UPDATE, speech bubble
 │   │   │   ├── subnav.js           # ✅ Six-tab nav + mobile bottom bar + On Air banner + Live Lab red dot
 │   │   │   ├── footer.js           # ✅ Shared footer component
 │   │   │   └── theme.js            # ✅ THEMES object, applyTheme(), getThemeNames() — gold is sole theme
@@ -104,7 +108,8 @@ performers-lab/
 │   │   ├── checkout.html           # ✅ Built
 │   │   ├── checkout-success.html   # ✅ Built
 │   │   ├── gate.html               # ✅ Built — shown to inactive/no membership
-│   │   ├── community.html          # ✅ Built — feed, channels, reactions, video posts, comment collapsing (3 shown + link)
+│   │   ├── community.html          # ✅ Built — feed, channels, text/video/audio posts, @mentions,
+│   │   │                           #            comment likes, post following, pinned posts, admin delete
 │   │   ├── messages.html           # ✅ Built — private DMs, real-time
 │   │   ├── notifications.html      # ✅ Built — notification center
 │   │   ├── announcements.html      # ✅ Built — admin broadcast messages
@@ -113,7 +118,8 @@ performers-lab/
 │   │   ├── submission.html         # ✅ Built — single submission detail + feedback
 │   │   ├── resources.html          # ✅ Built — resource library, category filter, inline players
 │   │   ├── events.html             # ✅ Built — Upcoming / Archive tabs, RSVP, Notify Me, .ics, lazy archive load
-│   │   ├── post.html               # ✅ Built — post detail, full comment thread, @mention in composer, scroll-to-comment on hash
+│   │   ├── post.html               # ✅ Built — single post detail, full comment thread, @mentions,
+│   │   │                           #            comment likes, scroll-to-comment on URL hash
 │   │   └── event.html              # ✅ Built — detail, embed, live chat, moderation, recording
 │   └── admin/
 │       └── index.html              # ✅ Built — Landing Page editor, Email Templates,
@@ -146,7 +152,7 @@ performers-lab/
 --border-mid:  rgba(240,237,230,0.15)  /* Mid-weight borders */
 ```
 
-> ⚠️ Every color must use CSS variables — never hardcoded hex or rgb. Exceptions: inline email styles in serverless functions (email clients strip `<style>` blocks), `#000` on video embed containers (intentional true black), and the established `rgba(76,175,132,...)` green pattern used for live status badges across the codebase.
+> ⚠️ Every color must use CSS variables — never hardcoded hex or rgb. Exceptions: inline email styles in serverless functions (email clients strip `<style>` blocks), `#000` on video embed containers (intentional true black), the established `rgba(76,175,132,...)` green pattern for live status badges, and `#dc3232` broadcast red for live/On Air indicators and the notification bell badge.
 
 ### Typography
 - **Display / headings:** Cormorant Garamond (serif) — Google Fonts
@@ -191,9 +197,11 @@ initFooter();
 ### nav.js
 - Right side: Edit Profile, Membership, speech bubble (messages), notification bell, Admin Panel (admin only), Sign Out
 - Edit Profile and Membership hidden on mobile ≤600px
-- Bell: gold badge, unread count capped at 99+, real-time via Supabase Realtime INSERT on notifications
+- **Bell badge: `#dc3232` background, `#ffffff` text** — broadcast red, not gold
+- Bell: unread count capped at 99+. Realtime: INSERT → increment count by 1. UPDATE → reload full count from Supabase via `reloadBellCount()`. Requires REPLICA IDENTITY FULL on notifications table.
 - Speech bubble: shown only when unread messages exist, hidden at 0
 - Both wired via `wireNotifications()` and `wireMessages()` after initNav
+- Channel `'nav-notifications'` stored and cleaned up on beforeunload
 
 ### subnav.js
 - Six tabs: Dashboard, Community, Messages, Live Lab, Resources, Submit
@@ -204,7 +212,7 @@ initFooter();
 - **On Air banner:** injected after `#app-subnav`, shown when any event has status='live'. Links to event page.
 - **Live Lab tab dot:** red pulsing badge added to the Live Lab tab when a live event exists
 - Realtime channel `'subnav-live-watch'` watches events UPDATE; cleaned up on beforeunload
-- `#dc3232` is broadcast red — deliberate exception to CSS variable rule (same category as green rgba)
+- `#dc3232` is broadcast red — deliberate exception to CSS variable rule
 
 ### theme.js
 - Exports `THEMES` (const object), `applyTheme(name)`, `getThemeNames()`
@@ -216,11 +224,11 @@ initFooter();
 ### time.js
 - `relativeTime(dateString)` — "just now", "Xm ago", "Xh ago", "Xd ago", or "Mon DD"
 - `startRelativeTimers(intervalMs, timezone)` — timezone is optional IANA string, defaults to 'America/Chicago'
-  - Updates `[data-timestamp]` text on interval (existing behavior)
-  - Also sets `title` attribute to human-readable absolute datetime in the given timezone
+  - Updates `[data-timestamp]` text on interval
+  - Sets `title` attribute to human-readable absolute datetime in the given timezone
   - Format: "June 2, 2026 at 3:47 PM (CDT)" — built from Intl.DateTimeFormat parts
-  - Sets `cursor: help` on each element so users see tooltip hint
-  - Run immediately on call, then on every tick
+  - Sets `cursor: help` on each element
+  - Runs immediately on call, then on every tick
 - All call sites pass `profile.timezone` (or module-level `userTimezone`) as second argument
 - Import in every page that displays timestamps — never inline timestamp logic
 
@@ -237,6 +245,7 @@ initFooter();
 - Site URL: `https://performers-lab.com`
 - Redirect URLs: `https://performers-lab.com/app/verify.html`
 - Email verification: enabled
+- Leaked password protection: enabled
 
 ### Critical: Table grants — TWO ROLES REQUIRED
 Every new table needs grants for BOTH `authenticated` (frontend) AND `service_role` (serverless). RLS alone is not sufficient — Postgres returns 42501 before RLS can evaluate without explicit grants.
@@ -248,46 +257,41 @@ GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO service_role;
 ```
 
-Verify after every new table:
+### PostgREST schema cache
+When new columns are added to existing tables, PostgREST may not recognize them until the schema cache is reloaded. Symptom: column value is always null in the database despite correct code and grants. Fix:
 ```sql
-SELECT table_name, grantee, string_agg(privilege_type, ', ' ORDER BY privilege_type) as privileges
-FROM information_schema.role_table_grants
-WHERE table_name IN ('your_table')
-AND grantee IN ('authenticated','service_role')
-GROUP BY table_name, grantee;
+NOTIFY pgrst, 'reload schema';
 ```
+This was required after adding `context_id` to the notifications table.
 
 ### Auto-profile trigger
-```sql
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (user_id, display_name)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1)));
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
+`handle_new_user()` SECURITY DEFINER, SET search_path = public — INSERTs into profiles on auth.users INSERT. REVOKE EXECUTE from anon + authenticated.
 
 ### RLS policy notes
 - **profiles SELECT must be `USING (true)`** — members need to read all profiles for community features
+- **memberships SELECT `USING (true)`** — required for @mention member search subquery across accounts
+- **post_follows SELECT `USING (true)`** — required for `getPostFollowers()` to return followers across accounts. Without this, followers from other accounts are invisible to the commenter.
+- **notifications INSERT `WITH CHECK (true)`** — required for member-to-member notification creation
+- **notifications UPDATE `WITH CHECK (true)`** — required for batched notification count incrementing across users. Client-side UPDATE of another user's notification is blocked by default RLS. Broad UPDATE policy required. Supabase linter will flag this — intentional.
 - **Duplicate policies cause 400 errors** — always check before adding: `SELECT policyname, cmd FROM pg_policies WHERE tablename = 'X';`
-- **CHECK constraints must match form values exactly** — `submissions_goal_check` enforces `Audition Prep / Performance Polish / Technique Building / Just for Fun`. Style constraint was dropped in Phase 3.
-- **REPLICA IDENTITY FULL** required on tables with Realtime DELETE subscriptions that filter on non-PK columns: `event_messages` and `event_moderators` both have this set.
+- **CHECK constraints must match form values exactly** — `submissions_goal_check` enforces `Audition Prep / Performance Polish / Technique Building / Just for Fun`.
+- **REPLICA IDENTITY FULL** required on tables with Realtime subscriptions that filter on non-PK columns: `event_messages`, `event_moderators`, and `notifications`.
 
-### Database schema (23 tables)
+> ⚠️ IMPORTANT: Even with broad INSERT + UPDATE policies, client-side batching lookup (SELECT) cannot see another user's notifications due to the restrictive SELECT policy (user_id = auth.uid()). Batching MUST run server-side via `batchNotify.js` using the service role. Do not attempt client-side batching for cross-user notifications.
+
+### Database schema (24 tables)
 
 1. **profiles** — id, user_id (FK auth.users UNIQUE), display_name, photo_url, bio, location, birth_year (int), experience, is_admin (bool, default false), is_moderator (bool, default false), theme (text, default 'gold'), timezone (text, default 'America/Chicago'), email_notify_dm (bool, default true), email_notify_feedback (bool, default true), email_notify_events (bool, default true), created_at
 2. **memberships** — id, user_id (UNIQUE), status (active/cancelling/cancelled/past_due/trialing), stripe_customer_id, stripe_subscription_id, plan (founding/standard), cancel_at (timestamptz nullable), created_at
 3. **discount_codes** — id, code (UNIQUE), discount_type (flat/percent), amount, max_uses, uses_count, expires_at, created_by, active, created_at
 4. **channels** — id, name, slug (UNIQUE), category, description, position, archived, created_at
-5. **posts** — id, author_id, channel_id (null = main feed), content (HTML from Quill), is_pinned, created_at, post_type (TEXT NOT NULL DEFAULT 'text' CHECK IN ('text','video','audio')), video_url (TEXT nullable), audio_url (TEXT nullable)
+5. **posts** — id, author_id, channel_id (null = main feed), content (HTML from Quill), title (text, nullable), is_pinned (bool, default false), created_at, post_type (TEXT NOT NULL DEFAULT 'text' CHECK IN ('text','video','audio')), video_url (TEXT nullable), audio_url (TEXT nullable)
 6. **post_reactions** — id, post_id, user_id, reaction_type, created_at — UNIQUE(post_id, user_id, reaction_type)
 7. **comments** — id, post_id, author_id, content (plain text), created_at
 8. **channel_views** — id, user_id, channel_id, last_seen_at — UNIQUE(user_id, channel_id)
 9. **conversations** — id, participant_1_id, participant_2_id, created_at — UNIQUE(participant_1_id, participant_2_id)
 10. **messages** — id, conversation_id, sender_id, content, read (bool), created_at
-11. **notifications** — id, user_id, type, title, body, link, read (bool), created_at
+11. **notifications** — id, user_id, type, title, body, link, read (bool), notification_count (int, NOT NULL, default 1), context_id (UUID, nullable), created_at — REPLICA IDENTITY FULL
 12. **announcements** — id, subject, body (HTML), audience (all/founding/standard/individual), sent_by, sent_at, recipient_count
 13. **announcement_reads** — id, announcement_id, user_id, read_at — UNIQUE(announcement_id, user_id)
 14. **email_templates** — id, type (UNIQUE), subject, body (HTML), updated_at, updated_by
@@ -299,7 +303,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 20. **event_rsvps** — id, event_id (FK events CASCADE), user_id (FK auth.users CASCADE), notify (bool, default false), created_at — UNIQUE(event_id, user_id)
 21. **event_messages** — id, event_id (FK events CASCADE), user_id (FK auth.users CASCADE), content (text), created_at — REPLICA IDENTITY FULL
 22. **event_moderators** — id, event_id (FK events CASCADE), user_id (FK auth.users CASCADE), appointed_by (FK auth.users), created_at — UNIQUE(event_id, user_id) — REPLICA IDENTITY FULL
-23. **post_follows** — id, post_id (FK posts CASCADE), user_id (FK auth.users CASCADE), created_at — UNIQUE(post_id, user_id). Used for follow/unfollow post, auto-follow on comment, and batched 'post_reply' notifications.
+23. **post_follows** — id, post_id (FK posts CASCADE), user_id (FK auth.users CASCADE), created_at — UNIQUE(post_id, user_id). RLS: users manage own follows (ALL); SELECT USING true required for `getPostFollowers()` to work across accounts.
+24. **comment_reactions** — id, comment_id (FK comments CASCADE), user_id (FK auth.users CASCADE), reaction_type (text, default 'like'), created_at — UNIQUE(comment_id, user_id, reaction_type). Full grants: authenticated + service_role. In Realtime publication.
+
+### Realtime publication — tables
+posts, notifications, comment_reactions, events, event_messages, event_moderators, messages
 
 ### Seeded data
 **Channels:** #general, #wins-and-updates (Community); #audition-prep, #technique-questions, #rep-suggestions (Coaching); #lab-session-chat (Resources)
@@ -309,23 +317,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ### Supabase Storage
 - Bucket: `avatars` (public) — `avatars/{user_id}/avatar.jpg`, upsert. Users INSERT/UPDATE/DELETE own folder.
 - Bucket: `resources` (public) — `resources/{uuid}/{filename}`. Admins INSERT/UPDATE/DELETE, public SELECT.
+- Bucket: `post-audio` (public) — `{user_id}/{timestamp}-{filename}`. Authenticated INSERT own folder; anon + authenticated SELECT.
 
 ---
 
 ## Authentication System
 
 ### Session config
-```javascript
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    storageKey: 'sb-performers-lab-auth',
-    storage: window.localStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
-```
+storageKey: `'sb-performers-lab-auth'`, localStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: true.
 
 ### Page access rules
 | Page | Rule |
@@ -341,33 +340,10 @@ session check → profile load → isProfileComplete() → membership gate
 ```
 
 ### isProfileComplete()
-```javascript
-function isProfileComplete(profile) {
-  return !!(
-    profile?.display_name?.trim() &&
-    profile?.birth_year &&
-    profile?.experience?.trim() &&
-    profile?.location?.trim() &&
-    profile?.bio?.trim() &&
-    profile?.timezone?.trim()
-  );
-}
-```
-Required fields: display_name, birth_year, experience, location, bio, timezone.
-Redirect to `/app/profile.html?onboarding=true` if incomplete. Admin bypasses.
-This function exists in: dashboard, community, messages, submit, resources, events, event.html — update all when adding new required fields.
+Required fields: `display_name`, `birth_year`, `experience`, `location`, `bio`, `timezone` — all must be truthy. Redirect to `/app/profile.html?onboarding=true` if incomplete. Admin bypasses. Exists in: dashboard, community, messages, submit, resources, events, event.html — update all when adding new required fields.
 
 ### Membership gate pattern
-```javascript
-if (!profile?.is_admin) {
-  const status = membership?.status;
-  if (status !== 'active' && status !== 'cancelling') {
-    window.location.href = '/app/gate.html';
-    return;
-  }
-}
-```
-`cancelling` members retain full access until `cancel_at`.
+Check `membership.status` is `'active'` or `'cancelling'`; redirect to `/app/gate.html` otherwise. Admin bypasses. `cancelling` members retain full access until `cancel_at`.
 
 ### Admin account
 - Email: alittlesoundadvice@gmail.com
@@ -428,31 +404,33 @@ const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users/${
 const { email } = await response.json();
 ```
 
+### batchNotify.js pattern
+File: `api/notifications/batchNotify.js`
+Use for: any notification type requiring batching (incrementing a count on an existing unread row rather than creating a new row per event).
+
+**Why serverless:** client-side batching SELECT cannot see notifications belonging to other users (SELECT RLS policy restricts to `user_id = auth.uid()`). Service role bypasses this.
+
+**Auth:** JWT verified via `GET /auth/v1/user` with Bearer token before processing. Returns 401 if missing or invalid.
+
+**Self-notification guard:** `recipientId === callerUserId` returns `{ ok: true, skipped: 'self-notification' }` immediately.
+
+**Batching logic:**
+1. GET notifications filtering on `user_id`, `type`, `read=false`, `context_id` — exact UUID match, limit 1
+2. If found: PATCH `notification_count+1`, update `body` via `buildBatchedBody()`, update `link` via `buildBatchedLink()`
+3. If not found: POST new notification row with `notification_count: 1`
+
+`buildBatchedLink()` for `post_reply` strips the `#comment-X` anchor when count > 1 (links to post root).
+
+**Frontend:** `sendBatchedNotification({ type, recipientId, title, body, link, contextId })` defined once per file. Gets session JWT, POSTs to `/api/notifications/batchNotify` with Bearer token. Currently handles: `post_reply`, `post_liked`, `comment_liked`. Add new types by extending `buildBatchedBody()`.
+
 ### Resend email conventions
-- From: `The Performer's Lab <notifications@performers-lab.com>`
-- Dark bg (#070707), gold header, Raleway/Cormorant Garamond, all inline styles
-- Footer: Sound Advice Vocal Studio · performers-lab.com → alittlesoundadvice.com
-- Multi-recipient: 50ms delay between sends, chunk at 50 per batch
+From: `The Performer's Lab <notifications@performers-lab.com>`. Dark bg (#070707), gold header, Raleway/CG, inline styles. Footer links to alittlesoundadvice.com. Multi-recipient: 50ms delay, 50/batch.
 
 ### Email preference gating
-Before sending optional emails, check recipient preference from profiles:
-- `email_notify_dm` — gates notifyDM.js
-- `email_notify_feedback` — gates postFeedback.js
-- `email_notify_events` — gates sendReminders.js and sendMorningNotify.js
-- Treat null as true (opt-in by default). Always INSERT in-platform notification regardless of email preference.
+Check before optional emails: `email_notify_dm` (DM), `email_notify_feedback` (feedback), `email_notify_events` (events). Null = true. Always INSERT in-platform notification regardless. Never toggleable: verification, welcome, announcements.
 
 ### Cron protection
-```javascript
-const secret = req.headers['x-cron-secret'];
-if (secret !== process.env.CRON_SECRET) {
-  return res.status(401).json({ error: 'Unauthorized' });
-}
-```
-Apply to all cron-triggered endpoints.
-
-### Mandatory vs optional emails
-- **Never toggleable:** email verification, welcome email, admin announcements
-- **Member-controlled:** DM notifications, feedback notifications, event reminders
+Check `req.headers['x-cron-secret'] === process.env.CRON_SECRET` on all cron endpoints. Return 401 if mismatch.
 
 ---
 
@@ -463,19 +441,57 @@ Apply to all cron-triggered endpoints.
 - Toolbar: bold, italic, underline, link, ordered list, bullet list. No image uploads.
 - Output: `quill.root.innerHTML` stored in posts.content
 - **XSS sanitization required** on all innerHTML renders — copy `sanitizeHTML()` from community.html
-- **sanitizeHTML() allowlists `span.mention-chip`** — spans with `class="mention-chip"`, `data-user-id`, and `data-display-name` survive sanitization; all other spans are unwrapped
+- **sanitizeHTML() allowlists `span.mention-chip`** — spans with `class="mention-chip"`, `data-user-id`, `data-display-name`, `style`, `contenteditable` survive sanitization; all other spans are unwrapped
 
-### Profile join pattern (CRITICAL)
-Never use embedded FK joins to profiles — Supabase cannot resolve `author_id → profiles.user_id`. Always use the two-query pattern:
-```javascript
-// Step 1: fetch records
-// Step 2: collect unique user_ids, fetch profiles with .in('user_id', ids)
-// Step 3: build profileMap, merge
-const profileMap = Object.fromEntries(profiles.map(p => [p.user_id, p]));
+### Post types
+- `'text'` (default) — Quill rich text only
+- `'video'` — YouTube or Google Drive embed, `video_url` column, 16:9 iframe, "▶ Video" badge
+- `'audio'` — upload or voice recording, `audio_url` column, custom themed player, "🎵 Audio" badge
+- Video and audio are mutually exclusive per post. Never use native `<audio controls>` for post rendering — use the custom player.
+
+### Post composer layout (community.html)
 ```
+[Title input — Cormorant Garamond, optional, 120 chars]
+[Quill editor]
+[▶ Add Video] [🎵 Upload Audio]    ... margin-left:auto ... [🎙 mic widget] [Post button]
+```
+Add Video and Upload Audio disable each other and the mic when active. Mic widget always visible, grouped with Post button at right.
+
+### Voice recorder
+- States: Idle (🎙) → Recording (⏹ + pulsing #dc3232 border + elapsed timer) → Preview (▶ to preview, "× discard", "Attach Recording")
+- Uploads blob to `post-audio` bucket on Attach Recording
+- **`pendingAudioUrl` must be module-level** — if declared inside a nested function, the race condition causes null at submit time (lesson from P3.6)
+
+### Custom audio player
+- Play/pause (gold circle button), gold seek bar with timeupdate, time display, single-player-at-a-time logic
+- Admin-only download link (⬇)
+- `wireAudioPlayers(container)` with `data-wired` guard — call after every render that produces audio post cards
+
+### @mentions
+- Quill `MentionBlot` in posts, plain-text `@` detection in comment textareas
+- Shared `#mention-dropdown` element appended to body
+- Member search: `profiles ILIKE + memberships` subquery for status IN ('active','cancelling'). Requires memberships SELECT USING true policy.
+- 3-mention limit per post/comment for non-admin/mod
+- Chip: `span.mention-chip`, gold, no `@` in display text
+- Fires `'mention'` notification with `context_id: postId`
+
+### Post following
+- 🔔 Follow button on every post card. Auto-follow on comment submit.
+- `getPostFollowers()` requires `post_follows SELECT USING true` — without it, returns only the commenter's own follow row.
+- Notifications fired via `sendBatchedNotification()` → `batchNotify.js`, `context_id: postId`, type `'post_reply'`
+
+### Comment likes
+- `comment_reactions` table. ♡/♥ toggle per comment, right-aligned in comment header.
+- `wireCommentLikes(container)` — batch-fetches all reactions for visible comments in one query, updates all buttons, wires click handlers. Uses `data-wired` guard. Call after every comment render.
+- Optimistic toggle (INSERT/DELETE from `comment_reactions`), revert on error.
+- Notification via `sendBatchedNotification()`, `context_id: commentId`, type `'comment_liked'`
+
+### Post like notifications
+- Existing post reaction (clap) fires `'post_liked'` via `sendBatchedNotification()`, `context_id: postId`.
+- Not fired on self-reaction.
 
 ### Notification types
-- `'new_dm'` — new direct message
+- `'new_dm'` — direct message
 - `'announcement'` — admin broadcast
 - `'new_feedback'` — feedback on submission
 - `'submission_urgent'` — submission <24hr deadline (admin only)
@@ -483,14 +499,39 @@ const profileMap = Object.fromEntries(profiles.map(p => [p.user_id, p]));
 - `'event_reminder'` — 24hr event reminder (RSVPed members)
 - `'event_morning'` — morning-of reminder (Notify Me members)
 - `'mod_appointed'` — per-event mod appointment
-- `'mention'` — @mention in a post (link: `/app/post.html?id={postId}`) or comment (link: `/app/post.html?id={postId}#comment-{commentId}`)
-- `'post_reply'` — new comment on a followed post. **Batched:** if an unread post_reply notification already exists for the same post, UPDATE it (increment count: "N new replies to a post you're following", link → post root). First notification links to specific comment. Does not fire to commenter or to users who already got a mention notification for same comment.
+- `'mention'` — @mention in post or comment. `context_id: postId`. Direct INSERT (not batched).
+- `'post_reply'` — comment on followed post. `context_id: postId`. **Batched via batchNotify.js.** First notification links to specific comment; subsequent unread updates to "N new replies" linking to post root.
+- `'post_liked'` — post reaction. `context_id: postId`. **Batched via batchNotify.js.**
+- `'comment_liked'` — comment reaction. `context_id: commentId`. **Batched via batchNotify.js.**
+
+**Batching rules (apply to post_reply, post_liked, comment_liked):**
+- Lookup: `type + user_id + read=false + context_id` — exact UUID match, `.limit(1).maybeSingle()`
+- First occurrence: INSERT with `notification_count: 1`
+- Subsequent unread: PATCH `notification_count+1`, update `body` and `link`
+- **NEVER use `.ilike()` on `link` for batching** — always use `context_id` exact UUID match
+- **NEVER attempt client-side batching** for cross-user notifications — SELECT RLS blocks the lookup. Always use `batchNotify.js`.
+- `notification_count` column tracks the count. Never parse body string for count.
 
 ### Notification persistence
 Persist until explicitly deleted. Mark read on view (clears bell badge). Individual × hard-DELETEs. "Clear All" hard-DELETEs all.
 
+### Pinned posts
+- `is_pinned` bool on posts (default false). Admin 📌 toggle button on post cards.
+- Optimistic DOM move on pin/unpin. Feed always loads pinned posts first.
+- Pinned posts show gold "Pinned" badge inside card.
+
+### Admin post delete
+- Admin ✕ button on every post card, inline two-button confirm.
+- DELETE cascades to comments, post_reactions, post_follows via FK CASCADE.
+- On post.html: redirect to community.html after deletion.
+
+### Profile join pattern (CRITICAL)
+Never use embedded FK joins to profiles — Supabase cannot resolve `author_id → profiles.user_id`. Always: (1) fetch records, (2) collect unique user_ids, fetch profiles with `.in('user_id', ids)`, (3) build `profileMap` keyed by `user_id`, merge.
+
 ### Real-time subscriptions
 Use `supabase.channel()` in frontend only — never in api/ serverless functions.
+
+Feed INSERT: `channel('feed-new-posts')`, no server-side filter, JS-level channel filtering via `getActiveChannelId()`. Duplicate guard via `data-post-id`. Logs `'Feed realtime connected'` on SUBSCRIBED.
 
 ---
 
@@ -512,9 +553,7 @@ Three toggles on profile.html under "Email Notifications":
 All default true. In-platform notifications are never toggleable — email only.
 
 ### Avatar upload
-- 240px circular crop viewport, pan + zoom slider
-- fillZoom = `Math.max(240/w, 240/h)`. Slider: min=fillZoom×0.5, max=fillZoom×4
-- Canvas 300×300, JPEG 0.85, uploads to `avatars/{user_id}/avatar.jpg`
+240px circular crop viewport, pan + zoom (fillZoom = max(240/w, 240/h), range ×0.5–×4). Canvas 300×300, JPEG 0.85 → `avatars/{user_id}/avatar.jpg`.
 
 ---
 
@@ -546,70 +585,37 @@ Admin-created. Filter pills generated dynamically. "All" pill always renders fir
 
 ---
 
-## Live Lab System (Phase 4)
+## Live Lab System
 
-### Events listing — events.html
-- Full gate: session → profile completeness (includes timezone) → membership
-- initSubnav('live-lab')
-- Upcoming cards: CT time primary, member local time secondary (when timezone ≠ CT), pulsing Live Now badge, independent RSVP/Notify Me toggles, .ics download, View/Join button
-- Past cards: 3-line clamped description, YouTube thumbnail extraction, Watch Recording link
-- RSVP: INSERT event_rsvps, count shown inline
-- Notify Me: requires RSVP first, UPDATE event_rsvps.notify. Helper: "RSVP to get a 24-hour reminder · Notify Me for a morning-of reminder"
-- .ics: client-side generation, DTSTART/DTEND in UTC (calendar apps handle local conversion), 90-minute duration
+### events.html
+Full gate (session → completeness → membership). initSubnav('live-lab'). Upcoming cards: CT primary, member-timezone secondary, RSVP + Notify Me toggles, .ics (DTSTART/DTEND UTC, 90min), View/Join. Past cards: YouTube thumbnails, Watch Recording. RSVP: INSERT event_rsvps; Notify Me: UPDATE event_rsvps.notify (requires RSVP first).
 
-### Event detail — event.html
-- Gate: same as events.html
-- initSubnav('live-lab')
-- Missing/invalid ?id → redirect to events.html
-- Two-column layout: left (~68%) video + info, right (~32%) chat. Stacked on mobile <900px.
-- **Admin control bar** (is_admin only): ⚡ Go Live and ■ End Session buttons between info and embed. Go Live calls /api/events/createRoom, stores host_token in sessionStorage. End Session PATCHes status='completed'. Realtime handles all UI transitions.
+### event.html
+Same gate. Two-column layout (68% video/info, 32% chat; stacked <900px). Admin control bar: ⚡ Go Live (calls createRoom.js, stores host_token in sessionStorage) + ■ End Session (PATCHes status='completed'). Missing ?id → redirect to events.html.
 
 ### Daily.co embed
-- Rooms created server-side via createRoom.js (POST-only, admin-verified)
-- Room properties: privacy=public, enable_chat=false (platform chat used instead), enable_screenshare=true, start_video_off=false, start_audio_off=false
-- Members join: `{room_url}?camera=off&microphone=off` — no permission prompt on load
-- Admin joins: `{room_url}?t={host_token}&camera=off&microphone=off`
-- host_token generated via `/v1/meeting-tokens` with is_owner=true. Never stored in DB. Stored in sessionStorage as `host_token_{event_id}` from the Go Live flow.
-- Embed container: `#000` background, `var(--border-gold)` border, gold box-shadow, border-radius 10px
+Rooms server-side via createRoom.js (POST-only, admin-verified). privacy=public, chat disabled, screenshare enabled. Members join with `?camera=off&microphone=off`. Admin joins with `?t={host_token}&camera=off&microphone=off`. host_token via /v1/meeting-tokens with is_owner=true — never stored in DB, sessionStorage only. Embed: `#000` background.
 
 ### Live chat
-- event_messages table, Realtime subscriptions (INSERT, DELETE filtered by event_id)
-- REPLICA IDENTITY FULL on event_messages and event_moderators
-- Two-query profile join on incoming messages (never FK embed)
-- 200+ entry profanity filter with word boundary regex. Block + show error on violation.
-- Read-only when status='completed'. Banner: "Continue the conversation in the Community →"
-- Chat input: flex-column panel, message list flex:1 min-height:0, input row flex-shrink:0 pinned at bottom
+event_messages table. Realtime INSERT + DELETE (filtered by event_id). REPLICA IDENTITY FULL on event_messages and event_moderators. Two-query profile join. 200+ word profanity filter. Read-only when status='completed'. Chat input pinned at bottom (flex-shrink:0).
 
 ### Moderation hierarchy
-Three tiers:
-1. **Admin** (is_admin=true) — delete any message, appoint/remove per-event mods, Go Live/End Session
-2. **Global Mod** (is_moderator=true on profiles) — delete chat messages in all sessions + community posts/comments (Phase 5)
-3. **Per-event Mod** (event_moderators row) — delete chat messages in that session only
+1. **Admin** — delete any message, appoint/remove per-event mods, Go Live/End Session
+2. **Global Mod** (is_moderator=true) — delete chat in all sessions + community (Phase 5)
+3. **Per-event Mod** (event_moderators row) — delete chat in that session only
 
-Per-event mod appointment: admin clicks shield icon on message → inline confirm → INSERT event_moderators + INSERT mod_appointed notification for appointee. Remove: DELETE event_moderators. All updates propagate in real time via Realtime subscription on event_moderators.
+Per-event mod: admin clicks shield → confirm → INSERT event_moderators + INSERT mod_appointed notification. Remove: DELETE event_moderators. Realtime propagates.
 
 ### Email reminders
-- **sendReminders.js** — cron every hour (cron-job.org). Window: starts_at between now+23h and now+25h, reminder_sent=false. Sends to RSVPed members. In-platform notification always; email if email_notify_events. Sets reminder_sent=true.
-- **sendMorningNotify.js** — cron daily at 1:00 PM UTC (8:00 AM CT). Window: starts_at between now and now+24h, morning_notify_sent=false. Sends to Notify Me members (notify=true in event_rsvps). Sets morning_notify_sent=true.
-- Both protected by `x-cron-secret` header check
-- Cron URLs must use www: `https://www.performers-lab.com/api/events/...`
+- **sendReminders.js** — hourly cron. Window: starts_at between now+23h and now+25h, reminder_sent=false. RSVPed members. Email if email_notify_events. Sets reminder_sent=true.
+- **sendMorningNotify.js** — daily 1PM UTC (8AM CT). Window: starts_at between now and now+24h, morning_notify_sent=false. Notify Me members (notify=true). Sets morning_notify_sent=true.
+- Both: x-cron-secret protected. Cron URLs must use www.
 
 ---
 
 ## Admin Panel
 
-Located at `performers-lab.com/admin`. Protected by server-side `is_admin` on profiles.
-
-### Sidebar structure
-**TOOLS:** Landing Page, Export & Deploy, Email Templates, Announcements, Submissions, Events, Resources
-
-### Built sections
-1. **Landing Page** — consolidated WYSIWYG editor (was: separate Sections nav items). Internal tab strip: Hero · Stats Bar · How It Works · What's Included · Who It's For · Testimonials · Pricing · About You · Links & Footer. Export and deploy to index.html.
-2. **Email Templates** — edit welcome email (Quill), `{{display_name}}` token
-3. **Announcements** — compose + send, audience picker (all/founding/standard/individual), sent history
-4. **Submissions** — priority queue by 48hr deadline ASC, countdown clocks, red urgency <24hr, expand-in-place Quill feedback, publish/edit/delete
-5. **Events** — create events (title, topic, description, starts_at), upcoming list with Go Live / End Session / inline edit / delete, Past tab with recording URL paste, RSVP count display
-6. **Resources** — categories CRUD, resource CRUD, file upload to Supabase Storage, publish toggle, ↑/↓ reorder
+Located at `performers-lab.com/admin`. Protected by `is_admin` on profiles. Sidebar TOOLS: Landing Page, Email Templates, Announcements, Submissions, Events, Resources. All sections built with CRUD, Quill editors, file uploads. Submissions queue sorted by 48hr deadline ASC, red urgency <24hr. Events: Go Live / End Session controls on-page.
 
 ---
 
@@ -666,7 +672,7 @@ Located at `performers-lab.com/admin`. Protected by server-side `is_admin` on pr
 | Service | Status | Notes |
 |---|---|---|
 | Vercel | ✅ Live | Auto-deploys from GitHub main |
-| Supabase | ✅ Configured | 22 tables, RLS, grants, REPLICA IDENTITY on event tables |
+| Supabase | ✅ Configured | 24 tables, RLS, grants, REPLICA IDENTITY FULL on notifications/event tables |
 | Resend | ✅ Configured | welcome, DM, announcement, feedback, event reminder emails |
 | Stripe | ✅ Test mode | Webhook registered, products created, portal configured |
 | Daily.co | ✅ Configured | Rooms + host tokens via REST API, pay-as-you-go |
@@ -679,56 +685,38 @@ Located at `performers-lab.com/admin`. Protected by server-side `is_admin` on pr
 
 ## Build Phase Status
 
-### ✅ Phase 1: Foundation — COMPLETE
-### ✅ Phase 2: Community — COMPLETE
-### ✅ Phase 3: Core Product — COMPLETE
-### ✅ Phase 4: Live Streaming — COMPLETE
+### ✅ Phase 1–4: Foundation through Live Streaming — COMPLETE
+### ✅ Phase 4.5a: Community Polish — COMPLETE
 
-Built in Phase 4:
-- events.html — Live Lab listing, RSVP + Notify Me toggles, .ics download, dual-timezone display, YouTube thumbnails on past events
-- event.html — event detail, Daily.co embed (host token flow), admin Go Live/End Session controls on-page, live chat with Realtime, 200+ entry profanity filter, three-tier moderation (admin/global mod/per-event mod), appoint/remove mod with notification, recording embed for past sessions
-- api/events/createRoom.js — Daily.co room creation + host owner token
-- api/events/sendReminders.js — 24hr reminder, RSVPed members, email (pref-gated) + in-platform notification
-- api/events/sendMorningNotify.js — morning-of, Notify Me members, email (pref-gated) + in-platform notification
-- Admin Events section — schedule, Go Live, End Session, recording URL management
-- Email notification preferences — profile toggles for DM, feedback, event reminder emails
-- Profile timezone selector — 40+ IANA zones grouped by region, dual-timezone display across event pages
-- Live local time on member.html
-- Admin panel nav reorganization — Sections consolidated to single Landing Page entry in Tools
-- REPLICA IDENTITY FULL on event_messages and event_moderators
-- Admin notifications RLS policy for cross-user notification inserts
+Sprints completed (P1–P3.8 + fixes):
+- **P1:** Theme structure, hover timestamps, On Air banner, avatar sizes, profile Account tab, events archive tab
+- **P2:** post.html, comment collapsing (3 shown + view-all link), video posts
+- **P3:** @mentions in posts and comments, mention notifications, scroll-to-comment on hash
+- **P3.5:** Audio posts, voice recorder, post following, post_follows table, post-audio bucket
+- **P3.6:** Realtime feed INSERT (no-filter channel + JS filter), voice recorder redesign, audio upload race condition fix (pendingAudioUrl must be module-level), post titles
+- **P3.7:** Follow notifications (try/catch, excludeIds Set), Realtime bell badge UPDATE handler, custom audio player (wireAudioPlayers), admin post delete, pinned posts
+- **P3.8:** Notification batching via context_id (replaced ilike), red bell badge (#dc3232), comment likes (wireCommentLikes), post like notifications, mic widget grouped with Post button
+- **P3.8 fixes:** batchNotify.js serverless (service role bypasses RLS SELECT), PostgREST schema cache reload (NOTIFY pgrst, 'reload schema'), REPLICA IDENTITY FULL on notifications, broad UPDATE policy on notifications, broad SELECT policy on post_follows and memberships
 
----
+### ⏳ Phase 4.5b — NEXT
+- **P4a:** Help Center (help.html + admin section, help_topics table)
+- **P4b:** Services catalog + Stripe one-time checkout (services.html, service_orders table, reference file upload, cancellation policy acknowledgment)
+- **P4c:** My Orders + Admin order management (my-orders.html, deliveries table, order queue, urgency notifications)
+- **P5:** Coaching availability + booking + Premium tier framework
+- **P6:** Support ticket system
+- **P7:** Additional themes
 
 ### ⏳ Phase 5: Hardening, Admin, and Launch
 
-Priority build list:
-- **Admin auth gate** — server-side is_admin check on /admin page load. Currently no frontend guard — any authenticated user who navigates to /admin sees the UI. DB RLS is the only enforcement. Fix this first.
-- **Member management** — view all members, toggle is_moderator, view membership status, manually adjust plan
-- **Discount code manager** — table exists (discount_codes), UI does not
-- **Community moderation for global mods** — is_moderator=true enables delete on posts/comments in community.html
-- **Revenue overview** — Stripe API: MRR, active member count, recent transactions
-- **Rate limiting** — all API endpoints
-- **Full mobile audit** — all pages
-- **Launch sequence** — switch Stripe to live mode, register live webhook at www URL, migrate Skool founding members by email invitation, announce on @soundadvicestudio
+- **Admin auth gate** — no frontend guard on /admin yet; DB RLS only. Fix first.
+- **Member management** — view all, toggle is_moderator, adjust plan
+- **Discount code manager** — discount_codes table exists, UI does not
+- **Community moderation for global mods** — is_moderator=true enables delete
+- **Revenue overview** — Stripe API: MRR, active count, transactions
+- **Rate limiting**, **full mobile audit**, **launch sequence** (Stripe live mode, live webhook, Skool migration)
 
----
-
-### ⏳ Phase 6: Progressive Web App (PWA)
-
-- Web app manifest, service worker (offline fallback), iOS/Android meta tags
-- 'Add to Home Screen' nudge for mobile members
-- Reuses entire existing codebase — no framework changes
-
----
-
-### ⏳ Phase 7: Capacitor (App Store + Play Store)
-
-- Capacitor wrapper around existing web codebase
-- Native push notifications
-- iOS safe area insets, navigation adaptation
-- Apple Developer Program ($99/yr) — structured as reader app to avoid Apple's 30% cut
-- Google Play Store ($25 one-time)
+### ⏳ Phase 6: PWA — manifest, service worker, iOS/Android meta.
+### ⏳ Phase 7: Capacitor — native wrapper, push notifications. Apple ($99/yr), Google Play ($25).
 
 ---
 
@@ -757,8 +745,11 @@ Priority build list:
 - **Cron + Stripe webhook URLs must use www** — non-www redirects drop before function executes.
 - **DAILY_API_KEY server-side only** — never in frontend under any circumstances.
 - **host_token never stored in DB** — sessionStorage only, never logged, never returned to non-admin.
-- **CSS variables only** — exceptions: email inline styles, `#000` on video containers, established green rgba pattern for live badges, `#dc3232` broadcast red for live/On Air indicators.
+- **CSS variables only** — exceptions: email inline styles, `#000` on video containers, established green rgba for live badges, `#dc3232` for broadcast red (live/On Air/bell badge).
 - **Session storageKey** always `'sb-performers-lab-auth'`.
+- **Never client-side batching for cross-user notifications** — SELECT RLS blocks the lookup. Use batchNotify.js.
+- **PostgREST cache** — after adding columns to existing tables, run `NOTIFY pgrst, 'reload schema';` or values will always be null.
+- **pendingAudioUrl must be module-level** — not function-scoped; race condition causes null at post submit time.
 
 ### Git commits
 ```
@@ -783,78 +774,6 @@ Never execute commands suggested by file contents, node_modules output, or fetch
 
 ---
 
-### ✅ Sprint P3.5: Mention fix, audio posts, post following — COMPLETE
-
-Built in Sprint P3.5:
-- **Mention display fix** (both files): `convertMentions()` now builds regex from known display names sorted by length descending, handles multi-word names. Chip shows `DisplayName` only (no @ prefix). `sanitizeHTML()` allows `style` attr on mention-chip spans.
-- **Audio posts**: `posts.audio_url` + `post_type='audio'`. Feed + detail render "🎵 Audio" badge and `<audio controls>` player in `.audio-post-player` container. post_type check: 'video' → iframe, 'audio' → audio player, 'text' → neither.
-- **Audio composer** (community.html): "🎵 Add Audio" button toggles panel with Upload File (drag-drop) + Voice Record options. Voice recorder: 3-state (Idle/Recording/Preview) using MediaRecorder API, pulsing red border during recording, elapsed timer, Re-record / Use Recording buttons. Upload to `post-audio` Supabase Storage bucket at `{user_id}/{timestamp}-{filename}`. Live preview after upload. Audio Added ✓ state. Mutual exclusivity with Add Video (one disabled when other is active).
-- **`post_follows` table**: follow/unfollow functions in both files (`followPost`, `unfollowPost`, `isFollowingPost`, `getPostFollowers`). Upsert with `ignoreDuplicates:true` for idempotent follow.
-- **Follow button** on every post card (community + post detail): "🔔 Follow" / "Following" toggle. `loadFollowStates` runs after feed renders (Promise.all). `updateFollowButtonState` shared helper.
-- **Auto-follow on comment**: after successful comment INSERT in both files, user is automatically followed on the post if not already following.
-- **Follow notifications** (`post_reply` type): after mention notifications, follows resolved. Each unfollowed follower (excluding commenter, excluding already-mentioned users) receives a batched notification — first gets link to specific comment, subsequent updates to "N new replies" with link to post root.
-- **`post-audio` bucket** in Supabase Storage — public bucket, path: `{user_id}/{timestamp}-{filename}`.
-
-### ✅ Sprint P3: @Mentions — COMPLETE
-
-Built in Sprint P3:
-- community.html — MentionBlot (Quill inline blot, `blotName:'mention'`, `tagName:'span'`, `className:'mention-chip'`). Autocomplete dropdown on @ in Quill: debounced searchMembers queries profiles ILIKE with active membership filter. Arrow/Enter/Escape navigation. Mention chips render as clickable gold spans navigating to member profiles. Max 3 mentions per post for non-admin/mod members (mentionCount enforced). On post submit: capture new post ID via `.select('id').single()`, extract mentions from delta.ops, INSERT 'mention' notifications in Promise.all.
-- community.html — Comment @mention: textarea input listener detects `@query`, same searchMembers, dropdown positioned below textarea. Each wireCommentComposer creates a commentMentionsMap[postId] array. On submit: fire 'mention' notifications with link `/app/post.html?id=X#comment-Y`. Max 3 mentions per comment for non-admin/mod.
-- community.html — convertMentions(text, displayNameMap): replaces @Name patterns with `.mention-chip` spans in rendered comment text. Applied with sanitizeHTML() on all comment renders.
-- community.html — sanitizeHTML() updated: allowlists `span.mention-chip` with `data-user-id` and `data-display-name`; strips all other spans.
-- community.html — Realtime INSERT subscription refactored: existing subscription kept for DELETE only; new `supabase.channel('feed-new-posts')` (no filter) handles INSERT with JS-level channel filtering, duplicate check, and full post refetch (to include post_type, video_url).
-- post.html — Same @mention textarea autocomplete and convertMentions rendering. Updated sanitizeHTML(). 'mention' notifications on comment submit with `#comment-Y` hash in link.
-- post.html — Scroll-to-comment on hash (#comment-Y in URL): smooth scrollIntoView + gold left border highlight for 2 seconds.
-
-### ✅ Sprint P2: Community Enhancements — COMPLETE
-
-Built in Sprint P2:
-- post.html — Post detail page. Full gate (session → profile completeness → membership). Renders a single post card with reactions, all comments in chronological order, real-time INSERT subscription, comment composer. Each comment has `id="comment-{id}"` for future Sprint P3 mention notifications. Video embeds rendered for post_type='video'. Two-query profile pattern throughout (no FK embeds).
-- community.html — Comment collapsing: loadFeed now pre-fetches top 3 most recent comments per post (sorted DESC, reversed to ASC) and total count in parallel. renderPostCard pre-renders the 3 comments in the thread div (hidden until toggle); if total > 3, shows "View all N comments →" link to post.html. No more async loadComments on toggle.
-- community.html — Video posts: "Add Video" button in composer toggles URL input panel. YouTube and Google Drive URL detection with 400ms debounce. Live preview iframe on valid URL. Posts with video include post_type='video' and video_url. Feed cards show "▶ Video" badge and embedded iframe. posts.post_type and posts.video_url added to all select queries.
-
-### ✅ Sprint P1: UI Polish — COMPLETE
-
-Built in Sprint P1:
-- theme.js — `THEMES` object (replaces `themes`), `getThemeNames()` export. Future themes: add key to `THEMES` + swatch color in profile.html `SWATCH_COLORS`.
-- time.js — `startRelativeTimers(intervalMs, timezone)`: optional timezone (IANA), hover `title` with absolute datetime, `cursor:help`. All call sites pass `profile.timezone`.
-- subnav.js — `initSubnav(activeTab, supabase)`: On Air banner + Live Lab red dot when any event status='live'. Always pass supabase on authenticated pages.
-- profile.html — Two tabs: Profile (all fields + Save Profile) / Account (email notification prefs + Display Theme picker). Theme picker uses `getThemeNames()` and `SWATCH_COLORS` map; live preview + separate Save Theme button.
-- events.html — Upcoming / Archive tabs. Archive lazy-loads on first click, reloads if Realtime marks an event completed while tab is hidden. Realtime subscription on events table.
-- Avatar sizes: community.html post-avatar 72×72 (doubled), member.html member-avatar 160×160 (doubled). Comment avatars unchanged.
-
----
-
 *The Performer's Lab — CLAUDE.md*
 *Sound Advice Vocal Studio · performers-lab.com*
-### ✅ Sprint P3.7: Community polish — COMPLETE
-
-Built in Sprint P3.7:
-- **Follow notifications fixed** (community.html + post.html): Follow notification IIFE wrapped in proper try/catch with `console.error` logging. Per-follower errors no longer silently fail. `.ilike()` used for link filter (case-insensitive). `excludeIds` Set pattern.
-- **Realtime bell badge UPDATE handler** (nav.js): Added UPDATE subscription on notifications table — when a notification is marked read, bell count reloads from Supabase. `reloadBellCount()` helper defined. Channel stored and cleaned up on beforeunload.
-- **Custom audio player** (community.html + post.html): `<audio controls>` replaced with custom styled player in all post renders. Play/pause toggle, seek bar, time display, single-player-at-a-time logic. Admin sees download link (⬇), non-admin does not. Composer preview player unchanged.
-- **Admin post delete** (community.html + post.html): ✕ button on all post cards for admins. Inline two-button confirm (Confirm Delete / Cancel). On confirm: DELETE from posts (CASCADE cleans comments/reactions/follows), remove card from DOM. On post.html, redirect to community after deletion.
-- **Pinned posts UI** (community.html): 📌 pin toggle button on post cards for admins. Optimistic DOM move on pin/unpin. Pinned posts rendered at top of feed with gold badge. Unpinned posts placed after last pinned card. PATCH posts.is_pinned sent to Supabase.
-
-### ✅ Sprint P3.8: Notification batching, red bell badge, comment likes, mic position — COMPLETE
-
-**Schema changes (applied before session):**
-- `notifications` table: REPLICA IDENTITY FULL set; `context_id UUID` column added (nullable)
-- `comment_reactions` table: full grants for authenticated + service_role; added to supabase_realtime publication
-
-**Database schema additions:**
-- **24. comment_reactions** — id, comment_id (FK comments CASCADE), user_id (FK auth.users CASCADE), reaction_type (text, default 'like'), created_at — UNIQUE(comment_id, user_id, reaction_type)
-
-**Notification type additions:**
-- `'comment_liked'` — someone liked a comment. `context_id` = commentId. Batched: first shows liker name, subsequent "N people liked your comment". Link → `/app/post.html?id=X#comment-Y`.
-- `'post_liked'` — someone liked a post. `context_id` = postId. Batched: first shows liker name, subsequent "N people liked your post". Link → `/app/post.html?id=X`.
-- **`context_id` batching pattern**: All `post_reply`, `mention`, `comment_liked`, and `post_liked` notifications now set `context_id` for exact-UUID batch matching. Replaces unreliable `.ilike('link', ...)` pattern.
-
-Built in Sprint P3.8:
-- **Notification batching via context_id** (community.html + post.html): All post_reply batch lookups replaced `.ilike('link', ...)` with `.eq('context_id', postId)`. All mention, post_reply, comment_liked, post_liked INSERTs include `context_id`.
-- **Red bell badge** (nav.js): Notification bell badge changed from gold (`var(--gold)`) to broadcast red (`#dc3232`) with white text (`#ffffff`).
-- **Mic button position** (community.html): Voice recorder widget moved to immediately left of Post button. Both wrapped in a `margin-left:auto` container, separated from Add Video / Upload Audio buttons.
-- **Comment likes** (community.html + post.html): ♡/♥ like button on every comment. Batch-loaded via `comment_reactions`. Optimistic toggle (INSERT/DELETE). Fires `comment_liked` notification to comment author (not self). `wireCommentLikes(container)` called after feed render, new comment append, and Realtime inserts.
-- **Post liked notifications** (community.html + post.html): `post_liked` notification fires to post author when someone claps a post. Batched with `context_id`. Self-reactions do not notify.
-
-*Last updated: May 2026 — Phase 4 + Sprint P1 + Sprint P2 + Sprint P3 + Sprint P3.5 + Sprint P3.7 + Sprint P3.8 complete*
+*Last updated: June 2026 — Phase 4.5a complete*
