@@ -1595,7 +1595,7 @@
             const { data: existing } = await supabase.from('notifications')
               .select('id, notification_count')
               .eq('user_id', commentAuthorId).eq('type', 'comment_liked').eq('read', false)
-              .eq('context_id', commentId).maybeSingle();
+              .eq('context_id', commentId).limit(1).maybeSingle();
             if (existing) {
               const newCount = (existing.notification_count || 1) + 1;
               await supabase.from('notifications').update({
@@ -1895,7 +1895,7 @@
               const { data: existing } = await supabase.from('notifications')
                 .select('id, notification_count')
                 .eq('user_id', postAuthorId).eq('type', 'post_liked').eq('read', false)
-                .eq('context_id', postId).maybeSingle();
+                .eq('context_id', postId).limit(1).maybeSingle();
               if (existing) {
                 const newCount = (existing.notification_count || 1) + 1;
                 await supabase.from('notifications').update({
@@ -2065,7 +2065,7 @@
                   .select('id, notification_count')
                   .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
                   .eq('context_id', postId)
-                  .maybeSingle();
+                  .limit(1).maybeSingle();
                 if (existing) {
                   const newCount = (existing.notification_count || 1) + 1;
                   await supabase.from('notifications').update({
