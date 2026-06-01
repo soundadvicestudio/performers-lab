@@ -2061,19 +2061,23 @@
             await Promise.all(targets.map(async followerId => {
               try {
                 console.log('post_reply context_id:', postId, typeof postId);
-                const { data: existing } = await supabase.from('notifications')
+                const { data: existing, error: lookupError } = await supabase.from('notifications')
                   .select('id, notification_count')
                   .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
                   .eq('context_id', postId)
                   .limit(1).maybeSingle();
+                console.log('batch lookup result:', JSON.stringify(existing), 'error:', JSON.stringify(lookupError));
                 if (existing) {
+                  console.log('taking UPDATE path, id:', existing.id);
                   const newCount = (existing.notification_count || 1) + 1;
-                  await supabase.from('notifications').update({
+                  const { data: updateData, error: updateError } = await supabase.from('notifications').update({
                     notification_count: newCount,
                     body: `${newCount} new replies to a post you're following`,
                     link: `/app/post.html?id=${postId}`,
                   }).eq('id', existing.id);
+                  console.log('UPDATE result:', JSON.stringify(updateData), 'error:', JSON.stringify(updateError));
                 } else {
+                  console.log('taking INSERT path — no existing found');
                   console.log('post_reply context_id:', postId, typeof postId);
                   await supabase.from('notifications').insert({
                     user_id: followerId, type: 'post_reply',
