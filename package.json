@@ -12,7 +12,8 @@
     "@supabase/supabase-js": "^2.39.0",
     "stripe": "^14.0.0",
     "resend": "^2.0.0",
-    "@daily-co/daily-js": "^0.70.0"
+    "@daily-co/daily-js": "^0.70.0",
+    "busboy": "^1.6.0"
   },
   "engines": {
     "node": "20.x"

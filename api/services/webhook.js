@@ -35,11 +35,43 @@ export default async function handler(req, res) {
 
   const session = event.data.object;
 
-  // Guard: not a service checkout
-  if (!session.metadata?.serviceId) {
+  // Guard: not a service or quote checkout
+  if (!session.metadata?.serviceId && !session.metadata?.quoteId) {
     return res.status(200).json({ received: true });
   }
 
+  // ── Quote accepted ─────────────────────────────────────────────────────────
+  if (session.metadata?.quoteId && !session.metadata?.serviceId) {
+    try {
+      const { quoteId } = session.metadata;
+
+      await supabaseRequest(
+        'PATCH',
+        `/rest/v1/service_quotes?id=eq.${quoteId}`,
+        {
+          status: 'accepted',
+          stripe_checkout_session_id: session.id,
+          stripe_payment_intent_id: session.payment_intent,
+        }
+      );
+
+      await supabaseRequest('POST', '/rest/v1/notifications', {
+        user_id: ADMIN_ID,
+        type: 'quote_accepted',
+        title: 'Quote accepted',
+        body: 'A member accepted your quote and payment was received.',
+        link: '/admin',
+        read: false,
+      });
+
+      return res.status(200).json({ received: true });
+    } catch (err) {
+      console.error('[services/webhook] quote processing error:', err.message);
+      return res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  }
+
+  // ── Service order ──────────────────────────────────────────────────────────
   try {
     const { serviceId, memberId, expedited, notes, referenceFileUrl, referenceDriveUrl } = session.metadata;
 

@@ -1000,6 +1000,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         Help Center
       </div>
+      <div class="nav-item" data-panel="services" onclick="switchPanel(this,'services'); window.initServicesPanel?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        Member Services
+      </div>
     </nav>
     <div class="sidebar-footer">
       <button class="preview-btn" onclick="openPreview()">Preview Site ↗</button>
@@ -1626,6 +1633,147 @@
 
         <!-- Topic list grouped by category -->
         <div id="help-topic-list"><div class="sub-loading">Loading…</div></div>
+      </div>
+
+      <!-- MEMBER SERVICES -->
+      <div class="panel" id="panel-services">
+        <div class="panel-title">Member Services</div>
+        <div class="panel-desc">Manage the service catalog, order queue, and member quotes.</div>
+
+        <nav class="section-nav">
+          <button class="section-nav-btn active" data-svc-section="catalog" onclick="switchSvcSection('catalog')">Catalog</button>
+          <button class="section-nav-btn" data-svc-section="orders" onclick="switchSvcSection('orders')">Orders</button>
+          <button class="section-nav-btn" data-svc-section="quotes" onclick="switchSvcSection('quotes')">Quotes</button>
+        </nav>
+
+        <!-- ── CATALOG ── -->
+        <div class="svc-section-pane active" id="svc-pane-catalog">
+          <div class="panel-desc" style="margin-bottom:1.25rem;">Manage the services available to members.</div>
+          <div class="res-list-header">
+            <button class="action-btn primary" id="svc-new-btn" onclick="window.showSvcForm(null)">+ New Service</button>
+          </div>
+
+          <!-- Service form -->
+          <div id="svc-form-container" style="display:none;">
+            <div class="res-form-panel">
+              <div class="res-form-title" id="svc-form-title">New Service</div>
+              <div class="res-form-field">
+                <label class="res-form-label">Name *</label>
+                <input type="text" class="res-form-input" id="svc-name" placeholder="Service name">
+              </div>
+              <div class="res-form-field">
+                <label class="res-form-label">Description *</label>
+                <textarea class="res-form-input" id="svc-desc" placeholder="Describe this service…" style="min-height:70px;"></textarea>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem;">
+                <div>
+                  <label class="res-form-label">Type</label>
+                  <select class="res-form-select" id="svc-type" onchange="window.onSvcTypeChange()">
+                    <option value="deliverable">Deliverable</option>
+                    <option value="virtual_session">Coaching Session</option>
+                    <option value="local">In-Studio</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="res-form-label">Position</label>
+                  <input type="number" class="res-form-input" id="svc-position" value="0" min="0">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem;">
+                <div>
+                  <label class="res-form-label">Price (dollars)</label>
+                  <input type="number" class="res-form-input" id="svc-price" placeholder="25" min="0" step="0.01">
+                </div>
+                <div id="svc-exp-price-wrap">
+                  <label class="res-form-label">Expedited Price (dollars)</label>
+                  <input type="number" class="res-form-input" id="svc-exp-price" placeholder="40 (optional)" min="0" step="0.01">
+                </div>
+              </div>
+              <div id="svc-turnaround-wrap" style="margin-bottom:1.25rem;">
+                <label class="res-form-label">Turnaround Days</label>
+                <input type="number" class="res-form-input" id="svc-turnaround" placeholder="7" min="1">
+              </div>
+              <div class="res-form-field">
+                <div class="res-toggle-wrap">
+                  <input type="checkbox" class="res-toggle-input" id="svc-active" checked>
+                  <label class="res-toggle-label" for="svc-active"></label>
+                  <span class="res-toggle-text">Active (visible to members)</span>
+                </div>
+              </div>
+              <div class="res-form-error" id="svc-form-error"></div>
+              <div class="res-form-actions">
+                <button class="res-save-btn" id="svc-save-btn" onclick="window.saveSvc()">
+                  <span id="svc-save-label">Save Service</span>
+                </button>
+                <button class="res-cancel-btn" onclick="window.hideSvcForm()">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="svc-catalog-list"><div class="sub-loading">Loading…</div></div>
+        </div>
+
+        <!-- ── ORDERS ── -->
+        <div class="svc-section-pane" id="svc-pane-orders" style="display:none;">
+          <div class="panel-desc" style="margin-bottom:1.25rem;">All service orders, sorted by deadline.</div>
+          <div id="svc-orders-active-list"><div class="sub-loading">Loading…</div></div>
+
+          <!-- Completed orders (lazy load) -->
+          <div style="margin-top:1.5rem;">
+            <button class="action-btn" id="svc-load-completed-btn" onclick="window.loadCompletedOrders()">Load Completed Orders</button>
+            <div id="svc-orders-completed-list" style="margin-top:1rem;"></div>
+          </div>
+        </div>
+
+        <!-- ── QUOTES ── -->
+        <div class="svc-section-pane" id="svc-pane-quotes" style="display:none;">
+          <div class="panel-desc" style="margin-bottom:1.25rem;">Send custom quotes to members and track responses.</div>
+
+          <!-- Quote composer -->
+          <div class="evt-create-card" style="margin-bottom:1.5rem;">
+            <div class="evt-create-title">Send a Quote</div>
+
+            <div class="field">
+              <label class="field-label">Member</label>
+              <div class="member-picker-wrap">
+                <input type="text" id="quote-member-search" placeholder="Search by display name…"
+                  autocomplete="off" oninput="window.debounceQuoteMemberSearch(this.value)">
+                <div class="member-results" id="quote-member-results"></div>
+              </div>
+              <div class="member-chips" id="quote-member-chip"></div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Related Service <span style="font-weight:300;text-transform:none;letter-spacing:0;opacity:0.65;">(optional)</span></label>
+              <select class="res-form-select" id="quote-service-select" style="width:100%;">
+                <option value="">— No specific service —</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Quote Title *</label>
+              <input type="text" id="quote-title" placeholder="e.g. Custom Studio Production Package">
+            </div>
+
+            <div class="field">
+              <label class="field-label">Description *</label>
+              <textarea id="quote-desc" placeholder="Describe what's included…" style="min-height:80px;"></textarea>
+            </div>
+
+            <div class="field" style="max-width:200px;">
+              <label class="field-label">Price (dollars) *</label>
+              <input type="number" id="quote-price" placeholder="150" min="1" step="0.01">
+            </div>
+
+            <div class="ann-error" id="quote-send-error"></div>
+            <button class="ann-send-btn" id="quote-send-btn" onclick="window.sendQuote()" style="max-width:220px;">
+              Send Quote
+            </button>
+          </div>
+
+          <!-- Quotes list -->
+          <div id="svc-quotes-list"><div class="sub-loading">Loading…</div></div>
+        </div>
       </div>
 
     </div>
@@ -3837,6 +3985,639 @@
       .replace(/^-|-$/g, '')
       .slice(0, 80);
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MEMBER SERVICES PANEL
+  // ══════════════════════════════════════════════════════════════════════════
+
+  let servicesInitialized = false;
+  let svcServices = [];
+  let svcEditingId = null;
+  let svcCompletedLoaded = false;
+
+  // Selected member for quote composer
+  let quoteMemberId = null;
+  let quoteMemberName = null;
+  let quoteMemberDebounce = null;
+
+  function switchSvcSection(id) {
+    document.querySelectorAll('.svc-section-pane').forEach(p => {
+      p.classList.remove('active');
+      p.style.display = 'none';
+    });
+    document.getElementById('svc-pane-' + id).classList.add('active');
+    document.getElementById('svc-pane-' + id).style.display = 'block';
+    document.querySelectorAll('.section-nav-btn[data-svc-section]').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.section-nav-btn[data-svc-section="${id}"]`).classList.add('active');
+  }
+  window.switchSvcSection = switchSvcSection;
+
+  window.initServicesPanel = async function() {
+    if (servicesInitialized) return;
+    servicesInitialized = true;
+    await reloadSvcData();
+    await loadSvcOrders();
+    await loadSvcQuotes();
+    populateQuoteServiceSelect();
+  };
+
+  async function reloadSvcData() {
+    const { data } = await sbClient.from('services').select('*').order('position', { ascending: true });
+    svcServices = data || [];
+    renderSvcCatalog();
+  }
+
+  // ── CATALOG ─────────────────────────────────────────────────────────────────
+
+  function renderSvcCatalog() {
+    const list = document.getElementById('svc-catalog-list');
+    if (!list) return;
+    if (!svcServices.length) {
+      list.innerHTML = '<div class="sub-empty">No services yet. Add one above.</div>';
+      return;
+    }
+    list.innerHTML = svcServices.map((s, idx) => {
+      const typeLabel = s.type === 'deliverable' ? 'Deliverable' : s.type === 'virtual_session' ? 'Coaching' : 'In-Studio';
+      const priceDisplay = s.price != null ? '$' + (s.price / 100).toFixed(s.price % 100 === 0 ? 0 : 2) : '—';
+      const activeBadge = s.active
+        ? `<span class="res-pub-badge published">Active</span>`
+        : `<span class="res-pub-badge draft">Inactive</span>`;
+      return `
+        <div class="res-item" id="svc-row-${escStr(s.id)}">
+          <div class="res-item-body">
+            <div class="res-item-badges">
+              <span class="res-type-badge">${escStr(typeLabel)}</span>
+              ${activeBadge}
+            </div>
+            <div class="res-item-title">${escStr(s.name)}</div>
+            <div class="res-item-meta">${priceDisplay}</div>
+          </div>
+          <div class="res-item-actions">
+            <button class="res-order-btn" ${idx===0?'disabled':''} onclick="window.moveSvcUp('${escStr(s.id)}')">↑</button>
+            <button class="res-order-btn" ${idx===svcServices.length-1?'disabled':''} onclick="window.moveSvcDown('${escStr(s.id)}')">↓</button>
+            <button class="evt-edit-btn" onclick="window.showSvcForm('${escStr(s.id)}')">Edit</button>
+            <button class="evt-delete-btn" onclick="window.confirmDeleteSvc('${escStr(s.id)}')">Delete</button>
+          </div>
+          <div id="svc-del-${escStr(s.id)}" style="display:none;padding:10px 0 6px;width:100%;">
+            <div class="evt-confirm-text">Delete "<strong>${escStr(s.name)}</strong>"? This cannot be undone.</div>
+            <div class="evt-confirm-btns">
+              <button class="sub-cancel-btn" onclick="window.cancelDeleteSvc('${escStr(s.id)}')">Cancel</button>
+              <button class="evt-delete-btn" id="svc-del-yes-${escStr(s.id)}" onclick="window.executeDeleteSvc('${escStr(s.id)}')">Yes, Delete</button>
+            </div>
+            <div id="svc-del-err-${escStr(s.id)}" style="font-size:12px;color:#e53935;margin-top:6px;"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.onSvcTypeChange = function() {
+    const type = document.getElementById('svc-type')?.value;
+    const deliverableOnly = type === 'deliverable';
+    document.getElementById('svc-exp-price-wrap').style.display = deliverableOnly ? '' : 'none';
+    document.getElementById('svc-turnaround-wrap').style.display = deliverableOnly ? '' : 'none';
+  };
+
+  window.showSvcForm = function(serviceId) {
+    svcEditingId = serviceId;
+    const formContainer = document.getElementById('svc-form-container');
+    const titleEl = document.getElementById('svc-form-title');
+    const saveLabel = document.getElementById('svc-save-label');
+    const errEl = document.getElementById('svc-form-error');
+
+    if (serviceId) {
+      const svc = svcServices.find(s => s.id === serviceId);
+      if (!svc) return;
+      titleEl.textContent = 'Edit Service';
+      saveLabel.textContent = 'Update Service';
+      document.getElementById('svc-name').value = svc.name || '';
+      document.getElementById('svc-desc').value = svc.description || '';
+      document.getElementById('svc-type').value = svc.type || 'deliverable';
+      document.getElementById('svc-price').value = svc.price != null ? (svc.price / 100) : '';
+      document.getElementById('svc-exp-price').value = svc.expedited_price != null ? (svc.expedited_price / 100) : '';
+      document.getElementById('svc-turnaround').value = svc.turnaround_days || '';
+      document.getElementById('svc-position').value = svc.position ?? 0;
+      document.getElementById('svc-active').checked = !!svc.active;
+    } else {
+      titleEl.textContent = 'New Service';
+      saveLabel.textContent = 'Save Service';
+      document.getElementById('svc-name').value = '';
+      document.getElementById('svc-desc').value = '';
+      document.getElementById('svc-type').value = 'deliverable';
+      document.getElementById('svc-price').value = '';
+      document.getElementById('svc-exp-price').value = '';
+      document.getElementById('svc-turnaround').value = '';
+      document.getElementById('svc-position').value = svcServices.length;
+      document.getElementById('svc-active').checked = true;
+    }
+
+    errEl.textContent = '';
+    window.onSvcTypeChange();
+    formContainer.style.display = 'block';
+    document.getElementById('svc-new-btn').style.display = 'none';
+  };
+
+  window.hideSvcForm = function() {
+    svcEditingId = null;
+    document.getElementById('svc-form-container').style.display = 'none';
+    document.getElementById('svc-new-btn').style.display = '';
+  };
+
+  window.saveSvc = async function() {
+    const name = (document.getElementById('svc-name')?.value || '').trim();
+    const description = (document.getElementById('svc-desc')?.value || '').trim();
+    const type = document.getElementById('svc-type')?.value;
+    const priceVal = parseFloat(document.getElementById('svc-price')?.value);
+    const expPriceVal = document.getElementById('svc-exp-price')?.value.trim();
+    const turnaroundVal = document.getElementById('svc-turnaround')?.value.trim();
+    const position = parseInt(document.getElementById('svc-position')?.value || '0', 10);
+    const active = document.getElementById('svc-active')?.checked ?? true;
+    const errEl = document.getElementById('svc-form-error');
+    const btn = document.getElementById('svc-save-btn');
+
+    errEl.textContent = '';
+    if (!name) { errEl.textContent = 'Name is required.'; return; }
+    if (!description) { errEl.textContent = 'Description is required.'; return; }
+    if (isNaN(priceVal) || priceVal < 0) { errEl.textContent = 'Enter a valid price.'; return; }
+
+    const payload = {
+      name, description, type, active, position,
+      price: Math.round(priceVal * 100),
+      expedited_price: (type === 'deliverable' && expPriceVal) ? Math.round(parseFloat(expPriceVal) * 100) : null,
+      turnaround_days: (type === 'deliverable' && turnaroundVal) ? parseInt(turnaroundVal, 10) : null,
+    };
+
+    btn.disabled = true;
+    if (svcEditingId) {
+      const { error } = await sbClient.from('services').update(payload).eq('id', svcEditingId);
+      btn.disabled = false;
+      if (error) { errEl.textContent = 'Could not save. ' + (error.message || ''); return; }
+    } else {
+      const { error } = await sbClient.from('services').insert(payload);
+      btn.disabled = false;
+      if (error) { errEl.textContent = 'Could not create. ' + (error.message || ''); return; }
+    }
+
+    window.hideSvcForm();
+    await reloadSvcData();
+    populateQuoteServiceSelect();
+    showToast(svcEditingId ? 'Service updated.' : 'Service created.');
+  };
+
+  window.confirmDeleteSvc = function(id) {
+    document.getElementById(`svc-del-${id}`)?.style.setProperty('display', 'block');
+  };
+  window.cancelDeleteSvc = function(id) {
+    document.getElementById(`svc-del-${id}`)?.style.setProperty('display', 'none');
+  };
+  window.executeDeleteSvc = async function(id) {
+    const btn = document.getElementById(`svc-del-yes-${id}`);
+    const errEl = document.getElementById(`svc-del-err-${id}`);
+    if (btn) btn.disabled = true;
+
+    // Block delete if orders exist
+    const { count } = await sbClient.from('service_orders').select('id', { count: 'exact', head: true }).eq('service_id', id);
+    if (count > 0) {
+      if (errEl) errEl.textContent = 'This service has existing orders and cannot be deleted.';
+      if (btn) { btn.disabled = false; }
+      return;
+    }
+
+    const { error } = await sbClient.from('services').delete().eq('id', id);
+    if (error) {
+      if (errEl) errEl.textContent = 'Could not delete. ' + (error.message || '');
+      if (btn) btn.disabled = false;
+      return;
+    }
+    svcServices = svcServices.filter(s => s.id !== id);
+    renderSvcCatalog();
+    populateQuoteServiceSelect();
+    showToast('Service deleted.');
+  };
+
+  window.moveSvcUp = async function(id) {
+    const idx = svcServices.findIndex(s => s.id === id);
+    if (idx <= 0) return;
+    const a = svcServices[idx - 1], b = svcServices[idx];
+    await Promise.all([
+      sbClient.from('services').update({ position: b.position }).eq('id', a.id),
+      sbClient.from('services').update({ position: a.position }).eq('id', b.id),
+    ]);
+    [a.position, b.position] = [b.position, a.position];
+    svcServices.sort((x, y) => x.position - y.position);
+    renderSvcCatalog();
+  };
+  window.moveSvcDown = async function(id) {
+    const idx = svcServices.findIndex(s => s.id === id);
+    if (idx < 0 || idx >= svcServices.length - 1) return;
+    const a = svcServices[idx], b = svcServices[idx + 1];
+    await Promise.all([
+      sbClient.from('services').update({ position: b.position }).eq('id', a.id),
+      sbClient.from('services').update({ position: a.position }).eq('id', b.id),
+    ]);
+    [a.position, b.position] = [b.position, a.position];
+    svcServices.sort((x, y) => x.position - y.position);
+    renderSvcCatalog();
+  };
+
+  // ── ORDERS ──────────────────────────────────────────────────────────────────
+
+  async function loadSvcOrders() {
+    const list = document.getElementById('svc-orders-active-list');
+    if (!list) return;
+
+    const { data: orders } = await sbClient
+      .from('service_orders')
+      .select('*')
+      .not('status', 'in', '("fulfilled","cancelled")')
+      .order('created_at', { ascending: true });
+
+    if (!orders?.length) {
+      list.innerHTML = '<div class="sub-empty">No active orders.</div>';
+      return;
+    }
+
+    const serviceIds = [...new Set(orders.map(o => o.service_id).filter(Boolean))];
+    const memberIds = [...new Set(orders.map(o => o.member_id).filter(Boolean))];
+
+    const [{ data: services }, { data: profiles }] = await Promise.all([
+      sbClient.from('services').select('id, name, type, turnaround_days').in('id', serviceIds),
+      sbClient.from('profiles').select('user_id, display_name').in('user_id', memberIds),
+    ]);
+
+    const svcMap = {};
+    (services || []).forEach(s => { svcMap[s.id] = s; });
+    const profMap = {};
+    (profiles || []).forEach(p => { profMap[p.user_id] = p; });
+
+    const now = Date.now();
+    const urgentThreshold = now + 24 * 3600 * 1000;
+
+    // Sort by deadline
+    orders.sort((a, b) => {
+      const daysA = svcMap[a.service_id]?.turnaround_days || 7;
+      const daysB = svcMap[b.service_id]?.turnaround_days || 7;
+      return (new Date(a.created_at).getTime() + daysA * 86400000) - (new Date(b.created_at).getTime() + daysB * 86400000);
+    });
+
+    list.innerHTML = orders.map(order => {
+      const svc = svcMap[order.service_id] || {};
+      const member = profMap[order.member_id] || {};
+      const turnaroundDays = svc.turnaround_days || 7;
+      const deadline = new Date(order.created_at).getTime() + turnaroundDays * 86400000;
+      const isUrgent = deadline < urgentThreshold;
+      const deadlineStr = new Date(deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const orderedStr = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      let statusBadge = '';
+      if (order.status === 'pending_approval') statusBadge = `<span class="res-pub-badge draft">Pending Review</span>`;
+      else if (order.status === 'in_progress') statusBadge = `<span style="background:rgba(100,149,237,0.15);color:rgba(100,149,237,0.8);border:0.5px solid rgba(100,149,237,0.3);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">In Progress</span>`;
+
+      const urgentBadge = isUrgent ? `<span style="background:rgba(224,92,92,0.12);color:#e05c5c;border:0.5px solid rgba(224,92,92,0.3);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Urgent</span>` : '';
+
+      let refFileHtml = '';
+      if (order.reference_file_url) {
+        refFileHtml = `<div style="margin-top:8px;"><button class="action-btn" style="font-size:10px;" onclick="window.openRefFile('${escStr(order.reference_file_url)}', this)">View Reference File ↗</button></div>`;
+      }
+      let refLinkHtml = order.reference_drive_url
+        ? `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">Drive/YT: <a href="${escStr(order.reference_drive_url)}" target="_blank" rel="noopener" style="color:var(--gold);">Open Link ↗</a></div>`
+        : '';
+      let notesHtml = order.notes
+        ? `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);line-height:1.55;">Notes: ${escStr(order.notes)}</div>`
+        : '';
+
+      const markInProgressBtn = order.status === 'pending_approval'
+        ? `<button class="action-btn primary" onclick="window.markOrderInProgress('${escStr(order.id)}', this)">Mark In Progress</button>`
+        : '';
+
+      let fulfillSection = '';
+      if (order.status === 'in_progress') {
+        fulfillSection = `
+          <div id="fulfill-section-${escStr(order.id)}" style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Fulfill Order</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="file" id="fulfill-file-${escStr(order.id)}" accept=".pdf,.mp3,.wav,.jpg,.jpeg,.png" style="font-size:12px;color:var(--text-muted);">
+              <button class="action-btn primary" onclick="window.fulfillOrder('${escStr(order.id)}', this)">Upload &amp; Fulfill</button>
+            </div>
+            <div id="fulfill-err-${escStr(order.id)}" style="font-size:12px;color:#e05c5c;margin-top:6px;min-height:14px;"></div>
+          </div>`;
+      }
+
+      return `
+        <div class="sub-row" style="${isUrgent ? 'border-left:3px solid #e05c5c;' : ''}">
+          <div class="sub-row-header" style="cursor:default;align-items:center;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                <span style="font-size:14px;font-weight:600;color:var(--text);">
+                  <a href="/app/member.html?id=${escStr(order.member_id)}" target="_blank" style="color:var(--text);text-decoration:none;">${escStr(member.display_name || 'Unknown')}</a>
+                </span>
+                ${statusBadge} ${urgentBadge}
+                ${order.expedited ? `<span style="background:var(--gold-dim);color:var(--gold);border:0.5px solid var(--border-gold);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Expedited</span>` : ''}
+              </div>
+              <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
+              <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Ordered ${orderedStr} · Due ${deadlineStr}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+              ${markInProgressBtn}
+            </div>
+          </div>
+          ${refFileHtml}${refLinkHtml}${notesHtml}
+          ${fulfillSection}
+        </div>`;
+    }).join('');
+  }
+
+  window.openRefFile = async function(path, btn) {
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Getting link…';
+    const { data } = await sbClient.storage.from('service-references').createSignedUrl(path, 3600);
+    btn.disabled = false;
+    btn.textContent = orig;
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, '_blank');
+    } else {
+      showToast('Could not generate download link.');
+    }
+  };
+
+  window.markOrderInProgress = async function(orderId, btn) {
+    btn.disabled = true;
+    btn.textContent = '…';
+    const { error } = await sbClient.from('service_orders').update({ status: 'in_progress' }).eq('id', orderId);
+    if (error) {
+      btn.disabled = false;
+      btn.textContent = 'Mark In Progress';
+      showToast('Could not update order.');
+    } else {
+      await loadSvcOrders();
+      showToast('Order marked in progress.');
+    }
+  };
+
+  window.fulfillOrder = async function(orderId, btn) {
+    const fileInput = document.getElementById(`fulfill-file-${orderId}`);
+    const errEl = document.getElementById(`fulfill-err-${orderId}`);
+    if (!fileInput?.files?.[0]) {
+      errEl.textContent = 'Please select a file first.';
+      return;
+    }
+
+    const { data: { session } } = await sbClient.auth.getSession();
+    btn.disabled = true;
+    btn.textContent = 'Uploading…';
+    errEl.textContent = '';
+
+    const formData = new FormData();
+    formData.append('orderId', orderId);
+    formData.append('file', fileInput.files[0]);
+
+    try {
+      const res = await fetch('/api/services/fulfill', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Fulfillment failed.';
+        btn.disabled = false;
+        btn.textContent = 'Upload & Fulfill';
+        return;
+      }
+      await loadSvcOrders();
+      showToast('Order fulfilled. Member notified.');
+    } catch {
+      errEl.textContent = 'Connection error. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Upload & Fulfill';
+    }
+  };
+
+  window.loadCompletedOrders = async function() {
+    if (svcCompletedLoaded) return;
+    svcCompletedLoaded = true;
+    const btn = document.getElementById('svc-load-completed-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+
+    const { data: orders } = await sbClient
+      .from('service_orders')
+      .select('*')
+      .in('status', ['fulfilled', 'cancelled'])
+      .order('created_at', { ascending: false });
+
+    if (btn) btn.style.display = 'none';
+    const list = document.getElementById('svc-orders-completed-list');
+    if (!orders?.length) {
+      list.innerHTML = '<div class="sub-empty">No completed orders.</div>';
+      return;
+    }
+
+    const serviceIds = [...new Set(orders.map(o => o.service_id).filter(Boolean))];
+    const memberIds = [...new Set(orders.map(o => o.member_id).filter(Boolean))];
+    const [{ data: services }, { data: profiles }] = await Promise.all([
+      sbClient.from('services').select('id, name').in('id', serviceIds),
+      sbClient.from('profiles').select('user_id, display_name').in('user_id', memberIds),
+    ]);
+    const svcMap = {};
+    (services || []).forEach(s => { svcMap[s.id] = s; });
+    const profMap = {};
+    (profiles || []).forEach(p => { profMap[p.user_id] = p; });
+
+    list.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.75rem;">Completed Orders</div>` +
+      orders.map(order => {
+        const svc = svcMap[order.service_id] || {};
+        const member = profMap[order.member_id] || {};
+        const badge = order.status === 'fulfilled'
+          ? `<span class="res-pub-badge published">Fulfilled</span>`
+          : `<span style="background:rgba(224,92,92,0.1);color:#e05c5c;border:0.5px solid rgba(224,92,92,0.25);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Cancelled</span>`;
+        const dateStr = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return `
+          <div class="sub-row">
+            <div class="sub-row-header" style="cursor:default;">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
+                <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${dateStr}</div>
+              </div>
+              <div>${badge}</div>
+            </div>
+          </div>`;
+      }).join('');
+  };
+
+  // ── QUOTES ───────────────────────────────────────────────────────────────────
+
+  function populateQuoteServiceSelect() {
+    const sel = document.getElementById('quote-service-select');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— No specific service —</option>' +
+      svcServices.map(s => `<option value="${escStr(s.id)}">${escStr(s.name)}</option>`).join('');
+  }
+
+  window.debounceQuoteMemberSearch = function(val) {
+    if (quoteMemberDebounce) clearTimeout(quoteMemberDebounce);
+    quoteMemberDebounce = setTimeout(() => doQuoteMemberSearch(val), 280);
+  };
+
+  async function doQuoteMemberSearch(val) {
+    const results = document.getElementById('quote-member-results');
+    if (!results) return;
+    if (!val.trim()) { results.classList.remove('open'); return; }
+    const { data } = await sbClient
+      .from('profiles')
+      .select('user_id, display_name, photo_url')
+      .ilike('display_name', `%${val}%`)
+      .limit(8);
+    if (!data?.length) { results.classList.remove('open'); return; }
+    results.innerHTML = data.map(p => `
+      <div class="member-result-item" onclick="window.selectQuoteMember('${escStr(p.user_id)}','${escStr(p.display_name || '')}','${escStr(p.photo_url || '')}')">
+        <div class="mr-avatar">${p.photo_url ? `<img src="${escStr(p.photo_url)}" alt="">` : escStr((p.display_name||'?')[0].toUpperCase())}</div>
+        <div class="mr-name">${escStr(p.display_name || p.user_id)}</div>
+      </div>`).join('');
+    results.classList.add('open');
+  }
+
+  window.selectQuoteMember = function(userId, name, photoUrl) {
+    quoteMemberId = userId;
+    quoteMemberName = name;
+    const results = document.getElementById('quote-member-results');
+    if (results) results.classList.remove('open');
+    const searchInput = document.getElementById('quote-member-search');
+    if (searchInput) searchInput.value = '';
+    const chip = document.getElementById('quote-member-chip');
+    if (chip) {
+      chip.innerHTML = `<div class="member-chip">
+        ${photoUrl ? `<img src="${escStr(photoUrl)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
+        ${escStr(name)}
+        <button class="chip-remove" onclick="window.clearQuoteMember()">×</button>
+      </div>`;
+    }
+  };
+
+  window.clearQuoteMember = function() {
+    quoteMemberId = null;
+    quoteMemberName = null;
+    const chip = document.getElementById('quote-member-chip');
+    if (chip) chip.innerHTML = '';
+  };
+
+  document.addEventListener('click', e => {
+    const results = document.getElementById('quote-member-results');
+    if (results && !results.contains(e.target) && e.target.id !== 'quote-member-search') {
+      results.classList.remove('open');
+    }
+  });
+
+  window.sendQuote = async function() {
+    const errEl = document.getElementById('quote-send-error');
+    const btn = document.getElementById('quote-send-btn');
+    errEl.textContent = '';
+
+    if (!quoteMemberId) { errEl.textContent = 'Select a member.'; return; }
+    const title = (document.getElementById('quote-title')?.value || '').trim();
+    const description = (document.getElementById('quote-desc')?.value || '').trim();
+    const priceVal = parseFloat(document.getElementById('quote-price')?.value || '');
+    const serviceId = document.getElementById('quote-service-select')?.value || '';
+
+    if (!title) { errEl.textContent = 'Title is required.'; return; }
+    if (!description) { errEl.textContent = 'Description is required.'; return; }
+    if (isNaN(priceVal) || priceVal <= 0) { errEl.textContent = 'Enter a valid price.'; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    const { data: { session } } = await sbClient.auth.getSession();
+
+    try {
+      const res = await fetch('/api/services/createQuote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          action: 'send',
+          memberId: quoteMemberId,
+          title,
+          description,
+          price: Math.round(priceVal * 100),
+          serviceId: serviceId || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Could not send quote.';
+        btn.disabled = false;
+        btn.textContent = 'Send Quote';
+        return;
+      }
+      // Clear form
+      document.getElementById('quote-title').value = '';
+      document.getElementById('quote-desc').value = '';
+      document.getElementById('quote-price').value = '';
+      document.getElementById('quote-service-select').value = '';
+      window.clearQuoteMember();
+      btn.disabled = false;
+      btn.textContent = 'Send Quote';
+      showToast(`Quote sent to ${quoteMemberName}.`);
+      await loadSvcQuotes();
+    } catch {
+      errEl.textContent = 'Connection error. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Send Quote';
+    }
+  };
+
+  async function loadSvcQuotes() {
+    const list = document.getElementById('svc-quotes-list');
+    if (!list) return;
+
+    const { data: quotes } = await sbClient
+      .from('service_quotes')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!quotes?.length) {
+      list.innerHTML = '<div class="sub-empty">No quotes sent yet.</div>';
+      return;
+    }
+
+    const memberIds = [...new Set(quotes.map(q => q.member_id).filter(Boolean))];
+    const { data: profiles } = await sbClient.from('profiles').select('user_id, display_name').in('user_id', memberIds);
+    const profMap = {};
+    (profiles || []).forEach(p => { profMap[p.user_id] = p; });
+
+    const statusBadge = (status) => {
+      if (status === 'pending') return `<span class="res-pub-badge draft">Pending</span>`;
+      if (status === 'accepted') return `<span class="res-pub-badge published">Accepted</span>`;
+      if (status === 'declined') return `<span style="background:rgba(240,237,230,0.05);color:var(--text-dim);border:0.5px solid var(--border);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Declined</span>`;
+      if (status === 'expired') return `<span style="background:rgba(224,92,92,0.1);color:#e05c5c;border:0.5px solid rgba(224,92,92,0.25);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Expired</span>`;
+      return '';
+    };
+
+    list.innerHTML = quotes.map(q => {
+      const member = profMap[q.member_id] || {};
+      const priceDisplay = '$' + (q.price / 100).toFixed(q.price % 100 === 0 ? 0 : 2);
+      const sentStr = new Date(q.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const expiresStr = new Date(q.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const daysLeft = q.status === 'pending' ? Math.ceil((new Date(q.expires_at) - new Date()) / 86400000) : null;
+
+      return `
+        <div class="sub-row">
+          <div class="sub-row-header" style="cursor:default;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;">${escStr(member.display_name || 'Unknown')}</div>
+              <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(q.title)}</div>
+              <div style="font-size:13px;color:var(--text-muted);font-weight:300;">${priceDisplay}</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Sent ${sentStr} · Expires ${expiresStr}${daysLeft != null ? ` · ${daysLeft}d left` : ''}</div>
+            </div>
+            <div>${statusBadge(q.status)}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── END MEMBER SERVICES ─────────────────────────────────────────────────────
 
   window.saveHelpTopic = async function() {
     const editingId = helpEditingId;
