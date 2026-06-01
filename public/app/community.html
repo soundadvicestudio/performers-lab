@@ -822,6 +822,22 @@
   let dropdownActiveIndex = 0;
   let activeDropdownContext = null; // 'quill' | { textarea, postId }
 
+  // ── Batched notifications (serverless, service role) ───────────────────
+  async function sendBatchedNotification({ type, recipientId, title, body, link, contextId }) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token || recipientId === currentUser?.id) return;
+      await fetch('/api/notifications/batchNotify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ type, recipientId, title, body, link, contextId }),
+      });
+    } catch (err) {
+      console.error('batchNotify error:', err);
+    }
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────
   function sanitizeHTML(html) {
     const ALLOWED = new Set(['b','i','u','strong','em','a','ul','ol','li','p','br','span']);
@@ -1590,31 +1606,14 @@
       if (error) {
         updateCommentLikeBtn(btn, liked, count);
       } else if (commentAuthorId && commentAuthorId !== currentUser.id) {
-        (async () => {
-          try {
-            const { data: existing } = await supabase.from('notifications')
-              .select('id, notification_count')
-              .eq('user_id', commentAuthorId).eq('type', 'comment_liked').eq('read', false)
-              .eq('context_id', commentId).limit(1).maybeSingle();
-            if (existing) {
-              const newCount = (existing.notification_count || 1) + 1;
-              await supabase.from('notifications').update({
-                notification_count: newCount,
-                body: newCount === 2 ? '2 people liked your comment' : `${newCount} people liked your comment`,
-              }).eq('id', existing.id);
-            } else {
-              await supabase.from('notifications').insert({
-                user_id: commentAuthorId, type: 'comment_liked',
-                title: 'Someone liked your comment',
-                body: `${currentUserDisplayName} liked your comment`,
-                link: `/app/post.html?id=${postId}#comment-${commentId}`,
-                read: false, notification_count: 1, context_id: commentId,
-              });
-            }
-          } catch (err) {
-            console.error('Comment like notification error:', err);
-          }
-        })();
+        sendBatchedNotification({
+          type: 'comment_liked',
+          recipientId: commentAuthorId,
+          title: 'Someone liked your comment',
+          body: `${currentUserDisplayName} liked your comment`,
+          link: `/app/post.html?id=${postId}#comment-${commentId}`,
+          contextId: commentId,
+        });
       }
     }
   }
@@ -1890,31 +1889,14 @@
       if (!rxError) {
         const postAuthorId = btn.closest('.post-card')?.dataset.authorId;
         if (postAuthorId && postAuthorId !== currentUser.id) {
-          (async () => {
-            try {
-              const { data: existing } = await supabase.from('notifications')
-                .select('id, notification_count')
-                .eq('user_id', postAuthorId).eq('type', 'post_liked').eq('read', false)
-                .eq('context_id', postId).limit(1).maybeSingle();
-              if (existing) {
-                const newCount = (existing.notification_count || 1) + 1;
-                await supabase.from('notifications').update({
-                  notification_count: newCount,
-                  body: newCount === 2 ? '2 people liked your post' : `${newCount} people liked your post`,
-                }).eq('id', existing.id);
-              } else {
-                await supabase.from('notifications').insert({
-                  user_id: postAuthorId, type: 'post_liked',
-                  title: 'Someone liked your post',
-                  body: `${currentUserDisplayName} liked your post`,
-                  link: `/app/post.html?id=${postId}`,
-                  read: false, notification_count: 1, context_id: postId,
-                });
-              }
-            } catch (err) {
-              console.error('Post like notification error:', err);
-            }
-          })();
+          sendBatchedNotification({
+            type: 'post_liked',
+            recipientId: postAuthorId,
+            title: 'Someone liked your post',
+            body: `${currentUserDisplayName} liked your post`,
+            link: `/app/post.html?id=${postId}`,
+            contextId: postId,
+          });
         }
       }
     }
@@ -2058,39 +2040,17 @@
           const excludeIds = new Set([currentUser.id, ...mentionedIds]);
           const targets = followers.filter(uid => !excludeIds.has(uid));
           if (targets.length > 0) {
-            await Promise.all(targets.map(async followerId => {
-              try {
-                console.log('post_reply context_id:', postId, typeof postId);
-                console.log('batch lookup filters:', { followerId, type: 'post_reply', read: false, context_id: postId });
-                const { data: existing, error: lookupError } = await supabase.from('notifications')
-                  .select('id, notification_count')
-                  .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
-                  .eq('context_id', postId)
-                  .limit(1).maybeSingle();
-                console.log('batch lookup result:', JSON.stringify(existing), 'error:', JSON.stringify(lookupError));
-                if (existing) {
-                  console.log('taking UPDATE path, id:', existing.id);
-                  const newCount = (existing.notification_count || 1) + 1;
-                  const { data: updateData, error: updateError } = await supabase.from('notifications').update({
-                    notification_count: newCount,
-                    body: `${newCount} new replies to a post you're following`,
-                    link: `/app/post.html?id=${postId}`,
-                  }).eq('id', existing.id);
-                  console.log('UPDATE result:', JSON.stringify(updateData), 'error:', JSON.stringify(updateError));
-                } else {
-                  console.log('taking INSERT path — no existing found');
-                  console.log('post_reply context_id:', postId, typeof postId);
-                  await supabase.from('notifications').insert({
-                    user_id: followerId, type: 'post_reply',
-                    title: "New reply on a post you're following",
-                    body: `${currentUserDisplayName} replied to a post you're following`,
-                    link: `/app/post.html?id=${postId}#comment-${newComment.id}`,
-                    read: false, notification_count: 1, context_id: postId,
-                  });
-                }
-              } catch (err) {
-                console.error('Follow notification error for', followerId, err);
-              }
+            await Promise.all(targets.map(followerId => {
+              console.log('post_reply context_id:', postId, typeof postId);
+              console.log('batch lookup filters:', { followerId, type: 'post_reply', read: false, context_id: postId });
+              return sendBatchedNotification({
+                type: 'post_reply',
+                recipientId: followerId,
+                title: "New reply on a post you're following",
+                body: `${currentUserDisplayName} replied to a post you're following`,
+                link: `/app/post.html?id=${postId}#comment-${newComment.id}`,
+                contextId: postId,
+              });
             }));
           }
         }
