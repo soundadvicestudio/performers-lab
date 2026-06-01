@@ -2061,6 +2061,7 @@
             await Promise.all(targets.map(async followerId => {
               try {
                 console.log('post_reply context_id:', postId, typeof postId);
+                console.log('batch lookup filters:', { followerId, type: 'post_reply', read: false, context_id: postId });
                 const { data: existing, error: lookupError } = await supabase.from('notifications')
                   .select('id, notification_count')
                   .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
