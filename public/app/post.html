@@ -227,6 +227,12 @@
   .follow-post-btn:hover { border-color: var(--border-mid); color: var(--text); }
   .follow-post-btn[data-following="true"] { border-color: var(--border-gold); color: var(--gold); }
 
+  /* ── POST TITLE ── */
+  .post-title {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 500;
+    color: var(--gold); margin: 0 0 8px 0; line-height: 1.3;
+  }
+
   .error-state {
     text-align: center; padding: 3rem 1rem; font-size: 14px; color: var(--text-dim);
   }
@@ -614,6 +620,7 @@
     const isVideo = post.post_type === 'video' && post.video_url;
     const isAudio = post.post_type === 'audio' && post.audio_url;
     const hasText = post.content && stripHtml(post.content).trim();
+    const hasTitle = post.title && post.title.trim();
 
     return `
       <div class="post-card" id="post-${post.id}">
@@ -629,6 +636,7 @@
             <span class="post-time" data-timestamp="${escapeHtml(post.created_at)}">${relativeTime(post.created_at)}</span>
           </div>
         </div>
+        ${hasTitle ? `<h3 class="post-title">${escapeHtml(post.title)}</h3>` : ''}
         ${hasText ? `<div class="post-body">${sanitizeHTML(post.content)}</div>` : ''}
         ${isVideo ? videoEmbedHtml(post.video_url) : ''}
         ${isAudio ? audioPlayerHtml(post.audio_url) : ''}
@@ -888,7 +896,7 @@
     // Fetch post
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('id, author_id, channel_id, content, is_pinned, created_at, post_type, video_url, audio_url')
+      .select('id, author_id, channel_id, content, title, is_pinned, created_at, post_type, video_url, audio_url')
       .eq('id', postId)
       .single();
 

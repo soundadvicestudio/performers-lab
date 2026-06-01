@@ -509,6 +509,56 @@
   }
   .follow-post-btn:hover { border-color: var(--border-mid); color: var(--text); }
   .follow-post-btn[data-following="true"] { border-color: var(--border-gold); color: var(--gold); }
+
+  /* ── POST TITLE ── */
+  .post-title {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 500;
+    color: var(--gold); margin: 0 0 8px 0; line-height: 1.3;
+  }
+
+  /* ── TITLE INPUT ── */
+  #post-title-input {
+    width: 100%; background: transparent;
+    border: none; border-bottom: 1px solid var(--border);
+    padding: 8px 0; margin-bottom: 12px;
+    font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500;
+    color: var(--text); outline: none;
+  }
+  #post-title-input:focus { border-bottom-color: var(--border-gold); }
+  #post-title-input::placeholder { color: var(--text-dim); }
+
+  /* ── COMPOSER ACTION ROW ── */
+  .composer-action-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+  }
+
+  /* ── VOICE RECORD WIDGET ── */
+  .voice-record-widget { display: flex; align-items: center; gap: 6px; }
+  .voice-record-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-3); border: 1.5px solid var(--border-gold);
+    font-size: 16px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all 0.2s; flex-shrink: 0;
+    font-family: 'Raleway', sans-serif; line-height: 1;
+  }
+  .voice-record-circle:disabled { opacity: 0.5; cursor: not-allowed; }
+  .voice-record-circle.recording { border-color: #dc3232; animation: live-pulse-red 1.5s ease-in-out infinite; }
+  @keyframes live-pulse-red {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220,50,50,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(220,50,50,0); }
+  }
+  .voice-record-timer { font-size: 0.8rem; color: #dc3232; font-family: 'Raleway', sans-serif; }
+  .voice-record-extras { display: flex; align-items: center; gap: 6px; }
+  .voice-record-discard {
+    font-size: 0.75rem; color: var(--text-muted); cursor: pointer;
+    background: none; border: none; font-family: 'Raleway', sans-serif; padding: 0;
+  }
+  .voice-record-discard:hover { color: var(--text); }
+  .voice-record-use {
+    font-size: 0.75rem; color: var(--gold); cursor: pointer;
+    background: none; border: none; font-family: 'Raleway', sans-serif; padding: 0;
+  }
+  .voice-record-use:hover { color: var(--gold-light); }
 </style>
 </head>
 <body>
@@ -557,10 +607,16 @@
 
       <!-- Composer -->
       <div class="composer-card" id="composer">
+        <input type="text" id="post-title-input" placeholder="Add a title… (optional)" maxlength="120" autocomplete="off">
         <div id="quill-editor"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div class="composer-action-row">
           <button type="button" id="btn-add-video" class="btn-add-video">▶ Add Video</button>
-          <button type="button" id="btn-add-audio" class="btn-add-media">🎵 Add Audio</button>
+          <button type="button" id="btn-upload-audio" class="btn-add-media">🎵 Upload Audio</button>
+          <div class="voice-record-widget" id="voice-record-widget">
+            <button type="button" id="voice-record-btn" class="voice-record-circle" title="Record a voice memo">🎙</button>
+            <div class="voice-record-extras" id="voice-record-extras"></div>
+          </div>
+          <button class="btn-post" id="btn-post" style="margin-left:auto;">Post</button>
         </div>
         <div id="video-input-panel" class="video-input-panel">
           <input type="text" id="video-url-input" class="video-url-input" placeholder="Paste a YouTube or Google Drive URL" autocomplete="off">
@@ -569,27 +625,14 @@
           <div id="video-preview-area" style="margin-top:8px;"></div>
         </div>
         <div id="audio-input-panel" class="audio-input-panel">
-          <div class="audio-options">
-            <div class="audio-option-upload">
-              <label class="audio-dropzone" for="audio-file-input">
-                <span>Drop audio file here<br>or click to browse</span>
-              </label>
-              <input type="file" id="audio-file-input" accept=".mp3,.m4a,.wav,.ogg,.webm" style="display:none;">
-            </div>
-            <div class="audio-option-record" id="audio-record-section">
-              <button type="button" id="audio-record-btn" class="audio-record-btn">🎙</button>
-              <div id="audio-record-label" class="audio-record-label">Record Voice Memo</div>
-              <div id="audio-record-timer" class="audio-record-timer" style="display:none;">0:00</div>
-            </div>
-          </div>
+          <label class="audio-dropzone" for="audio-file-input">
+            <span>Drop audio file here<br>or click to browse</span>
+          </label>
+          <input type="file" id="audio-file-input" accept=".mp3,.m4a,.wav,.ogg,.webm" style="display:none;">
           <div id="audio-upload-status" class="audio-upload-status" style="display:none;"></div>
           <div id="audio-preview-player" style="display:none;"></div>
-          <div id="audio-record-error" style="font-size:11px;color:var(--red);display:none;margin-top:4px;"></div>
         </div>
-        <div class="composer-footer">
-          <span class="composer-error" id="composer-error"></span>
-          <button class="btn-post" id="btn-post">Post</button>
-        </div>
+        <div style="min-height:18px;margin-top:6px;"><span class="composer-error" id="composer-error"></span></div>
       </div>
 
       <!-- Posts -->
@@ -1212,7 +1255,7 @@
 
     let query = supabase
       .from('posts')
-      .select('id, author_id, channel_id, content, is_pinned, created_at, post_type, video_url, audio_url')
+      .select('id, author_id, channel_id, content, title, is_pinned, created_at, post_type, video_url, audio_url')
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(30);
@@ -1393,6 +1436,7 @@
     const isVideo = post.post_type === 'video' && post.video_url;
     const isAudio = post.post_type === 'audio' && post.audio_url;
     const hasText = post.content && stripHtml(post.content).trim();
+    const hasTitle = post.title && post.title.trim();
 
     return `
       <div class="post-card" id="post-${post.id}" data-post-id="${post.id}" data-author-id="${escapeHtml(post.author_id)}">
@@ -1408,6 +1452,7 @@
             <span class="post-time" data-timestamp="${escapeHtml(post.created_at)}">${relativeTime(post.created_at)}</span>
           </div>
         </div>
+        ${hasTitle ? `<h3 class="post-title">${escapeHtml(post.title)}</h3>` : ''}
         ${hasText ? `<div class="post-body">${sanitizeHTML(post.content)}</div>` : ''}
         ${isVideo ? videoEmbedHtml(post.video_url) : ''}
         ${isAudio ? audioPlayerHtml(post.audio_url) : ''}
@@ -1731,6 +1776,7 @@
 
     const html = quill.root.innerHTML;
     const text = stripHtml(html).trim();
+    const title = (document.getElementById('post-title-input')?.value || '').trim() || null;
     if (!text && !videoUrl && !pendingAudioUrl) {
       errorEl.textContent = 'Post cannot be empty.';
       return;
@@ -1756,6 +1802,7 @@
       post_type: videoUrl ? 'video' : (pendingAudioUrl ? 'audio' : 'text'),
       video_url: videoUrl || null,
       audio_url: pendingAudioUrl || null,
+      title: title,
     };
 
     const { data: newPost, error } = await supabase.from('posts').insert(payload).select('id').single();
@@ -1785,6 +1832,8 @@
 
     quill.setText('');
     mentionCount = 0;
+    const titleInput = document.getElementById('post-title-input');
+    if (titleInput) titleInput.value = '';
     resetVideoComposer();
     resetAudioComposer();
   }
@@ -1873,17 +1922,21 @@
   // ── Media mutual exclusivity ───────────────────────────────────────────
   function setMediaBtnsMutualExclusive(activeType) {
     const btnVideo = document.getElementById('btn-add-video');
-    const btnAudio = document.getElementById('btn-add-audio');
-    if (!btnVideo || !btnAudio) return;
+    const btnUploadAudio = document.getElementById('btn-upload-audio');
+    const micBtn = document.getElementById('voice-record-btn');
+    if (!btnVideo || !btnUploadAudio) return;
     if (activeType === 'video') {
-      btnAudio.style.opacity = '0.4'; btnAudio.style.cursor = 'not-allowed'; btnAudio.style.pointerEvents = 'none';
+      btnUploadAudio.style.opacity = '0.4'; btnUploadAudio.style.cursor = 'not-allowed'; btnUploadAudio.style.pointerEvents = 'none';
       btnVideo.style.opacity = ''; btnVideo.style.cursor = ''; btnVideo.style.pointerEvents = '';
+      if (micBtn) { micBtn.disabled = true; micBtn.style.opacity = '0.5'; micBtn.style.cursor = 'not-allowed'; }
     } else if (activeType === 'audio') {
       btnVideo.style.opacity = '0.4'; btnVideo.style.cursor = 'not-allowed'; btnVideo.style.pointerEvents = 'none';
-      btnAudio.style.opacity = ''; btnAudio.style.cursor = ''; btnAudio.style.pointerEvents = '';
+      btnUploadAudio.style.opacity = ''; btnUploadAudio.style.cursor = ''; btnUploadAudio.style.pointerEvents = '';
+      if (micBtn) { micBtn.disabled = true; micBtn.style.opacity = '0.5'; micBtn.style.cursor = 'not-allowed'; }
     } else {
       btnVideo.style.opacity = ''; btnVideo.style.cursor = ''; btnVideo.style.pointerEvents = '';
-      btnAudio.style.opacity = ''; btnAudio.style.cursor = ''; btnAudio.style.pointerEvents = '';
+      btnUploadAudio.style.opacity = ''; btnUploadAudio.style.cursor = ''; btnUploadAudio.style.pointerEvents = '';
+      if (micBtn && !audioMediaRecorder) { micBtn.disabled = false; micBtn.style.opacity = ''; micBtn.style.cursor = ''; }
     }
   }
 
@@ -1900,131 +1953,190 @@
     pendingAudioUrl = null;
     const panel = document.getElementById('audio-input-panel');
     if (panel) panel.style.display = 'none';
-    const btn = document.getElementById('btn-add-audio');
-    if (btn) { btn.textContent = '🎵 Add Audio'; btn.classList.remove('has-audio'); }
+    const btn = document.getElementById('btn-upload-audio');
+    if (btn) { btn.textContent = '🎵 Upload Audio'; btn.classList.remove('has-audio'); }
     const statusEl = document.getElementById('audio-upload-status');
     if (statusEl) { statusEl.style.display = 'none'; statusEl.textContent = ''; }
     const preview = document.getElementById('audio-preview-player');
     if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
-    const errEl = document.getElementById('audio-record-error');
-    if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-    resetRecordSection();
+    setVoiceWidgetIdle();
     setMediaBtnsMutualExclusive(null);
   }
 
-  function resetRecordSection() {
-    const sec = document.getElementById('audio-record-section');
-    if (!sec) return;
-    sec.innerHTML = `
-      <button type="button" id="audio-record-btn" class="audio-record-btn">🎙</button>
-      <div id="audio-record-label" class="audio-record-label">Record Voice Memo</div>
-      <div id="audio-record-timer" class="audio-record-timer" style="display:none;">0:00</div>
-    `;
-    const rb = document.getElementById('audio-record-btn');
-    if (rb) rb.addEventListener('click', handleRecordClick);
+  // ── Voice record widget ────────────────────────────────────────────────
+
+  function initVoiceRecordWidget() {
+    const btn = document.getElementById('voice-record-btn');
+    if (!btn) return;
+    if (!window.MediaRecorder) {
+      btn.disabled = true;
+      btn.title = 'Recording not supported in this browser';
+      btn.style.opacity = '0.4';
+      return;
+    }
+    btn.addEventListener('click', handleVoiceRecordClick);
   }
 
-  function handleRecordingStop() {
-    audioMediaRecorder = null;
-    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-    if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
-    audioObjectUrl = URL.createObjectURL(blob);
-    const sec = document.getElementById('audio-record-section');
-    if (!sec) return;
-    sec.innerHTML = `
-      <audio controls src="${audioObjectUrl}" style="width:100%;accent-color:var(--gold);margin-bottom:8px;"></audio>
-      <div style="display:flex;gap:8px;">
-        <button type="button" id="audio-rerecord-btn" class="btn-add-media" style="margin-top:0;">🔄 Re-record</button>
-        <button type="button" id="audio-use-btn" class="btn-gold" style="padding:7px 14px;font-size:11px;border-radius:2px;margin-top:0;">✓ Use Recording</button>
-      </div>
-    `;
-    document.getElementById('audio-rerecord-btn').addEventListener('click', () => {
-      if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
-      audioChunks = [];
-      resetRecordSection();
-    });
-    document.getElementById('audio-use-btn').addEventListener('click', async () => {
-      const b = new Blob(audioChunks, { type: 'audio/webm' });
-      await uploadAudioFile(b, `voice-memo-${Date.now()}.webm`);
-    });
-  }
-
-  async function handleRecordClick() {
-    const errEl = document.getElementById('audio-record-error');
+  async function handleVoiceRecordClick() {
     if (audioMediaRecorder) {
       clearInterval(audioRecordingTimer);
       if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
       audioMediaRecorder.stop();
-      const rb = document.getElementById('audio-record-btn');
-      if (rb) rb.classList.remove('recording');
+      const btn = document.getElementById('voice-record-btn');
+      if (btn) btn.classList.remove('recording');
     } else {
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         audioChunks = [];
         audioMediaRecorder = new MediaRecorder(mediaStream);
         audioMediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-        audioMediaRecorder.onstop = handleRecordingStop;
+        audioMediaRecorder.onstop = handleVoiceRecordingStop;
         audioMediaRecorder.start();
-        const rb = document.getElementById('audio-record-btn');
-        const lbl = document.getElementById('audio-record-label');
-        const tmr = document.getElementById('audio-record-timer');
-        if (rb) { rb.textContent = '⏹'; rb.classList.add('recording'); }
-        if (lbl) { lbl.textContent = 'Recording… (tap to stop)'; lbl.style.color = '#dc3232'; }
+        setVoiceWidgetRecording();
         audioRecordingSeconds = 0;
-        if (tmr) { tmr.textContent = '0:00'; tmr.style.display = 'block'; }
         audioRecordingTimer = setInterval(() => {
           audioRecordingSeconds++;
           const m = Math.floor(audioRecordingSeconds / 60);
           const s = audioRecordingSeconds % 60;
-          const t = document.getElementById('audio-record-timer');
+          const t = document.getElementById('voice-timer');
           if (t) t.textContent = `${m}:${String(s).padStart(2, '0')}`;
         }, 1000);
       } catch (_) {
-        if (errEl) { errEl.textContent = 'Microphone access denied. Please allow microphone access in your browser settings.'; errEl.style.display = 'block'; }
+        const errEl = document.getElementById('composer-error');
+        if (errEl) {
+          errEl.textContent = 'Microphone access denied. Please allow microphone access in your browser settings.';
+          setTimeout(() => { if (errEl.textContent.startsWith('Microphone')) errEl.textContent = ''; }, 5000);
+        }
       }
+    }
+  }
+
+  function handleVoiceRecordingStop() {
+    audioMediaRecorder = null;
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+    audioObjectUrl = URL.createObjectURL(blob);
+    setVoiceWidgetPreview(audioObjectUrl);
+  }
+
+  function setVoiceWidgetIdle() {
+    const btn = document.getElementById('voice-record-btn');
+    const extras = document.getElementById('voice-record-extras');
+    if (btn) {
+      btn.textContent = '🎙';
+      btn.classList.remove('recording');
+      btn.title = 'Record a voice memo';
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      btn.onclick = null;
+    }
+    if (extras) extras.innerHTML = '';
+  }
+
+  function setVoiceWidgetRecording() {
+    const btn = document.getElementById('voice-record-btn');
+    const extras = document.getElementById('voice-record-extras');
+    if (btn) {
+      btn.textContent = '⏹';
+      btn.classList.add('recording');
+      btn.title = 'Tap to stop recording';
+    }
+    if (extras) extras.innerHTML = `<span id="voice-timer" class="voice-record-timer">0:00</span>`;
+  }
+
+  function setVoiceWidgetPreview(blobUrl) {
+    const btn = document.getElementById('voice-record-btn');
+    const extras = document.getElementById('voice-record-extras');
+    if (btn) {
+      btn.textContent = '▶';
+      btn.classList.remove('recording');
+      btn.title = 'Preview recording';
+      btn.onclick = e => {
+        e.stopPropagation();
+        const audio = new Audio(blobUrl);
+        audio.play().catch(() => {});
+      };
+    }
+    if (extras) {
+      extras.innerHTML = `
+        <button type="button" class="voice-record-discard" id="voice-discard-btn">× discard</button>
+        <button type="button" class="voice-record-use" id="voice-use-btn">✓ use</button>
+      `;
+      document.getElementById('voice-discard-btn').addEventListener('click', () => {
+        if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+        audioChunks = [];
+        setVoiceWidgetIdle();
+      });
+      document.getElementById('voice-use-btn').addEventListener('click', async () => {
+        const b = new Blob(audioChunks, { type: 'audio/webm' });
+        await uploadAudioFile(b, `voice-memo-${Date.now()}.webm`);
+      });
     }
   }
 
   async function uploadAudioFile(file, overrideName) {
     const name = overrideName || file.name || `audio-${Date.now()}.webm`;
-    const ext = name.split('.').pop().toLowerCase();
-    const path = `${currentUser.id}/${Date.now()}-${name}`;
+    const safeName = name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${currentUser.id}/${Date.now()}-${safeName}`;
     const contentType = file.type || 'audio/webm';
     const statusEl = document.getElementById('audio-upload-status');
     const preview = document.getElementById('audio-preview-player');
-    if (statusEl) { statusEl.textContent = `Uploading... ${name}`; statusEl.style.display = 'block'; }
-    const { error } = await supabase.storage.from('post-audio').upload(path, file, { contentType, upsert: false });
-    if (error) {
-      if (statusEl) statusEl.textContent = `Upload failed: ${error.message}`;
-      return;
+    if (statusEl) { statusEl.textContent = 'Uploading…'; statusEl.style.display = 'block'; }
+
+    try {
+      const { data, error } = await supabase.storage.from('post-audio').upload(path, file, { contentType, upsert: false });
+      if (error) {
+        console.error('Audio upload error:', error);
+        showAudioError('Upload failed: ' + error.message);
+        if (statusEl) { statusEl.style.display = 'none'; }
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('post-audio').getPublicUrl(data.path);
+      pendingAudioUrl = urlData.publicUrl;
+      console.log('Audio upload success, pendingAudioUrl:', pendingAudioUrl);
+      if (statusEl) { statusEl.style.display = 'none'; }
+      if (preview) {
+        preview.innerHTML = `<div class="audio-post-player"><audio controls style="width:100%;accent-color:var(--gold);"><source src="${escapeHtml(pendingAudioUrl)}" type="${contentType}">Your browser does not support audio playback.</audio></div>`;
+        preview.style.display = 'block';
+      }
+      const btnUploadAudio = document.getElementById('btn-upload-audio');
+      if (btnUploadAudio) { btnUploadAudio.textContent = '🎵 Audio Added ✓'; btnUploadAudio.classList.add('has-audio'); }
+      setMediaBtnsMutualExclusive('audio');
+    } catch (err) {
+      console.error('Audio upload exception:', err);
+      showAudioError('Upload failed. Please try again.');
+      if (statusEl) { statusEl.style.display = 'none'; }
     }
-    const { data: urlData } = supabase.storage.from('post-audio').getPublicUrl(path);
-    pendingAudioUrl = urlData.publicUrl;
-    if (statusEl) statusEl.style.display = 'none';
-    if (preview) {
-      preview.innerHTML = `<div class="audio-post-player"><audio controls style="width:100%;accent-color:var(--gold);"><source src="${escapeHtml(pendingAudioUrl)}" type="${contentType}">Your browser does not support audio playback.</audio></div>`;
-      preview.style.display = 'block';
+  }
+
+  function showAudioError(msg) {
+    const errEl = document.getElementById('composer-error');
+    if (errEl) {
+      errEl.textContent = msg;
+      setTimeout(() => { if (errEl.textContent === msg) errEl.textContent = ''; }, 4000);
     }
-    const btnAudio = document.getElementById('btn-add-audio');
-    if (btnAudio) { btnAudio.textContent = '🎵 Audio Added ✓'; btnAudio.classList.add('has-audio'); }
-    setMediaBtnsMutualExclusive('audio');
   }
 
   function initAudioComposer() {
-    const btnAddAudio = document.getElementById('btn-add-audio');
+    const btnUploadAudio = document.getElementById('btn-upload-audio');
     const panel = document.getElementById('audio-input-panel');
     const fileInput = document.getElementById('audio-file-input');
     const dropzone = document.querySelector('.audio-dropzone');
-    const rb = document.getElementById('audio-record-btn');
 
-    if (!window.MediaRecorder) {
-      const sec = document.getElementById('audio-record-section');
-      if (sec) sec.style.display = 'none';
-    }
-
-    btnAddAudio.addEventListener('click', () => {
+    btnUploadAudio.addEventListener('click', () => {
       if (pendingAudioUrl) { resetAudioComposer(); return; }
-      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+      const isOpen = panel.style.display === 'block';
+      panel.style.display = isOpen ? 'none' : 'block';
+      // Disable mic when upload panel is open, re-enable when closed
+      const micBtn = document.getElementById('voice-record-btn');
+      if (micBtn && !pendingAudioUrl) {
+        if (!isOpen) {
+          micBtn.disabled = true; micBtn.style.opacity = '0.5'; micBtn.style.cursor = 'not-allowed';
+        } else {
+          micBtn.disabled = false; micBtn.style.opacity = ''; micBtn.style.cursor = '';
+        }
+      }
     });
 
     fileInput.addEventListener('change', async e => {
@@ -2045,11 +2157,13 @@
       });
     }
 
-    if (rb) rb.addEventListener('click', handleRecordClick);
+    initVoiceRecordWidget();
   }
 
   // ── Realtime ───────────────────────────────────────────────────────────
   let newPostsChannel = null;
+
+  function getActiveChannelId() { return activeChannelId; }
 
   function subscribeRealtime() {
     if (realtimeChannel) {
@@ -2075,7 +2189,14 @@
         schema: 'public',
         table: 'posts',
       }, payload => handleNewPost(payload))
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Feed realtime connected');
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Feed realtime error — channel failed');
+        }
+      });
     window.addEventListener('beforeunload', () => {
       if (newPostsChannel) supabase.removeChannel(newPostsChannel);
     }, { once: true });
@@ -2091,14 +2212,15 @@
     // Refetch full post record (payload may not include all columns)
     const { data: post } = await supabase
       .from('posts')
-      .select('id, author_id, channel_id, content, is_pinned, created_at, post_type, video_url, audio_url')
+      .select('id, author_id, channel_id, content, title, is_pinned, created_at, post_type, video_url, audio_url')
       .eq('id', postId)
       .single();
     if (!post) return;
 
     // JS-level channel filter
-    if (activeChannelId === null && post.channel_id !== null) return;
-    if (activeChannelId !== null && post.channel_id !== activeChannelId) return;
+    const currentChannelId = getActiveChannelId();
+    if (currentChannelId === null && post.channel_id !== null) return;
+    if (currentChannelId !== null && post.channel_id !== currentChannelId) return;
 
     // Fetch author profile (two-query pattern)
     const { data: authorProfiles } = await supabase
