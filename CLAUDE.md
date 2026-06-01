@@ -836,4 +836,25 @@ Built in Sprint P3.7:
 - **Admin post delete** (community.html + post.html): ✕ button on all post cards for admins. Inline two-button confirm (Confirm Delete / Cancel). On confirm: DELETE from posts (CASCADE cleans comments/reactions/follows), remove card from DOM. On post.html, redirect to community after deletion.
 - **Pinned posts UI** (community.html): 📌 pin toggle button on post cards for admins. Optimistic DOM move on pin/unpin. Pinned posts rendered at top of feed with gold badge. Unpinned posts placed after last pinned card. PATCH posts.is_pinned sent to Supabase.
 
-*Last updated: May 2026 — Phase 4 + Sprint P1 + Sprint P2 + Sprint P3 + Sprint P3.5 + Sprint P3.7 complete*
+### ✅ Sprint P3.8: Notification batching, red bell badge, comment likes, mic position — COMPLETE
+
+**Schema changes (applied before session):**
+- `notifications` table: REPLICA IDENTITY FULL set; `context_id UUID` column added (nullable)
+- `comment_reactions` table: full grants for authenticated + service_role; added to supabase_realtime publication
+
+**Database schema additions:**
+- **24. comment_reactions** — id, comment_id (FK comments CASCADE), user_id (FK auth.users CASCADE), reaction_type (text, default 'like'), created_at — UNIQUE(comment_id, user_id, reaction_type)
+
+**Notification type additions:**
+- `'comment_liked'` — someone liked a comment. `context_id` = commentId. Batched: first shows liker name, subsequent "N people liked your comment". Link → `/app/post.html?id=X#comment-Y`.
+- `'post_liked'` — someone liked a post. `context_id` = postId. Batched: first shows liker name, subsequent "N people liked your post". Link → `/app/post.html?id=X`.
+- **`context_id` batching pattern**: All `post_reply`, `mention`, `comment_liked`, and `post_liked` notifications now set `context_id` for exact-UUID batch matching. Replaces unreliable `.ilike('link', ...)` pattern.
+
+Built in Sprint P3.8:
+- **Notification batching via context_id** (community.html + post.html): All post_reply batch lookups replaced `.ilike('link', ...)` with `.eq('context_id', postId)`. All mention, post_reply, comment_liked, post_liked INSERTs include `context_id`.
+- **Red bell badge** (nav.js): Notification bell badge changed from gold (`var(--gold)`) to broadcast red (`#dc3232`) with white text (`#ffffff`).
+- **Mic button position** (community.html): Voice recorder widget moved to immediately left of Post button. Both wrapped in a `margin-left:auto` container, separated from Add Video / Upload Audio buttons.
+- **Comment likes** (community.html + post.html): ♡/♥ like button on every comment. Batch-loaded via `comment_reactions`. Optimistic toggle (INSERT/DELETE). Fires `comment_liked` notification to comment author (not self). `wireCommentLikes(container)` called after feed render, new comment append, and Realtime inserts.
+- **Post liked notifications** (community.html + post.html): `post_liked` notification fires to post author when someone claps a post. Batched with `context_id`. Self-reactions do not notify.
+
+*Last updated: May 2026 — Phase 4 + Sprint P1 + Sprint P2 + Sprint P3 + Sprint P3.5 + Sprint P3.7 + Sprint P3.8 complete*

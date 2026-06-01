@@ -606,6 +606,17 @@
     background: none; border: none; font-family: 'Raleway', sans-serif; padding: 0;
   }
   .voice-record-use:hover { color: var(--gold-light); }
+
+  /* ── COMMENT LIKES ── */
+  .comment-like-btn {
+    background: transparent; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 0.8rem; font-family: 'Raleway', sans-serif;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 6px; border-radius: 12px; transition: all 0.2s;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .comment-like-btn:hover:not([data-liked="true"]) { color: var(--text-muted); }
+  .comment-like-btn[data-liked="true"] { color: #dc3232; }
 </style>
 </head>
 <body>
@@ -659,11 +670,13 @@
         <div class="composer-action-row">
           <button type="button" id="btn-add-video" class="btn-add-video">▶ Add Video</button>
           <button type="button" id="btn-upload-audio" class="btn-add-media">🎵 Upload Audio</button>
-          <div class="voice-record-widget" id="voice-record-widget">
-            <button type="button" id="voice-record-btn" class="voice-record-circle" title="Record a voice memo">🎙</button>
-            <div class="voice-record-extras" id="voice-record-extras"></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <div class="voice-record-widget" id="voice-record-widget">
+              <button type="button" id="voice-record-btn" class="voice-record-circle" title="Record a voice memo">🎙</button>
+              <div class="voice-record-extras" id="voice-record-extras"></div>
+            </div>
+            <button class="btn-post" id="btn-post">Post</button>
           </div>
-          <button class="btn-post" id="btn-post" style="margin-left:auto;">Post</button>
         </div>
         <div id="video-input-panel" class="video-input-panel">
           <input type="text" id="video-url-input" class="video-url-input" placeholder="Paste a YouTube or Google Drive URL" autocomplete="off">
@@ -1519,10 +1532,97 @@
     });
   }
 
+  // ── Comment likes ──────────────────────────────────────────────────────
+  async function wireCommentLikes(container) {
+    const root = container || document;
+    const btns = [...root.querySelectorAll('.comment-like-btn:not([data-wired])')];
+    if (!btns.length) return;
+    btns.forEach(btn => { btn.dataset.wired = 'true'; });
+
+    const commentIds = [...new Set(btns.map(btn => btn.dataset.commentId).filter(Boolean))];
+    if (!commentIds.length) return;
+
+    const { data: reactions } = await supabase
+      .from('comment_reactions')
+      .select('comment_id, user_id')
+      .in('comment_id', commentIds);
+
+    const likeMap = {};
+    for (const r of (reactions || [])) {
+      if (!likeMap[r.comment_id]) likeMap[r.comment_id] = { count: 0, liked: false };
+      likeMap[r.comment_id].count++;
+      if (r.user_id === currentUser.id) likeMap[r.comment_id].liked = true;
+    }
+
+    btns.forEach(btn => {
+      const cid = btn.dataset.commentId;
+      const info = likeMap[cid] || { count: 0, liked: false };
+      updateCommentLikeBtn(btn, info.liked, info.count);
+      btn.addEventListener('click', () => toggleCommentLike(btn));
+    });
+  }
+
+  function updateCommentLikeBtn(btn, liked, count) {
+    btn.dataset.liked = liked ? 'true' : 'false';
+    btn.dataset.likeCount = String(count);
+    const icon = btn.querySelector('.comment-like-icon');
+    const countEl = btn.querySelector('.comment-like-count');
+    if (icon) icon.textContent = liked ? '♥' : '♡';
+    if (countEl) countEl.textContent = count > 0 ? String(count) : '';
+  }
+
+  async function toggleCommentLike(btn) {
+    const commentId = btn.dataset.commentId;
+    const commentAuthorId = btn.dataset.commentAuthorId;
+    const postId = btn.dataset.postId;
+    const liked = btn.dataset.liked === 'true';
+    const count = parseInt(btn.dataset.likeCount || '0', 10);
+
+    updateCommentLikeBtn(btn, !liked, liked ? Math.max(0, count - 1) : count + 1);
+
+    if (liked) {
+      const { error } = await supabase.from('comment_reactions')
+        .delete().eq('comment_id', commentId).eq('user_id', currentUser.id);
+      if (error) updateCommentLikeBtn(btn, liked, count);
+    } else {
+      const { error } = await supabase.from('comment_reactions')
+        .insert({ comment_id: commentId, user_id: currentUser.id, reaction_type: 'like' });
+      if (error) {
+        updateCommentLikeBtn(btn, liked, count);
+      } else if (commentAuthorId && commentAuthorId !== currentUser.id) {
+        (async () => {
+          try {
+            const { data: existing } = await supabase.from('notifications')
+              .select('id, notification_count')
+              .eq('user_id', commentAuthorId).eq('type', 'comment_liked').eq('read', false)
+              .eq('context_id', commentId).maybeSingle();
+            if (existing) {
+              const newCount = (existing.notification_count || 1) + 1;
+              await supabase.from('notifications').update({
+                notification_count: newCount,
+                body: newCount === 2 ? '2 people liked your comment' : `${newCount} people liked your comment`,
+              }).eq('id', existing.id);
+            } else {
+              await supabase.from('notifications').insert({
+                user_id: commentAuthorId, type: 'comment_liked',
+                title: 'Someone liked your comment',
+                body: `${currentUserDisplayName} liked your comment`,
+                link: `/app/post.html?id=${postId}#comment-${commentId}`,
+                read: false, notification_count: 1, context_id: commentId,
+              });
+            }
+          } catch (err) {
+            console.error('Comment like notification error:', err);
+          }
+        })();
+      }
+    }
+  }
+
   // ── Render helpers ─────────────────────────────────────────────────────
-  function renderCommentThread(postId, totalCount, previewComments) {
+  function renderCommentThread(postId, totalCount, previewComments, postAuthorId = '') {
     const commentListHtml = previewComments.length > 0
-      ? previewComments.map(c => renderComment(c)).join('')
+      ? previewComments.map(c => renderComment(c, postAuthorId)).join('')
       : '<div class="no-comments">No comments yet. Be the first!</div>';
     const viewAllLink = totalCount > 3
       ? `<a href="/app/post.html?id=${escapeHtml(postId)}" class="view-all-link">View all ${totalCount} comments →</a>`
@@ -1590,7 +1690,7 @@
           </button>
         </div>
         <div class="comment-thread" id="thread-${post.id}">
-          ${renderCommentThread(post.id, totalCount, previewComments)}
+          ${renderCommentThread(post.id, totalCount, previewComments, post.author_id)}
         </div>
       </div>
     `;
@@ -1627,6 +1727,7 @@
     attachTooltipListeners(feedList);
     loadFollowStates(posts.map(p => p.id));
     wireAudioPlayers(feedList);
+    wireCommentLikes(feedList);
   }
 
   function confirmDeletePost(btn) {
@@ -1784,8 +1885,38 @@
         .eq('user_id', currentUser.id)
         .eq('reaction_type', reactionType);
     } else {
-      await supabase.from('post_reactions')
+      const { error: rxError } = await supabase.from('post_reactions')
         .insert({ post_id: postId, user_id: currentUser.id, reaction_type: reactionType });
+      if (!rxError) {
+        const postAuthorId = btn.closest('.post-card')?.dataset.authorId;
+        if (postAuthorId && postAuthorId !== currentUser.id) {
+          (async () => {
+            try {
+              const { data: existing } = await supabase.from('notifications')
+                .select('id, notification_count')
+                .eq('user_id', postAuthorId).eq('type', 'post_liked').eq('read', false)
+                .eq('context_id', postId).maybeSingle();
+              if (existing) {
+                const newCount = (existing.notification_count || 1) + 1;
+                await supabase.from('notifications').update({
+                  notification_count: newCount,
+                  body: newCount === 2 ? '2 people liked your post' : `${newCount} people liked your post`,
+                }).eq('id', existing.id);
+              } else {
+                await supabase.from('notifications').insert({
+                  user_id: postAuthorId, type: 'post_liked',
+                  title: 'Someone liked your post',
+                  body: `${currentUserDisplayName} liked your post`,
+                  link: `/app/post.html?id=${postId}`,
+                  read: false, notification_count: 1, context_id: postId,
+                });
+              }
+            } catch (err) {
+              console.error('Post like notification error:', err);
+            }
+          })();
+        }
+      }
     }
   }
 
@@ -1855,7 +1986,7 @@
     }
   }
 
-  function renderComment(c) {
+  function renderComment(c, postAuthorId = '') {
     const profile = c.profiles || {};
     const name = profile.display_name || 'Member';
     const displayNameMap = buildDisplayNameMap(globalProfileMap);
@@ -1867,6 +1998,7 @@
           <div class="comment-header">
             <a class="comment-author author-link" href="/app/member.html?id=${escapeHtml(c.author_id)}">${escapeHtml(name)}</a>
             <span class="comment-time" data-timestamp="${escapeHtml(c.created_at)}">${relativeTime(c.created_at)}</span>
+            <button class="comment-like-btn" data-comment-id="${escapeHtml(c.id)}" data-post-id="${escapeHtml(c.post_id || '')}" data-post-author-id="${escapeHtml(postAuthorId)}" data-comment-author-id="${escapeHtml(c.author_id)}" data-liked="false" data-like-count="0"><span class="comment-like-icon">♡</span><span class="comment-like-count"></span></button>
           </div>
           <div class="comment-text">${commentHtml}</div>
         </div>
@@ -1884,7 +2016,7 @@
     const { data: newComment, error } = await supabase
       .from('comments')
       .insert({ post_id: postId, author_id: currentUser.id, content })
-      .select('id, content, created_at, author_id')
+      .select('id, post_id, content, created_at, author_id')
       .single();
     btn.disabled = false;
 
@@ -1898,9 +2030,11 @@
     const listEl = document.getElementById(`comments-${postId}`);
     const noComments = listEl?.querySelector('.no-comments');
     if (noComments) noComments.remove();
-    if (listEl) listEl.insertAdjacentHTML('beforeend', renderComment(newComment));
+    const postAuthorId = document.getElementById('post-' + postId)?.dataset.authorId || '';
+    if (listEl) listEl.insertAdjacentHTML('beforeend', renderComment(newComment, postAuthorId));
     postCommentCounts[postId] = (postCommentCounts[postId] || 0) + 1;
     updateCommentCount(postId);
+    wireCommentLikes(listEl);
 
     // Mention notifications (non-blocking)
     const mentions = commentMentionsMap[postId] || [];
@@ -1910,7 +2044,8 @@
         user_id: uid, type: 'mention',
         title: 'You were mentioned',
         body: `${currentUserDisplayName} mentioned you in a comment`,
-        link: `/app/post.html?id=${postId}#comment-${newComment.id}`, read: false,
+        link: `/app/post.html?id=${postId}#comment-${newComment.id}`,
+        read: false, context_id: postId,
       })));
       commentMentionsMap[postId] = [];
     }
@@ -1928,7 +2063,7 @@
                 const { data: existing } = await supabase.from('notifications')
                   .select('id, notification_count')
                   .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
-                  .ilike('link', `/app/post.html?id=${postId}%`)
+                  .eq('context_id', postId)
                   .maybeSingle();
                 if (existing) {
                   const newCount = (existing.notification_count || 1) + 1;
@@ -1943,7 +2078,7 @@
                     title: "New reply on a post you're following",
                     body: `${currentUserDisplayName} replied to a post you're following`,
                     link: `/app/post.html?id=${postId}#comment-${newComment.id}`,
-                    read: false, notification_count: 1,
+                    read: false, notification_count: 1, context_id: postId,
                   });
                 }
               } catch (err) {
@@ -2028,7 +2163,7 @@
           title: 'You were mentioned',
           body: `${currentUserDisplayName} mentioned you in a post`,
           link: `/app/post.html?id=${newPost.id}`,
-          read: false,
+          read: false, context_id: newPost.id,
         }))
       );
     }

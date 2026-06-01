@@ -47,7 +47,7 @@ function injectStyles() {
     .nav-bell:hover { color: var(--text-muted); }
     .nav-notif-count {
       position: absolute; top: -6px; right: -8px;
-      background: var(--gold); color: #000;
+      background: #dc3232; color: #ffffff;
       font-size: 10px; font-weight: 700; letter-spacing: 0; line-height: 1;
       min-width: 16px; height: 16px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
