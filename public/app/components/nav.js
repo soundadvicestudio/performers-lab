@@ -130,7 +130,16 @@ async function wireNotifications(supabase) {
 
   updateBell(count || 0);
 
-  supabase.channel('nav-notifications')
+  async function reloadBellCount() {
+    const { count: unread } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('read', false);
+    updateBell(unread || 0);
+  }
+
+  const navChannel = supabase.channel('nav-notifications')
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -141,9 +150,18 @@ async function wireNotifications(supabase) {
       const current = el ? (parseInt(el.textContent, 10) || 0) : 0;
       updateBell(current + 1);
     })
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'notifications',
+      filter: `user_id=eq.${user.id}`,
+    }, () => {
+      reloadBellCount();
+    })
     .subscribe();
 
   window.addEventListener('notifications-cleared', () => updateBell(0));
+  window.addEventListener('beforeunload', () => supabase.removeChannel(navChannel), { once: true });
 }
 
 function updateMsgBadge(count) {

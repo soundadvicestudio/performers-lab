@@ -827,4 +827,13 @@ Built in Sprint P1:
 
 *The Performer's Lab — CLAUDE.md*
 *Sound Advice Vocal Studio · performers-lab.com*
-*Last updated: May 2026 — Phase 4 + Sprint P1 + Sprint P2 + Sprint P3 + Sprint P3.5 complete*
+### ✅ Sprint P3.7: Community polish — COMPLETE
+
+Built in Sprint P3.7:
+- **Follow notifications fixed** (community.html + post.html): Follow notification IIFE wrapped in proper try/catch with `console.error` logging. Per-follower errors no longer silently fail. `.ilike()` used for link filter (case-insensitive). `excludeIds` Set pattern.
+- **Realtime bell badge UPDATE handler** (nav.js): Added UPDATE subscription on notifications table — when a notification is marked read, bell count reloads from Supabase. `reloadBellCount()` helper defined. Channel stored and cleaned up on beforeunload.
+- **Custom audio player** (community.html + post.html): `<audio controls>` replaced with custom styled player in all post renders. Play/pause toggle, seek bar, time display, single-player-at-a-time logic. Admin sees download link (⬇), non-admin does not. Composer preview player unchanged.
+- **Admin post delete** (community.html + post.html): ✕ button on all post cards for admins. Inline two-button confirm (Confirm Delete / Cancel). On confirm: DELETE from posts (CASCADE cleans comments/reactions/follows), remove card from DOM. On post.html, redirect to community after deletion.
+- **Pinned posts UI** (community.html): 📌 pin toggle button on post cards for admins. Optimistic DOM move on pin/unpin. Pinned posts rendered at top of feed with gold badge. Unpinned posts placed after last pinned card. PATCH posts.is_pinned sent to Supabase.
+
+*Last updated: May 2026 — Phase 4 + Sprint P1 + Sprint P2 + Sprint P3 + Sprint P3.5 + Sprint P3.7 complete*

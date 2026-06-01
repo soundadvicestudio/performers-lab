@@ -461,12 +461,59 @@
   }
   .mention-option-name { color: var(--text); }
 
-  /* ── AUDIO POST PLAYER ── */
-  .audio-post-player {
+  /* ── CUSTOM AUDIO PLAYER ── */
+  .custom-audio-player {
+    display: flex; align-items: center; gap: 12px;
     background: var(--bg-3); border: 1px solid var(--border-gold);
-    border-radius: 8px; padding: 12px 16px; margin-top: 12px;
+    border-radius: 8px; padding: 10px 14px; margin-top: 12px;
   }
-  .audio-post-player audio { width: 100%; accent-color: var(--gold); display: block; }
+  .audio-play-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--border-gold); background: var(--bg-4);
+    color: var(--gold); font-size: 0.85rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.2s;
+  }
+  .audio-play-btn:hover { background: var(--gold-dim); }
+  .audio-progress-wrap { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .audio-progress-bar {
+    width: 100%; height: 4px; background: var(--border-mid);
+    border-radius: 2px; cursor: pointer; position: relative;
+  }
+  .audio-progress-fill {
+    height: 100%; background: var(--gold); border-radius: 2px;
+    width: 0%; transition: width 0.1s linear; pointer-events: none;
+  }
+  .audio-time-display {
+    display: flex; justify-content: space-between;
+    font-family: 'Raleway', sans-serif; font-size: 0.72rem; color: var(--text-muted);
+  }
+  .audio-download-link {
+    color: var(--text-muted); font-size: 0.9rem; text-decoration: none; flex-shrink: 0;
+  }
+  .audio-download-link:hover { color: var(--gold); }
+
+  /* ── ADMIN POST ACTIONS ── */
+  .post-admin-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+  .post-delete-btn, .post-pin-btn {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 0.85rem; padding: 4px 6px; border-radius: 4px;
+    transition: color 0.2s; line-height: 1;
+  }
+  .post-delete-btn { color: var(--text-dim); }
+  .post-delete-btn:hover { color: #dc3232; }
+  .post-pin-btn { color: var(--text-dim); }
+  .post-pin-btn[data-pinned="true"] { color: var(--gold); }
+  .post-pin-btn:hover { color: var(--gold); }
+  .post-delete-confirm { display: flex; align-items: center; gap: 6px; }
+  .btn-confirm-delete {
+    font-size: 11px; color: #dc3232; background: none; border: none;
+    cursor: pointer; font-family: 'Raleway', sans-serif; font-weight: 600; padding: 2px 4px;
+  }
+  .btn-cancel-delete {
+    font-size: 11px; color: var(--text-muted); background: none; border: none;
+    cursor: pointer; font-family: 'Raleway', sans-serif; padding: 2px 4px;
+  }
 
   /* ── AUDIO COMPOSER ── */
   .btn-add-media {
@@ -754,6 +801,7 @@
   let globalProfileMap = {}; // all loaded profiles keyed by user_id
   let mentionCount = 0; // current Quill post mention count
   let isAdminOrMod = false;
+  let isAdmin = false;
   let commentMentionsMap = {}; // postId → [{userId, displayName}]
   let _activeUserIds = null; // cached active member user_ids for mention search
   let mentionSearchTimer = null;
@@ -1043,6 +1091,7 @@
     currentUserDisplayName = profile?.display_name || currentUser.email.split('@')[0];
     userTimezone = profile?.timezone || 'America/Chicago';
     isAdminOrMod = !!(profile?.is_admin || profile?.is_moderator);
+    isAdmin = !!(profile?.is_admin);
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: currentUserDisplayName, isAdmin: profile?.is_admin });
     initSubnav('Community', supabase);
@@ -1397,14 +1446,77 @@
     return { mp3:'audio/mpeg', m4a:'audio/mp4', wav:'audio/wav', ogg:'audio/ogg', webm:'audio/webm' }[ext] || 'audio/mpeg';
   }
 
-  function audioPlayerHtml(url) {
+  function audioPlayerHtml(url, isAdminFlag) {
     if (!url) return '';
-    return `<div class="audio-post-player">
-      <audio controls preload="metadata">
-        <source src="${escapeHtml(url)}" type="${escapeHtml(audioMimeFromUrl(url))}">
-        Your browser does not support audio playback.
-      </audio>
+    return `<div class="custom-audio-player" data-src="${escapeHtml(url)}">
+      <button class="audio-play-btn" aria-label="Play"><span class="play-icon">▶</span></button>
+      <div class="audio-progress-wrap">
+        <div class="audio-progress-bar"><div class="audio-progress-fill"></div></div>
+        <div class="audio-time-display">
+          <span class="audio-current-time">0:00</span>
+          <span class="audio-duration">0:00</span>
+        </div>
+      </div>
+      ${isAdminFlag ? `<a class="audio-download-link" href="${escapeHtml(url)}" download title="Download audio">⬇</a>` : ''}
     </div>`;
+  }
+
+  function wireAudioPlayers(scope) {
+    const root = scope || document;
+    root.querySelectorAll('.custom-audio-player:not([data-wired])').forEach(player => {
+      player.dataset.wired = 'true';
+      const src = player.dataset.src;
+      const audio = new Audio(src);
+      const playBtn = player.querySelector('.audio-play-btn');
+      const playIcon = player.querySelector('.play-icon');
+      const fill = player.querySelector('.audio-progress-fill');
+      const bar = player.querySelector('.audio-progress-bar');
+      const currentTimeEl = player.querySelector('.audio-current-time');
+      const durationEl = player.querySelector('.audio-duration');
+
+      function formatTime(s) {
+        if (!isFinite(s)) return '0:00';
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return `${m}:${sec.toString().padStart(2, '0')}`;
+      }
+
+      audio.addEventListener('loadedmetadata', () => { durationEl.textContent = formatTime(audio.duration); });
+      audio.addEventListener('timeupdate', () => {
+        const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+        fill.style.width = pct + '%';
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+      });
+      audio.addEventListener('ended', () => {
+        playIcon.textContent = '▶';
+        fill.style.width = '0%';
+        audio.currentTime = 0;
+      });
+
+      playBtn.addEventListener('click', () => {
+        if (audio.paused) {
+          document.querySelectorAll('.custom-audio-player[data-wired]').forEach(p => {
+            if (p !== player && p._audio && !p._audio.paused) {
+              p._audio.pause();
+              p.querySelector('.play-icon').textContent = '▶';
+            }
+          });
+          audio.play();
+          playIcon.textContent = '⏸';
+        } else {
+          audio.pause();
+          playIcon.textContent = '▶';
+        }
+      });
+
+      bar.addEventListener('click', e => {
+        const rect = bar.getBoundingClientRect();
+        const pct = (e.clientX - rect.left) / rect.width;
+        if (audio.duration) audio.currentTime = pct * audio.duration;
+      });
+
+      player._audio = audio;
+    });
   }
 
   // ── Render helpers ─────────────────────────────────────────────────────
@@ -1439,23 +1551,29 @@
     const hasTitle = post.title && post.title.trim();
 
     return `
-      <div class="post-card" id="post-${post.id}" data-post-id="${post.id}" data-author-id="${escapeHtml(post.author_id)}">
+      <div class="post-card" id="post-${post.id}" data-post-id="${post.id}" data-author-id="${escapeHtml(post.author_id)}" data-is-pinned="${post.is_pinned ? 'true' : 'false'}">
         ${post.is_pinned ? '<div class="post-pin-badge">📌 Pinned</div>' : ''}
-        <div class="post-meta">
-          ${avatarEl(photoUrl, authorName)}
-          <div class="post-author-info">
-            <div class="post-author" style="display:flex;align-items:center;gap:6px;">
-              <a class="author-link" href="/app/member.html?id=${escapeHtml(post.author_id)}">${escapeHtml(authorName)}</a>
-              ${isVideo ? '<span class="video-badge">▶ Video</span>' : ''}
-              ${isAudio ? '<span class="video-badge">🎵 Audio</span>' : ''}
+        <div class="post-meta" style="justify-content: space-between; align-items: flex-start;">
+          <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0;">
+            ${avatarEl(photoUrl, authorName)}
+            <div class="post-author-info">
+              <div class="post-author" style="display:flex;align-items:center;gap:6px;">
+                <a class="author-link" href="/app/member.html?id=${escapeHtml(post.author_id)}">${escapeHtml(authorName)}</a>
+                ${isVideo ? '<span class="video-badge">▶ Video</span>' : ''}
+                ${isAudio ? '<span class="video-badge">🎵 Audio</span>' : ''}
+              </div>
+              <span class="post-time" data-timestamp="${escapeHtml(post.created_at)}">${relativeTime(post.created_at)}</span>
             </div>
-            <span class="post-time" data-timestamp="${escapeHtml(post.created_at)}">${relativeTime(post.created_at)}</span>
           </div>
+          ${isAdmin ? `<div class="post-admin-actions">
+            <button class="post-pin-btn" data-post-id="${escapeHtml(post.id)}" data-pinned="${post.is_pinned ? 'true' : 'false'}" title="${post.is_pinned ? 'Unpin post' : 'Pin post'}">📌</button>
+            <button class="post-delete-btn" data-post-id="${escapeHtml(post.id)}" title="Delete post">✕</button>
+          </div>` : ''}
         </div>
         ${hasTitle ? `<h3 class="post-title">${escapeHtml(post.title)}</h3>` : ''}
         ${hasText ? `<div class="post-body">${sanitizeHTML(post.content)}</div>` : ''}
         ${isVideo ? videoEmbedHtml(post.video_url) : ''}
-        ${isAudio ? audioPlayerHtml(post.audio_url) : ''}
+        ${isAudio ? audioPlayerHtml(post.audio_url, isAdmin) : ''}
         <div class="post-actions">
           <div class="reaction-wrapper" data-post-id="${post.id}">
             <button class="reaction-btn${reacted ? ' reacted' : ''}" data-post-id="${post.id}" data-reaction="clap" aria-label="Clap">
@@ -1493,12 +1611,87 @@
       btn.addEventListener('click', () => toggleFollow(btn));
     });
 
+    if (isAdmin) {
+      feedList.querySelectorAll('.post-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => confirmDeletePost(btn));
+      });
+      feedList.querySelectorAll('.post-pin-btn').forEach(btn => {
+        btn.addEventListener('click', () => togglePinPost(btn));
+      });
+    }
+
     posts.forEach(post => {
       wireCommentComposer(post.id);
     });
 
     attachTooltipListeners(feedList);
     loadFollowStates(posts.map(p => p.id));
+    wireAudioPlayers(feedList);
+  }
+
+  function confirmDeletePost(btn) {
+    const postId = btn.dataset.postId;
+    const adminActions = btn.closest('.post-admin-actions');
+    if (!adminActions) return;
+    adminActions.innerHTML = `
+      <span class="post-delete-confirm">
+        <button class="btn-confirm-delete">Confirm Delete</button>
+        <button class="btn-cancel-delete">Cancel</button>
+      </span>`;
+    adminActions.querySelector('.btn-confirm-delete').addEventListener('click', async () => {
+      await supabase.from('posts').delete().eq('id', postId);
+      const card = document.getElementById(`post-${postId}`);
+      if (card) card.remove();
+      const feedList = document.getElementById('feed-list');
+      if (!feedList.querySelector('.post-card')) {
+        feedList.innerHTML = `<div class="feed-empty"><strong>No posts yet</strong>Be the first to post in ${activeChannelId ? '#' + activeChannelName : 'the main feed'}.</div>`;
+      }
+    });
+    adminActions.querySelector('.btn-cancel-delete').addEventListener('click', () => {
+      adminActions.innerHTML = `
+        <button class="post-pin-btn" data-post-id="${postId}" data-pinned="${document.getElementById('post-' + postId)?.dataset.isPinned || 'false'}" title="Pin post">📌</button>
+        <button class="post-delete-btn" data-post-id="${postId}" title="Delete post">✕</button>`;
+      adminActions.querySelector('.post-pin-btn').addEventListener('click', () => togglePinPost(adminActions.querySelector('.post-pin-btn')));
+      adminActions.querySelector('.post-delete-btn').addEventListener('click', () => confirmDeletePost(adminActions.querySelector('.post-delete-btn')));
+    });
+  }
+
+  async function togglePinPost(btn) {
+    const postId = btn.dataset.postId;
+    const currentlyPinned = btn.dataset.pinned === 'true';
+    const newPinned = !currentlyPinned;
+
+    btn.dataset.pinned = newPinned ? 'true' : 'false';
+    btn.title = newPinned ? 'Unpin post' : 'Pin post';
+
+    const card = document.getElementById(`post-${postId}`);
+    if (card) card.dataset.isPinned = newPinned ? 'true' : 'false';
+
+    const pinBadge = card?.querySelector('.post-pin-badge');
+    if (card) {
+      if (newPinned && !pinBadge) {
+        card.insertAdjacentHTML('afterbegin', '<div class="post-pin-badge">📌 Pinned</div>');
+      } else if (!newPinned && pinBadge) {
+        pinBadge.remove();
+      }
+    }
+
+    const feedList = document.getElementById('feed-list');
+    if (card && feedList) {
+      if (newPinned) {
+        feedList.insertAdjacentElement('afterbegin', card);
+      } else {
+        // Place after the last remaining pinned card, or at top if none
+        const lastPinned = [...feedList.querySelectorAll('.post-card[data-is-pinned="true"]')].pop();
+        if (lastPinned) {
+          lastPinned.insertAdjacentElement('afterend', card);
+        } else {
+          feedList.insertAdjacentElement('afterbegin', card);
+        }
+      }
+    }
+
+    await supabase.from('posts').update({ is_pinned: newPinned }).eq('id', postId);
   }
 
   function wireCommentComposer(postId) {
@@ -1726,32 +1919,42 @@
     (async () => {
       try {
         const followers = await getPostFollowers(postId);
-        const followersToNotify = followers.filter(uid => uid !== currentUser.id && !mentionedIds.includes(uid));
-        if (followersToNotify.length > 0) {
-          await Promise.all(followersToNotify.map(async followerId => {
-            const { data: existing } = await supabase.from('notifications')
-              .select('id, notification_count')
-              .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
-              .like('link', `/app/post.html?id=${postId}%`).limit(1).maybeSingle();
-            if (!existing) {
-              await supabase.from('notifications').insert({
-                user_id: followerId, type: 'post_reply',
-                title: "New reply on a post you're following",
-                body: `${currentUserDisplayName} replied to a post you're following`,
-                link: `/app/post.html?id=${postId}#comment-${newComment.id}`,
-                read: false, notification_count: 1,
-              });
-            } else {
-              const n = (existing.notification_count || 1) + 1;
-              await supabase.from('notifications').update({
-                notification_count: n,
-                body: `${n} new replies to a post you're following`,
-                link: `/app/post.html?id=${postId}`,
-              }).eq('id', existing.id);
-            }
-          }));
+        if (followers && followers.length > 0) {
+          const excludeIds = new Set([currentUser.id, ...mentionedIds]);
+          const targets = followers.filter(uid => !excludeIds.has(uid));
+          if (targets.length > 0) {
+            await Promise.all(targets.map(async followerId => {
+              try {
+                const { data: existing } = await supabase.from('notifications')
+                  .select('id, notification_count')
+                  .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
+                  .ilike('link', `/app/post.html?id=${postId}%`)
+                  .maybeSingle();
+                if (existing) {
+                  const newCount = (existing.notification_count || 1) + 1;
+                  await supabase.from('notifications').update({
+                    notification_count: newCount,
+                    body: `${newCount} new replies to a post you're following`,
+                    link: `/app/post.html?id=${postId}`,
+                  }).eq('id', existing.id);
+                } else {
+                  await supabase.from('notifications').insert({
+                    user_id: followerId, type: 'post_reply',
+                    title: "New reply on a post you're following",
+                    body: `${currentUserDisplayName} replied to a post you're following`,
+                    link: `/app/post.html?id=${postId}#comment-${newComment.id}`,
+                    read: false, notification_count: 1,
+                  });
+                }
+              } catch (err) {
+                console.error('Follow notification error for', followerId, err);
+              }
+            }));
+          }
         }
-      } catch (_) {}
+      } catch (err) {
+        console.error('Follow notification IIFE error:', err);
+      }
       const alreadyFollowing = await isFollowingPost(postId);
       if (!alreadyFollowing) {
         await followPost(postId);
@@ -2253,8 +2456,15 @@
       newCard.querySelectorAll('.follow-post-btn').forEach(btn =>
         btn.addEventListener('click', () => toggleFollow(btn))
       );
+      if (isAdmin) {
+        const delBtn = newCard.querySelector('.post-delete-btn');
+        if (delBtn) delBtn.addEventListener('click', () => confirmDeletePost(delBtn));
+        const pinBtn = newCard.querySelector('.post-pin-btn');
+        if (pinBtn) pinBtn.addEventListener('click', () => togglePinPost(pinBtn));
+      }
       wireCommentComposer(post.id);
       attachTooltipListeners(newCard);
+      wireAudioPlayers(newCard);
       isFollowingPost(post.id).then(following => {
         const followBtn = newCard.querySelector('.follow-post-btn');
         if (followBtn) updateFollowButtonState(followBtn, following);
