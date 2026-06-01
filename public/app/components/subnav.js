@@ -2,34 +2,47 @@ const SUBNAV_STYLES_ID = 'app-subnav-styles';
 
 const TABS = [
   {
+    id: 'dashboard',
     label: 'Dashboard',
     href: '/app/dashboard.html',
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
   },
   {
+    id: 'community',
     label: 'Community',
     href: '/app/community.html',
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   },
   {
+    id: 'messages',
     label: 'Messages',
     href: '/app/messages.html',
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
   },
   {
+    id: 'live-lab',
     label: 'Live Lab',
     href: '/app/events.html',
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
   },
   {
+    id: 'resources',
     label: 'Resources',
     href: '/app/resources.html',
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
   },
   {
+    id: 'submit',
     label: 'Submit',
     href: '/app/submit.html',
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 1 3 3v8a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  },
+  {
+    id: 'services',
+    label: 'Member Services',
+    href: '/app/services.html',
+    desktopOnly: true,
+    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>`,
   },
 ];
 
@@ -105,6 +118,44 @@ function injectStyles() {
       animation: live-pulse-red 1.5s ease-in-out infinite;
     }
 
+    /* Mobile overflow button — injected into .nav-right by subnav.js */
+    .nav-more-btn {
+      display: none;
+    }
+    @media (max-width: 700px) {
+      .nav-more-btn {
+        display: flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; border-radius: 4px;
+        background: none; border: 0.5px solid var(--border-mid);
+        color: var(--text-dim); cursor: pointer;
+        font-size: 16px; letter-spacing: 0.08em;
+        font-family: 'Raleway', sans-serif;
+        transition: color 0.2s, border-color 0.2s, background 0.2s;
+        flex-shrink: 0; position: relative;
+      }
+      .nav-more-btn:hover { color: var(--gold); border-color: var(--border-gold); background: var(--gold-dim); }
+    }
+    .nav-more-dropdown {
+      display: none;
+      position: absolute; top: calc(100% + 6px); right: 0;
+      min-width: 180px;
+      background: var(--bg-2); border: 0.5px solid var(--border-gold);
+      border-radius: 4px; z-index: 300;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .nav-more-dropdown.open { display: block; }
+    .nav-more-item {
+      display: block; padding: 12px 16px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-muted); text-decoration: none;
+      transition: color 0.15s, background 0.15s;
+      border-bottom: 0.5px solid var(--border);
+      font-family: 'Raleway', sans-serif;
+    }
+    .nav-more-item:last-child { border-bottom: none; }
+    .nav-more-item:hover { color: var(--gold); background: var(--gold-dim); }
+
     @media (max-width: 700px) {
       .app-subnav {
         position: fixed; bottom: 0; top: auto; left: 0; right: 0; z-index: 200;
@@ -124,6 +175,7 @@ function injectStyles() {
       .subnav-label { white-space: nowrap; }
       body { padding-bottom: 60px; }
       .live-tab-dot { top: 6px; right: calc(50% - 14px); }
+      .subnav-tab-desktop-only { display: none !important; }
     }
   `;
   document.head.appendChild(style);
@@ -143,6 +195,46 @@ function injectBanner() {
   const subnavEl = document.getElementById('app-subnav');
   if (subnavEl && subnavEl.parentNode) {
     subnavEl.parentNode.insertBefore(banner, subnavEl.nextSibling);
+  }
+}
+
+function injectMobileOverflow() {
+  const navRight = document.querySelector('.nav-right');
+  if (!navRight || document.getElementById('nav-more-btn')) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:relative;display:flex;align-items:center;';
+
+  const btn = document.createElement('button');
+  btn.id = 'nav-more-btn';
+  btn.className = 'nav-more-btn';
+  btn.setAttribute('aria-label', 'More');
+  btn.innerHTML = '&bull;&bull;&bull;';
+
+  const dropdown = document.createElement('div');
+  dropdown.id = 'nav-more-dropdown';
+  dropdown.className = 'nav-more-dropdown';
+  dropdown.innerHTML = `
+    <a href="/app/services.html" class="nav-more-item">Member Services</a>
+  `;
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('open');
+  });
+
+  wrapper.appendChild(btn);
+  wrapper.appendChild(dropdown);
+  // Insert before sign-out button
+  const signout = navRight.querySelector('#nav-signout-btn');
+  if (signout) {
+    navRight.insertBefore(wrapper, signout);
+  } else {
+    navRight.appendChild(wrapper);
   }
 }
 
@@ -177,16 +269,21 @@ export function initSubnav(activeTab, supabase) {
   container.className = 'app-subnav';
   container.innerHTML = `
     <div class="subnav-inner">
-      ${TABS.map(tab => `
-        <a href="${tab.href}" class="subnav-tab${tab.label === activeTab ? ' active' : ''}">
-          <span class="subnav-icon">${tab.icon}</span>
-          <span class="subnav-label">${tab.label}</span>
-        </a>
-      `).join('')}
+      ${TABS.map(tab => {
+        const isActive = tab.id === activeTab || tab.label === activeTab;
+        const extraClass = tab.desktopOnly ? ' subnav-tab-desktop-only' : '';
+        return `
+          <a href="${tab.href}" class="subnav-tab${isActive ? ' active' : ''}${extraClass}">
+            <span class="subnav-icon">${tab.icon}</span>
+            <span class="subnav-label">${tab.label}</span>
+          </a>
+        `;
+      }).join('')}
     </div>
   `;
 
   injectBanner();
+  injectMobileOverflow();
 
   if (!supabase) return;
 

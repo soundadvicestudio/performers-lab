@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Member Services — The Performer's Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a96e; --gold-light: #d4b87e;
+    --gold-dim: rgba(201,169,110,0.14); --border-gold: rgba(201,169,110,0.28);
+    --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
+    --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
+    --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
+    --red: #e05c5c;
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .loading-inner { text-align: center; }
+  .loading-logo { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .loading-logo span { color: var(--gold); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 900px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+  .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
+  .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 0.5rem; }
+  .page-subheading { font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.7; margin-bottom: 3rem; max-width: 520px; }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 3.5rem; }
+  .section-heading { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; color: var(--text); margin-bottom: 0.35rem; }
+  .section-subheading { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.65; margin-bottom: 1.5rem; max-width: 540px; }
+
+  /* ── SERVICE CARDS ── */
+  .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+  .service-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 1.75rem;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: border-color 0.2s;
+  }
+  .service-card:hover { border-color: var(--border-mid); }
+  .service-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.5;
+  }
+  .service-card-header { margin-bottom: 0.75rem; }
+  .service-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); line-height: 1.2; margin-bottom: 0.5rem; }
+  .service-description { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.7; flex: 1; margin-bottom: 1.25rem; }
+  .service-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .service-price { font-size: 22px; font-family: 'Cormorant Garamond', serif; font-weight: 400; color: var(--text); }
+  .service-price-exp { font-size: 12px; color: var(--text-muted); font-weight: 300; line-height: 1.5; margin-top: 2px; }
+  .turnaround-badge {
+    display: inline-flex; align-items: center;
+    background: var(--gold-dim); color: var(--gold);
+    font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 2px; border: 0.5px solid var(--border-gold);
+    white-space: nowrap;
+  }
+  .service-actions { margin-top: auto; }
+  .btn-order {
+    width: 100%; background: var(--gold); color: #070707;
+    border: none; padding: 11px 20px; border-radius: 2px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-order:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-ghost {
+    width: 100%; background: none; color: var(--text-muted);
+    border: 0.5px solid var(--border-mid); padding: 11px 20px; border-radius: 2px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-inline-msg { font-size: 12px; color: var(--text-muted); font-weight: 400; margin-top: 0.75rem; line-height: 1.6; }
+  .single-card { max-width: 400px; }
+
+  /* ── ORDER MODAL ── */
+  #order-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+    display: none; align-items: center; justify-content: center;
+    z-index: 500; padding: 1rem;
+  }
+  #order-modal-overlay.open { display: flex; }
+  .order-modal {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 6px; padding: 2rem;
+    width: 100%; max-width: 520px; max-height: 90vh;
+    overflow-y: auto; position: relative;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .order-modal::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 400; color: var(--text); margin-bottom: 0.25rem; }
+  .modal-price-display { font-size: 18px; color: var(--gold); font-family: 'Cormorant Garamond', serif; font-weight: 400; margin-bottom: 1.5rem; }
+  .modal-divider { border: none; border-top: 0.5px solid var(--border); margin: 1.25rem 0; }
+  .modal-field { margin-bottom: 1.25rem; }
+  .modal-label {
+    display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;
+  }
+  .modal-label .opt { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.65; }
+  .modal-textarea {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 10px 13px; border-radius: 3px;
+    font-size: 13px; font-family: 'Raleway', sans-serif; font-weight: 300;
+    outline: none; resize: vertical; min-height: 80px; line-height: 1.65;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .modal-textarea:focus { border-color: var(--gold); background: var(--bg-4); }
+  .modal-textarea::placeholder { color: var(--text-dim); }
+  .modal-input {
+    width: 100%; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    color: var(--text); padding: 10px 13px; border-radius: 3px;
+    font-size: 13px; font-family: 'Raleway', sans-serif; font-weight: 300;
+    outline: none; transition: border-color 0.2s, background 0.2s;
+  }
+  .modal-input:focus { border-color: var(--gold); background: var(--bg-4); }
+  .modal-input::placeholder { color: var(--text-dim); }
+  .char-count { font-size: 11px; color: var(--text-dim); text-align: right; margin-top: 4px; }
+  .file-upload-area {
+    border: 0.5px dashed var(--border-mid); border-radius: 3px;
+    padding: 14px 16px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    background: var(--bg-3);
+  }
+  .file-upload-area:hover { border-color: var(--border-gold); background: var(--bg-4); }
+  .file-upload-text { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .file-upload-text span { color: var(--gold); }
+  .file-name-display { font-size: 12px; color: var(--text-muted); margin-top: 6px; font-weight: 300; }
+  .expedited-toggle {
+    display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+    padding: 12px 14px; background: var(--bg-3); border-radius: 3px;
+    border: 0.5px solid var(--border-mid); transition: border-color 0.2s;
+  }
+  .expedited-toggle:hover { border-color: var(--border-gold); }
+  .expedited-toggle input { margin-top: 2px; accent-color: var(--gold); flex-shrink: 0; cursor: pointer; }
+  .expedited-toggle-text { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.5; }
+  .expedited-toggle-text strong { color: var(--text); font-weight: 500; }
+  .policy-box {
+    background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    border-radius: 3px; padding: 14px 16px; margin-bottom: 1rem;
+  }
+  .policy-text { font-size: 12px; color: var(--text-muted); font-weight: 300; line-height: 1.7; }
+  .policy-agree {
+    display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+    margin-top: 10px;
+  }
+  .policy-agree input { margin-top: 2px; accent-color: var(--gold); flex-shrink: 0; cursor: pointer; }
+  .policy-agree-text { font-size: 12px; color: var(--text-muted); font-weight: 300; line-height: 1.5; }
+  .modal-actions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+  .btn-checkout {
+    width: 100%; background: var(--gold); color: #070707;
+    border: none; padding: 13px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-checkout:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-checkout:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-modal-cancel {
+    width: 100%; background: none; color: var(--text-dim);
+    border: 0.5px solid var(--border); padding: 11px; border-radius: 2px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-modal-cancel:hover { border-color: var(--border-mid); color: var(--text-muted); }
+  .modal-error { font-size: 12px; color: var(--red); font-weight: 500; min-height: 18px; margin-top: 0.5rem; }
+
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem 5rem; }
+    .page-heading { font-size: 32px; }
+    .order-modal { padding: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-inner">
+    <div class="loading-logo">The Performer's <span>Lab</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="app-nav"></div>
+  <div id="app-subnav"></div>
+
+  <main class="main">
+    <div class="page-eyebrow">For Members</div>
+    <h1 class="page-heading">Member Services</h1>
+    <p class="page-subheading">Personalized services to support your growth as a performer.</p>
+
+    <!-- Section 1: Deliverable Services -->
+    <section class="section" id="section-deliverable">
+      <h2 class="section-heading">Deliverable Services</h2>
+      <p class="section-subheading">Submit your materials and receive a finished file, delivered within your chosen turnaround.</p>
+      <div class="services-grid" id="deliverable-grid">
+        <!-- rendered by JS -->
+      </div>
+    </section>
+
+    <!-- Section 2: Coaching Sessions -->
+    <section class="section" id="section-coaching">
+      <h2 class="section-heading">1:1 Coaching Sessions</h2>
+      <p class="section-subheading">Private video coaching, one-on-one with Jonathan.</p>
+      <div id="coaching-card-wrap"></div>
+    </section>
+
+    <!-- Section 3: In-Studio -->
+    <section class="section" id="section-studio">
+      <h2 class="section-heading">In-Studio Services</h2>
+      <p class="section-subheading">Bring professional vocal production to your recording session.</p>
+      <div id="studio-card-wrap"></div>
+    </section>
+  </main>
+
+  <div id="app-footer"></div>
+</div>
+
+<!-- Order Modal -->
+<div id="order-modal-overlay">
+  <div class="order-modal">
+    <h2 class="modal-title" id="modal-service-name">Service</h2>
+    <div class="modal-price-display" id="modal-price-display"></div>
+
+    <hr class="modal-divider">
+
+    <!-- Expedited toggle (shown/hidden per service) -->
+    <div class="modal-field" id="modal-expedited-wrap" style="display:none;">
+      <label class="expedited-toggle">
+        <input type="checkbox" id="modal-expedited-check">
+        <span class="expedited-toggle-text" id="modal-expedited-label">Expedited turnaround (4 days)</span>
+      </label>
+    </div>
+
+    <!-- Notes -->
+    <div class="modal-field">
+      <label class="modal-label" for="modal-notes">Notes <span class="opt">(optional)</span></label>
+      <textarea class="modal-textarea" id="modal-notes" rows="3" maxlength="500" placeholder="Anything specific you'd like me to know?"></textarea>
+      <div class="char-count"><span id="modal-notes-count">0</span> / 500</div>
+    </div>
+
+    <!-- Reference file -->
+    <div class="modal-field">
+      <label class="modal-label">Reference materials <span class="opt">(optional)</span></label>
+      <div class="file-upload-area" id="file-upload-area" role="button" tabindex="0">
+        <p class="file-upload-text"><span>Choose file</span> — PDF, MP3, WAV, JPG, PNG · max 20 MB</p>
+        <p class="file-name-display" id="file-name-display" style="display:none;"></p>
+      </div>
+      <input type="file" id="modal-file-input" accept=".pdf,.mp3,.wav,.jpg,.jpeg,.png" style="display:none;" aria-hidden="true">
+    </div>
+
+    <!-- Reference link -->
+    <div class="modal-field">
+      <label class="modal-label" for="modal-drive-link">Google Drive or YouTube link <span class="opt">(optional)</span></label>
+      <input type="url" class="modal-input" id="modal-drive-link" placeholder="https://">
+    </div>
+
+    <!-- Cancellation policy -->
+    <div class="policy-box">
+      <p class="policy-text">All sales are final. Refunds are at the sole discretion of Sound Advice Vocal Studio.</p>
+      <label class="policy-agree">
+        <input type="checkbox" id="modal-policy-check">
+        <span class="policy-agree-text">I understand and agree to the cancellation policy.</span>
+      </label>
+    </div>
+
+    <div class="modal-error" id="modal-error"></div>
+
+    <div class="modal-actions">
+      <button class="btn-checkout" id="btn-checkout" disabled>Proceed to Checkout →</button>
+      <button class="btn-modal-cancel" id="btn-modal-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  import { initNav } from './components/nav.js';
+  import { initSubnav } from './components/subnav.js';
+  import { initFooter } from './components/footer.js';
+  import { applyTheme } from './components/theme.js';
+
+  const SUPABASE_URL  = 'https://gunkzxyefspmvytiwcwy.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1bmt6eHllZnNwbXZ5dGl3Y3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjEyOTUsImV4cCI6MjA5NTczNzI5NX0.xv3Hkk_oWHBMVLKYn2PQ7x7GItUmoFgNH2bPoXGLHdg';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      storageKey: 'sb-performers-lab-auth',
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  });
+
+  const ADMIN_ID = '6abb9d4d-ed5f-456e-aebb-aa76c8696c44';
+
+  let currentUser = null;
+  let currentService = null;
+  let selectedFile = null;
+
+  // ── MODAL STATE ──
+  const overlay       = document.getElementById('order-modal-overlay');
+  const modalTitle    = document.getElementById('modal-service-name');
+  const priceDisplay  = document.getElementById('modal-price-display');
+  const expeditedWrap = document.getElementById('modal-expedited-wrap');
+  const expeditedChk  = document.getElementById('modal-expedited-check');
+  const expeditedLbl  = document.getElementById('modal-expedited-label');
+  const notesEl       = document.getElementById('modal-notes');
+  const notesCount    = document.getElementById('modal-notes-count');
+  const fileUploadArea= document.getElementById('file-upload-area');
+  const fileInput     = document.getElementById('modal-file-input');
+  const fileNameEl    = document.getElementById('file-name-display');
+  const driveLinkEl   = document.getElementById('modal-drive-link');
+  const policyChk     = document.getElementById('modal-policy-check');
+  const btnCheckout   = document.getElementById('btn-checkout');
+  const btnCancel     = document.getElementById('btn-modal-cancel');
+  const modalError    = document.getElementById('modal-error');
+
+  function formatPrice(cents) {
+    return '$' + (cents / 100).toFixed(0);
+  }
+
+  function updateModalPrice() {
+    if (!currentService) return;
+    const useExpedited = expeditedChk.checked && currentService.expedited_price != null;
+    const price = useExpedited ? currentService.expedited_price : currentService.price;
+    priceDisplay.textContent = '$' + Number(price).toFixed(0) + (useExpedited ? ' — expedited (4 days)' : ' — standard (7 days)');
+  }
+
+  function openModal(service) {
+    currentService = service;
+    selectedFile = null;
+    modalError.textContent = '';
+
+    modalTitle.textContent = service.name;
+
+    // Reset fields
+    notesEl.value = '';
+    notesCount.textContent = '0';
+    driveLinkEl.value = '';
+    policyChk.checked = false;
+    expeditedChk.checked = false;
+    fileNameEl.style.display = 'none';
+    fileNameEl.textContent = '';
+    fileInput.value = '';
+    btnCheckout.disabled = true;
+    btnCheckout.textContent = 'Proceed to Checkout →';
+
+    // Expedited toggle
+    if (service.expedited_price != null) {
+      const diff = Number(service.expedited_price) - Number(service.price);
+      expeditedLbl.innerHTML = `<strong>Expedited turnaround (4 days)</strong> — add $${Math.round(diff)}`;
+      expeditedWrap.style.display = 'block';
+    } else {
+      expeditedWrap.style.display = 'none';
+    }
+
+    updateModalPrice();
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    currentService = null;
+    selectedFile = null;
+  }
+
+  expeditedChk.addEventListener('change', updateModalPrice);
+
+  notesEl.addEventListener('input', () => {
+    notesCount.textContent = notesEl.value.length;
+  });
+
+  policyChk.addEventListener('change', () => {
+    btnCheckout.disabled = !policyChk.checked;
+  });
+
+  fileUploadArea.addEventListener('click', () => fileInput.click());
+  fileUploadArea.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      modalError.textContent = 'File exceeds 20 MB limit. Please choose a smaller file.';
+      fileInput.value = '';
+      return;
+    }
+    selectedFile = file;
+    fileNameEl.textContent = file.name;
+    fileNameEl.style.display = 'block';
+    modalError.textContent = '';
+  });
+
+  btnCancel.addEventListener('click', closeModal);
+
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal();
+  });
+
+  btnCheckout.addEventListener('click', async () => {
+    if (!currentService || !policyChk.checked) return;
+
+    modalError.textContent = '';
+    btnCheckout.disabled = true;
+    btnCheckout.textContent = 'Processing…';
+
+    try {
+      let referenceFileUrl = '';
+
+      // Upload reference file if selected
+      if (selectedFile) {
+        const filePath = `${currentUser.id}/${Date.now()}-${selectedFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('service-references')
+          .upload(filePath, selectedFile, { upsert: false });
+
+        if (uploadError) {
+          modalError.textContent = 'File upload failed. Please try again.';
+          btnCheckout.disabled = false;
+          btnCheckout.textContent = 'Proceed to Checkout →';
+          return;
+        }
+        referenceFileUrl = uploadData.path;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const res = await fetch('/api/services/createCheckout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          serviceId: currentService.id,
+          expedited: expeditedChk.checked && currentService.expedited_price != null,
+          notes: notesEl.value.trim() || null,
+          referenceFileUrl: referenceFileUrl || null,
+          referenceDriveUrl: driveLinkEl.value.trim() || null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        modalError.textContent = data.error || 'Could not start checkout. Please try again.';
+        btnCheckout.disabled = false;
+        btnCheckout.textContent = 'Proceed to Checkout →';
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      modalError.textContent = 'Connection error. Please try again.';
+      btnCheckout.disabled = false;
+      btnCheckout.textContent = 'Proceed to Checkout →';
+    }
+  });
+
+  // ── RENDER DELIVERABLE CARDS ──
+  function renderDeliverableCard(service) {
+    const card = document.createElement('div');
+    card.className = 'service-card';
+
+    const priceHtml = service.expedited_price != null
+      ? `<div class="service-price">$${Number(service.price).toFixed(0)}</div>
+         <div class="service-price-exp">or $${Number(service.expedited_price).toFixed(0)} expedited (4-day turnaround)</div>`
+      : `<div class="service-price">$${Number(service.price).toFixed(0)}</div>`;
+
+    const turnaroundDays = service.turnaround_days || 7;
+
+    card.innerHTML = `
+      <div class="service-card-header">
+        <div class="service-name">${escapeHtml(service.name)}</div>
+      </div>
+      <p class="service-description">${escapeHtml(service.description)}</p>
+      <div class="service-meta">
+        ${priceHtml}
+        <div class="turnaround-badge">${turnaroundDays}-day turnaround</div>
+      </div>
+      <div class="service-actions">
+        <button class="btn-order" data-service-id="${service.id}">Order Now</button>
+      </div>
+    `;
+
+    card.querySelector('.btn-order').addEventListener('click', () => openModal(service));
+    return card;
+  }
+
+  // ── RENDER COACHING CARD ──
+  function renderCoachingCard(service) {
+    const wrap = document.getElementById('coaching-card-wrap');
+    const card = document.createElement('div');
+    card.className = 'service-card single-card';
+    card.innerHTML = `
+      <div class="service-name">${escapeHtml(service.name)}</div>
+      <p class="service-description">${escapeHtml(service.description)}</p>
+      <div class="service-meta">
+        <div class="service-price">$${Number(service.price).toFixed(0)}<span style="font-size:14px;color:var(--text-muted);font-family:'Raleway',sans-serif;font-weight:300;"> / session</span></div>
+      </div>
+      <div class="service-actions">
+        <button class="btn-ghost" id="btn-book-session">Book a Session</button>
+        <p class="btn-inline-msg" id="booking-soon-msg" style="display:none;">Booking opens soon. Check back shortly.</p>
+      </div>
+    `;
+    card.querySelector('#btn-book-session').addEventListener('click', () => {
+      document.getElementById('booking-soon-msg').style.display = 'block';
+    });
+    wrap.appendChild(card);
+  }
+
+  // ── RENDER STUDIO CARD ──
+  async function renderStudioCard(service) {
+    const wrap = document.getElementById('studio-card-wrap');
+    const card = document.createElement('div');
+    card.className = 'service-card single-card';
+    card.innerHTML = `
+      <div class="service-name">${escapeHtml(service.name)}</div>
+      <p class="service-description">${escapeHtml(service.description)}</p>
+      <div class="service-actions">
+        <button class="btn-ghost" id="btn-quote-request">Request a Quote</button>
+        <p class="btn-inline-msg" id="quote-msg" style="display:none;"></p>
+      </div>
+    `;
+    card.querySelector('#btn-quote-request').addEventListener('click', () => handleQuoteRequest(service));
+    wrap.appendChild(card);
+  }
+
+  // ── QUOTE REQUEST (DM) ──
+  async function handleQuoteRequest(service) {
+    const btn = document.getElementById('btn-quote-request');
+    const msg = document.getElementById('quote-msg');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    msg.style.display = 'none';
+
+    try {
+      // Find or create conversation with admin
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(participant_1_id.eq.${currentUser.id},participant_2_id.eq.${ADMIN_ID}),and(participant_1_id.eq.${ADMIN_ID},participant_2_id.eq.${currentUser.id})`)
+        .limit(1);
+
+      let conversationId;
+      if (convs && convs.length > 0) {
+        conversationId = convs[0].id;
+      } else {
+        const { data: newConv, error: convErr } = await supabase
+          .from('conversations')
+          .insert({ participant_1_id: currentUser.id, participant_2_id: ADMIN_ID })
+          .select('id')
+          .single();
+        if (convErr) throw convErr;
+        conversationId = newConv.id;
+      }
+
+      // Fetch display_name for message
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', currentUser.id)
+        .single();
+      const displayName = profile?.display_name || 'A member';
+
+      // INSERT message
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        sender_id: currentUser.id,
+        content: `Hi Jonathan, I'm interested in the ${service.name} service and would like to request a quote. [Member can add details in the conversation.]`,
+        read: false,
+      });
+
+      // INSERT notification for admin
+      await supabase.from('notifications').insert({
+        user_id: ADMIN_ID,
+        type: 'quote_request',
+        title: 'New quote request',
+        body: `${displayName} requested a quote for ${service.name}`,
+        link: '/app/messages.html',
+        read: false,
+      });
+
+      window.location.href = `/app/messages.html?conversation=${conversationId}`;
+    } catch (err) {
+      console.error('[quote request]', err.message);
+      btn.disabled = false;
+      btn.textContent = 'Request a Quote';
+      msg.textContent = 'Something went wrong. Please try again.';
+      msg.style.display = 'block';
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── INIT ──
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/app/login.html'; return; }
+
+    currentUser = session.user;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, is_admin, theme')
+      .eq('user_id', currentUser.id)
+      .single();
+
+    const name = profile?.display_name || session.user.email.split('@')[0];
+    applyTheme(profile?.theme || 'gold');
+    initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
+    initSubnav('services', supabase);
+
+    // Fetch all active services ordered by position
+    const { data: services } = await supabase
+      .from('services')
+      .select('*')
+      .eq('active', true)
+      .order('position', { ascending: true });
+
+    const deliverableGrid = document.getElementById('deliverable-grid');
+
+    for (const service of (services || [])) {
+      if (service.type === 'deliverable') {
+        deliverableGrid.appendChild(renderDeliverableCard(service));
+      } else if (service.type === 'virtual_session') {
+        renderCoachingCard(service);
+      } else if (service.type === 'local') {
+        renderStudioCard(service);
+      }
+    }
+
+    initFooter();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>

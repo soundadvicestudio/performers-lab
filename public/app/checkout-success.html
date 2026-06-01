@@ -98,7 +98,8 @@
   <div id="app-nav"></div>
   <div id="app-subnav"></div>
 
-  <main class="main">
+  <!-- Membership success (default) -->
+  <main class="main" id="membership-success">
     <div class="success-icon">✓</div>
     <div class="success-eyebrow">Payment confirmed</div>
     <h1 class="success-heading">You're in. Welcome to <em>The Performer's Lab.</em></h1>
@@ -109,6 +110,18 @@
         <div class="status-spinner"></div>
         <div class="status-label">Activating your membership…</div>
       </div>
+    </div>
+  </main>
+
+  <!-- Service order success -->
+  <main class="main" id="service-success" style="display:none;">
+    <div class="success-icon">✓</div>
+    <div class="success-eyebrow">Order received</div>
+    <h1 class="success-heading">Your order is in. We'll get <em>started</em> shortly.</h1>
+    <p class="success-body">Your order has been received. We'll review your materials and get started within 24 hours.</p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;">
+      <a href="/app/my-orders.html" class="btn-dashboard">View My Orders →</a>
+      <a href="/app/services.html" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;transition:color 0.2s;">← Back to Services</a>
     </div>
   </main>
 
@@ -194,6 +207,15 @@
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display     = 'block';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const checkoutType = urlParams.get('type');
+
+    if (checkoutType === 'service') {
+      document.getElementById('membership-success').style.display = 'none';
+      document.getElementById('service-success').style.display    = 'flex';
+      return;
+    }
 
     // Check if already active (fast webhook, or page refresh after activation)
     const { data: membership } = await supabase
