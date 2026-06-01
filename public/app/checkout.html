@@ -280,10 +280,10 @@
     discountMsg.className   = 'discount-msg';
 
     try {
-      const res  = await fetch('/api/stripe/createCheckout', {
+      const res  = await fetch('/api/checkout/createCheckout', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ priceId: getPriceId(), discountCode: code, userId, email: userEmail }),
+        body:    JSON.stringify({ type: 'membership', priceId: getPriceId(), discountCode: code, userId, email: userEmail }),
       });
       const data = await res.json();
 
@@ -323,10 +323,11 @@
     }
 
     try {
-      const res  = await fetch('/api/stripe/createCheckout', {
+      const res  = await fetch('/api/checkout/createCheckout', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
+          type:         'membership',
           priceId:      getPriceId(),
           discountCode: discountApplied || undefined,
           userId,

@@ -444,13 +444,14 @@
 
       const { data: { session } } = await supabase.auth.getSession();
 
-      const res = await fetch('/api/services/createCheckout', {
+      const res = await fetch('/api/checkout/createCheckout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
+          type: 'service',
           serviceId: currentService.id,
           expedited: expeditedChk.checked && currentService.expedited_price != null,
           notes: notesEl.value.trim() || null,
