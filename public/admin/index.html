@@ -3866,10 +3866,9 @@
       await reloadHelpData();
       showToast('Topic updated.');
     } else {
-      const { data: { user } } = await sbClient.auth.getUser();
       const slug = generateHelpSlug(titleVal);
       const { error } = await sbClient.from('help_topics')
-        .insert({ title: titleVal, slug, category_id: catId, position, published, content, created_by: user?.id });
+        .insert({ title: titleVal, slug, category_id: catId, position, published, content });
       btn.disabled = false;
       if (error) { errEl.textContent = 'Could not create topic. ' + (error.message || ''); return; }
       window.hideHelpTopicForm();
