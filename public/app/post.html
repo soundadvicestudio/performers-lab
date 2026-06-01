@@ -1030,7 +1030,6 @@
           const targets = followers.filter(uid => !excludeIds.has(uid));
           if (targets.length > 0) {
             await Promise.all(targets.map(followerId => {
-              console.log('post_reply context_id:', postId, typeof postId);
               return sendBatchedNotification({
                 type: 'post_reply',
                 recipientId: followerId,
