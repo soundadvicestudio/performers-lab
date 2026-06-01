@@ -53,6 +53,7 @@ export function initFooter() {
           <a href="/app/profile.html">Profile</a>
           <a href="/app/community.html">Community</a>
           <a href="/app/resources.html">Resources</a>
+          <a href="/app/help.html">Help Center</a>
         </div>
       </div>
     </footer>

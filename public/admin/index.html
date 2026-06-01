@@ -923,6 +923,27 @@
   .evt-recording-row { display: flex; gap: 8px; align-items: flex-end; }
   .evt-recording-row input { flex: 1; }
   .evt-rec-error { font-size: 12px; color: #e05c5c; margin-top: 5px; min-height: 14px; }
+
+  /* ── HELP CENTER QUILL ── */
+  #help-quill-wrap .ql-toolbar {
+    background: var(--bg-3) !important; border: 0.5px solid var(--border) !important;
+    border-bottom: none !important; border-radius: 3px 3px 0 0;
+  }
+  #help-quill-wrap .ql-container {
+    background: var(--bg-3) !important; border: 0.5px solid var(--border) !important;
+    border-top: none !important; border-radius: 0 0 3px 3px;
+    font-family: 'Raleway', sans-serif !important; font-size: 14px !important;
+    color: var(--text) !important; min-height: 200px;
+  }
+  #help-quill-wrap .ql-container:focus-within { border-color: var(--border-gold) !important; }
+  #help-quill-wrap .ql-editor.ql-blank::before { color: var(--text-dim) !important; font-style: normal !important; }
+  #help-quill-wrap .ql-snow .ql-stroke { stroke: var(--text-dim) !important; }
+  #help-quill-wrap .ql-snow .ql-fill { fill: var(--text-dim) !important; }
+  #help-quill-wrap .ql-snow .ql-picker { color: var(--text-dim) !important; }
+  #help-quill-wrap .ql-snow button:hover .ql-stroke,
+  #help-quill-wrap .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
+  #help-quill-wrap .ql-snow button:hover .ql-fill,
+  #help-quill-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
 </style>
 </head>
 <body>
@@ -974,6 +995,10 @@
       <div class="nav-item" data-panel="resources" onclick="switchPanel(this,'resources'); window.initResources?.()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         Resources
+      </div>
+      <div class="nav-item" data-panel="help-center" onclick="switchPanel(this,'help-center'); window.initHelpCenter?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Help Center
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -1528,6 +1553,79 @@
         <div id="evt-view-past" style="display:none;">
           <div id="evt-past-list"><div class="sub-loading">Loading…</div></div>
         </div>
+      </div>
+
+      <!-- HELP CENTER -->
+      <div class="panel" id="panel-help-center">
+        <div class="panel-title">Help Center</div>
+        <div class="panel-desc">Manage help topics and categories visible to members.</div>
+
+        <!-- Categories collapsible -->
+        <div class="res-cat-section">
+          <button class="res-cat-toggle-btn" onclick="window.toggleHelpCategories()">
+            <span>Manage Categories</span>
+            <span id="help-cat-chevron" style="transition:transform 0.2s;font-size:12px;">▼</span>
+          </button>
+          <div id="help-cat-panel" style="display:none;">
+            <div id="help-cat-list" style="margin-top:0.75rem;"></div>
+            <div class="res-add-cat-row">
+              <input type="text" class="res-inline-input" id="help-new-cat-input"
+                placeholder="New category name…"
+                onkeydown="if(event.key==='Enter')window.addHelpCategory()">
+              <button class="action-btn" onclick="window.addHelpCategory()">Add Category</button>
+            </div>
+            <div class="res-cat-error" id="help-cat-error"></div>
+          </div>
+        </div>
+
+        <!-- New Topic button -->
+        <div class="res-list-header">
+          <button class="action-btn primary" id="help-new-btn" onclick="window.showHelpTopicForm(null)">+ New Topic</button>
+        </div>
+
+        <!-- Topic form — always in DOM so Quill initializes once -->
+        <div id="help-form-container" style="display:none;">
+          <div class="res-form-panel">
+            <div class="res-form-title" id="help-form-title">New Topic</div>
+            <div class="res-form-field">
+              <label class="res-form-label">Title</label>
+              <input type="text" class="res-form-input" id="help-topic-title" placeholder="Topic title…">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem;">
+              <div>
+                <label class="res-form-label">Category</label>
+                <select class="res-form-select" id="help-topic-category" onchange="window.helpAutoPosition()"></select>
+              </div>
+              <div>
+                <label class="res-form-label">Position</label>
+                <input type="number" class="res-form-input" id="help-topic-position" min="0" value="0">
+              </div>
+            </div>
+            <div class="res-form-field">
+              <div class="res-toggle-wrap">
+                <input type="checkbox" class="res-toggle-input" id="help-topic-published">
+                <label class="res-toggle-label" for="help-topic-published"></label>
+                <span class="res-toggle-text">Published</span>
+              </div>
+            </div>
+            <div class="res-form-field">
+              <label class="res-form-label">Content</label>
+              <div id="help-quill-wrap">
+                <div id="help-quill-editor"></div>
+              </div>
+            </div>
+            <div class="res-form-error" id="help-form-error"></div>
+            <div class="res-form-actions">
+              <button class="res-save-btn" id="help-save-btn" onclick="window.saveHelpTopic()">
+                <span id="help-save-label">Save Topic</span>
+              </button>
+              <button class="res-cancel-btn" onclick="window.hideHelpTopicForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Topic list grouped by category -->
+        <div id="help-topic-list"><div class="sub-loading">Loading…</div></div>
       </div>
 
     </div>
@@ -3396,6 +3494,388 @@
     btn.disabled = false; btn.textContent = 'Save';
     if (error) { errEl.textContent = 'Failed to save.'; return; }
     showToast('Recording URL saved.');
+  };
+
+  // ── Help Center ──────────────────────────────────────────────────────────
+
+  let helpInitialized = false;
+  let helpCatsExpanded = false;
+  let helpCats = [];
+  let helpTopics = [];
+  let helpEditingId = null;
+  let helpQuill = null;
+
+  window.initHelpCenter = async function() {
+    if (helpInitialized) return;
+    helpInitialized = true;
+
+    helpQuill = new Quill('#help-quill-editor', {
+      theme: 'snow',
+      placeholder: 'Write help content here…',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline', 'link'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['blockquote']
+        ]
+      }
+    });
+
+    await reloadHelpData();
+  };
+
+  async function reloadHelpData() {
+    const [{ data: cats }, { data: topics }] = await Promise.all([
+      sbClient.from('help_categories').select('*').order('position', { ascending: true }),
+      sbClient.from('help_topics').select('*').order('position', { ascending: true })
+    ]);
+    helpCats = cats || [];
+    helpTopics = topics || [];
+    renderHelpCatManager();
+    renderHelpTopicList();
+    // Refresh category select in form if open
+    const catSelect = document.getElementById('help-topic-category');
+    if (catSelect) {
+      const prev = catSelect.value;
+      catSelect.innerHTML = helpCats.map(c => `<option value="${escStr(c.id)}">${escStr(c.name)}</option>`).join('');
+      if (prev && helpCats.find(c => c.id === prev)) catSelect.value = prev;
+    }
+  }
+
+  // ── Category management ─────────────────────────────────────────────────
+
+  window.toggleHelpCategories = function() {
+    helpCatsExpanded = !helpCatsExpanded;
+    const panel = document.getElementById('help-cat-panel');
+    const chevron = document.getElementById('help-cat-chevron');
+    if (panel) panel.style.display = helpCatsExpanded ? 'block' : 'none';
+    if (chevron) chevron.style.transform = helpCatsExpanded ? 'rotate(180deg)' : '';
+  };
+
+  function renderHelpCatManager() {
+    const list = document.getElementById('help-cat-list');
+    if (!list) return;
+    if (!helpCats.length) {
+      list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 0;">No categories yet.</div>';
+      return;
+    }
+    list.innerHTML = helpCats.map((cat, idx) => {
+      const hasTopics = helpTopics.some(t => t.category_id === cat.id);
+      const sId = escStr(cat.id);
+      return `
+        <div class="res-cat-row" id="hcat-row-${sId}">
+          <div class="res-cat-name-display" id="hcat-name-${sId}"
+            title="Click to rename" onclick="window.startEditHelpCat('${sId}')">${escStr(cat.name)}</div>
+          <div style="display:flex;gap:2px;flex-shrink:0;">
+            <button class="res-cat-btn" ${idx===0?'disabled':''} onclick="window.moveHelpCatUp('${sId}')">↑</button>
+            <button class="res-cat-btn" ${idx===helpCats.length-1?'disabled':''} onclick="window.moveHelpCatDown('${sId}')">↓</button>
+            <button class="res-cat-btn del" ${hasTopics?'disabled title="Remove topics first."':''}
+              onclick="window.deleteHelpCat('${sId}')">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.startEditHelpCat = function(catId) {
+    const nameEl = document.getElementById(`hcat-name-${catId}`);
+    if (!nameEl) return;
+    const cat = helpCats.find(c => c.id === catId);
+    if (!cat) return;
+    const orig = cat.name; const sId = escStr(catId);
+    nameEl.outerHTML = `<input type="text" class="res-inline-input" id="hcat-edit-${sId}"
+      value="${escStr(orig)}"
+      onblur="window.saveInlineHelpCat('${sId}',this.value,'${escStr(orig)}')"
+      onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')window.cancelInlineHelpCat('${sId}','${escStr(orig)}')">`;
+    const inp = document.getElementById(`hcat-edit-${catId}`);
+    if (inp) { inp.focus(); inp.select(); }
+  };
+
+  window.cancelInlineHelpCat = function(catId, orig) {
+    const editEl = document.getElementById(`hcat-edit-${catId}`);
+    if (!editEl) return;
+    const sId = escStr(catId);
+    editEl.outerHTML = `<div class="res-cat-name-display" id="hcat-name-${sId}"
+      title="Click to rename" onclick="window.startEditHelpCat('${sId}')">${escStr(orig)}</div>`;
+  };
+
+  window.saveInlineHelpCat = async function(catId, newName, orig) {
+    newName = newName.trim();
+    if (!newName) { window.cancelInlineHelpCat(catId, orig); return; }
+    if (newName === orig) { window.cancelInlineHelpCat(catId, orig); return; }
+    const { error } = await sbClient.from('help_categories').update({ name: newName }).eq('id', catId);
+    if (error) { showToast('Could not rename category.'); window.cancelInlineHelpCat(catId, orig); return; }
+    const cat = helpCats.find(c => c.id === catId);
+    if (cat) cat.name = newName;
+    renderHelpCatManager();
+    showToast('Category renamed.');
+  };
+
+  window.addHelpCategory = async function() {
+    const inp = document.getElementById('help-new-cat-input');
+    const errEl = document.getElementById('help-cat-error');
+    const name = (inp?.value || '').trim();
+    errEl.textContent = '';
+    if (!name) { errEl.textContent = 'Enter a category name.'; return; }
+    if (helpCats.find(c => c.name === name)) { errEl.textContent = 'A category with that name already exists.'; return; }
+    const position = helpCats.length;
+    const { data, error } = await sbClient.from('help_categories').insert({ name, position }).select().single();
+    if (error) { errEl.textContent = 'Could not add category.'; return; }
+    helpCats.push(data);
+    inp.value = '';
+    renderHelpCatManager();
+    renderHelpTopicList();
+    showToast('Category added.');
+  };
+
+  window.deleteHelpCat = async function(catId) {
+    const hasTopics = helpTopics.some(t => t.category_id === catId);
+    if (hasTopics) {
+      const errEl = document.getElementById('help-cat-error');
+      if (errEl) errEl.textContent = 'Remove all topics from this category first.';
+      return;
+    }
+    const { error } = await sbClient.from('help_categories').delete().eq('id', catId);
+    if (error) { showToast('Could not delete category.'); return; }
+    helpCats = helpCats.filter(c => c.id !== catId);
+    renderHelpCatManager();
+    renderHelpTopicList();
+    showToast('Category deleted.');
+  };
+
+  window.moveHelpCatUp = async function(catId) {
+    const idx = helpCats.findIndex(c => c.id === catId);
+    if (idx <= 0) return;
+    const a = helpCats[idx - 1], b = helpCats[idx];
+    await Promise.all([
+      sbClient.from('help_categories').update({ position: b.position }).eq('id', a.id),
+      sbClient.from('help_categories').update({ position: a.position }).eq('id', b.id)
+    ]);
+    [a.position, b.position] = [b.position, a.position];
+    helpCats.sort((x, y) => x.position - y.position);
+    renderHelpCatManager();
+  };
+
+  window.moveHelpCatDown = async function(catId) {
+    const idx = helpCats.findIndex(c => c.id === catId);
+    if (idx < 0 || idx >= helpCats.length - 1) return;
+    const a = helpCats[idx], b = helpCats[idx + 1];
+    await Promise.all([
+      sbClient.from('help_categories').update({ position: b.position }).eq('id', a.id),
+      sbClient.from('help_categories').update({ position: a.position }).eq('id', b.id)
+    ]);
+    [a.position, b.position] = [b.position, a.position];
+    helpCats.sort((x, y) => x.position - y.position);
+    renderHelpCatManager();
+  };
+
+  // ── Topic list ───────────────────────────────────────────────────────────
+
+  function renderHelpTopicList() {
+    const list = document.getElementById('help-topic-list');
+    if (!list) return;
+
+    if (!helpCats.length) {
+      list.innerHTML = '<div class="res-empty">Create a category first, then add topics.</div>';
+      return;
+    }
+
+    const grouped = {};
+    helpCats.forEach(c => { grouped[c.id] = []; });
+    helpTopics.forEach(t => { if (grouped[t.category_id] !== undefined) grouped[t.category_id].push(t); });
+
+    let html = '';
+    helpCats.forEach(cat => {
+      const topics = grouped[cat.id] || [];
+      html += `<div class="res-cat-group"><div class="res-cat-group-label">${escStr(cat.name)}</div>`;
+      if (!topics.length) {
+        html += '<div style="font-size:12px;color:var(--text-dim);padding:6px 0 12px;">No topics in this category.</div>';
+      } else {
+        topics.forEach((t, idx) => {
+          const sId = escStr(t.id);
+          const pubBadge = t.published
+            ? '<span class="res-pub-badge published">Published</span>'
+            : '<span class="res-pub-badge draft">Draft</span>';
+          html += `
+            <div class="res-item" id="help-item-${sId}">
+              <div class="res-item-body">
+                <div class="res-item-badges">${pubBadge}</div>
+                <div class="res-item-title">${escStr(t.title)}</div>
+              </div>
+              <div class="res-item-actions">
+                <button class="res-order-btn" ${idx===0?'disabled':''} onclick="window.moveHelpTopicUp('${sId}','${escStr(cat.id)}')">↑</button>
+                <button class="res-order-btn" ${idx===topics.length-1?'disabled':''} onclick="window.moveHelpTopicDown('${sId}','${escStr(cat.id)}')">↓</button>
+                <button class="evt-edit-btn" onclick="window.showHelpTopicForm('${sId}')">Edit</button>
+                <button class="evt-delete-btn" onclick="window.confirmDeleteHelpTopic('${sId}')">Delete</button>
+              </div>
+            </div>
+            <div id="help-del-confirm-${sId}" style="display:none;padding:10px 0 6px;">
+              <div class="evt-confirm-text">Delete "<strong>${escStr(t.title)}</strong>"? This cannot be undone.</div>
+              <div class="evt-confirm-btns">
+                <button class="sub-cancel-btn" onclick="window.cancelDeleteHelpTopic('${sId}')">Cancel</button>
+                <button class="evt-delete-btn" id="help-del-yes-${sId}" onclick="window.executeDeleteHelpTopic('${sId}')">Yes, Delete</button>
+              </div>
+            </div>`;
+        });
+      }
+      html += '</div>';
+    });
+
+    list.innerHTML = html;
+  }
+
+  window.confirmDeleteHelpTopic = function(topicId) {
+    document.getElementById(`help-del-confirm-${topicId}`)?.style.setProperty('display','block');
+  };
+  window.cancelDeleteHelpTopic = function(topicId) {
+    document.getElementById(`help-del-confirm-${topicId}`)?.style.setProperty('display','none');
+  };
+  window.executeDeleteHelpTopic = async function(topicId) {
+    const btn = document.getElementById(`help-del-yes-${topicId}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+    const { error } = await sbClient.from('help_topics').delete().eq('id', topicId);
+    if (error) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Yes, Delete'; }
+      showToast('Could not delete topic.'); return;
+    }
+    helpTopics = helpTopics.filter(t => t.id !== topicId);
+    renderHelpTopicList();
+    showToast('Topic deleted.');
+  };
+
+  window.moveHelpTopicUp = async function(topicId, catId) {
+    const catTopics = helpTopics.filter(t => t.category_id === catId).sort((a, b) => a.position - b.position);
+    const idx = catTopics.findIndex(t => t.id === topicId);
+    if (idx <= 0) return;
+    const a = catTopics[idx - 1], b = catTopics[idx];
+    await Promise.all([
+      sbClient.from('help_topics').update({ position: b.position }).eq('id', a.id),
+      sbClient.from('help_topics').update({ position: a.position }).eq('id', b.id)
+    ]);
+    [a.position, b.position] = [b.position, a.position];
+    helpTopics.sort((x, y) => x.position - y.position);
+    renderHelpTopicList();
+  };
+
+  window.moveHelpTopicDown = async function(topicId, catId) {
+    const catTopics = helpTopics.filter(t => t.category_id === catId).sort((a, b) => a.position - b.position);
+    const idx = catTopics.findIndex(t => t.id === topicId);
+    if (idx < 0 || idx >= catTopics.length - 1) return;
+    const a = catTopics[idx], b = catTopics[idx + 1];
+    await Promise.all([
+      sbClient.from('help_topics').update({ position: b.position }).eq('id', a.id),
+      sbClient.from('help_topics').update({ position: a.position }).eq('id', b.id)
+    ]);
+    [a.position, b.position] = [b.position, a.position];
+    helpTopics.sort((x, y) => x.position - y.position);
+    renderHelpTopicList();
+  };
+
+  // ── Topic form ───────────────────────────────────────────────────────────
+
+  window.showHelpTopicForm = function(topicId) {
+    helpEditingId = topicId;
+    const container = document.getElementById('help-form-container');
+    const titleEl = document.getElementById('help-form-title');
+    const saveLabel = document.getElementById('help-save-label');
+    const titleInput = document.getElementById('help-topic-title');
+    const catSelect = document.getElementById('help-topic-category');
+    const posInput = document.getElementById('help-topic-position');
+    const pubToggle = document.getElementById('help-topic-published');
+    const errEl = document.getElementById('help-form-error');
+
+    catSelect.innerHTML = helpCats.map(c => `<option value="${escStr(c.id)}">${escStr(c.name)}</option>`).join('');
+
+    if (topicId) {
+      const topic = helpTopics.find(t => t.id === topicId);
+      if (!topic) return;
+      titleEl.textContent = 'Edit Topic';
+      saveLabel.textContent = 'Update Topic';
+      titleInput.value = topic.title;
+      catSelect.value = topic.category_id;
+      posInput.value = topic.position;
+      pubToggle.checked = topic.published;
+      helpQuill.root.innerHTML = topic.content || '';
+    } else {
+      titleEl.textContent = 'New Topic';
+      saveLabel.textContent = 'Save Topic';
+      titleInput.value = '';
+      if (helpCats.length) catSelect.value = helpCats[0].id;
+      posInput.value = helpAutoPositionValue(helpCats[0]?.id);
+      pubToggle.checked = false;
+      helpQuill.root.innerHTML = '';
+    }
+
+    errEl.textContent = '';
+    container.style.display = 'block';
+    titleInput.focus();
+    document.getElementById('help-new-btn').style.display = 'none';
+  };
+
+  window.hideHelpTopicForm = function() {
+    helpEditingId = null;
+    document.getElementById('help-form-container').style.display = 'none';
+    document.getElementById('help-new-btn').style.display = '';
+  };
+
+  function helpAutoPositionValue(catId) {
+    if (!catId) return 0;
+    return helpTopics.filter(t => t.category_id === catId).length;
+  }
+
+  window.helpAutoPosition = function() {
+    if (helpEditingId) return;
+    const catId = document.getElementById('help-topic-category')?.value;
+    const posInput = document.getElementById('help-topic-position');
+    if (posInput && catId) posInput.value = helpAutoPositionValue(catId);
+  };
+
+  function generateHelpSlug(title) {
+    return title.toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 80);
+  }
+
+  window.saveHelpTopic = async function() {
+    const editingId = helpEditingId;
+    const titleVal = (document.getElementById('help-topic-title')?.value || '').trim();
+    const catId = document.getElementById('help-topic-category')?.value;
+    const position = parseInt(document.getElementById('help-topic-position')?.value || '0', 10);
+    const published = document.getElementById('help-topic-published')?.checked || false;
+    const content = helpQuill.root.innerHTML;
+    const errEl = document.getElementById('help-form-error');
+    const btn = document.getElementById('help-save-btn');
+
+    errEl.textContent = '';
+    if (!titleVal) { errEl.textContent = 'Title is required.'; return; }
+    if (!catId) { errEl.textContent = 'Select a category.'; return; }
+
+    btn.disabled = true;
+
+    if (editingId) {
+      const topic = helpTopics.find(t => t.id === editingId);
+      const slug = (titleVal !== topic?.title) ? generateHelpSlug(titleVal) : (topic?.slug || generateHelpSlug(titleVal));
+      const { error } = await sbClient.from('help_topics')
+        .update({ title: titleVal, slug, category_id: catId, position, published, content })
+        .eq('id', editingId);
+      btn.disabled = false;
+      if (error) { errEl.textContent = 'Could not save topic. ' + (error.message || ''); return; }
+      window.hideHelpTopicForm();
+      await reloadHelpData();
+      showToast('Topic updated.');
+    } else {
+      const { data: { user } } = await sbClient.auth.getUser();
+      const slug = generateHelpSlug(titleVal);
+      const { error } = await sbClient.from('help_topics')
+        .insert({ title: titleVal, slug, category_id: catId, position, published, content, created_by: user?.id });
+      btn.disabled = false;
+      if (error) { errEl.textContent = 'Could not create topic. ' + (error.message || ''); return; }
+      window.hideHelpTopicForm();
+      await reloadHelpData();
+      showToast('Topic created.');
+    }
   };
 </script>
 </body>
