@@ -333,14 +333,15 @@
   const modalError    = document.getElementById('modal-error');
 
   function formatPrice(cents) {
-    return '$' + (cents / 100).toFixed(0);
+    const dollars = cents / 100;
+    return dollars % 1 === 0 ? '$' + dollars : '$' + dollars.toFixed(2);
   }
 
   function updateModalPrice() {
     if (!currentService) return;
     const useExpedited = expeditedChk.checked && currentService.expedited_price != null;
     const price = useExpedited ? currentService.expedited_price : currentService.price;
-    priceDisplay.textContent = '$' + Number(price).toFixed(0) + (useExpedited ? ' — expedited (4 days)' : ' — standard (7 days)');
+    priceDisplay.textContent = formatPrice(price) + (useExpedited ? ' — expedited (4 days)' : ' — standard (7 days)');
   }
 
   function openModal(service) {
@@ -365,7 +366,7 @@
     // Expedited toggle
     if (service.expedited_price != null) {
       const diff = Number(service.expedited_price) - Number(service.price);
-      expeditedLbl.innerHTML = `<strong>Expedited turnaround (4 days)</strong> — add $${Math.round(diff)}`;
+      expeditedLbl.innerHTML = `<strong>Expedited turnaround (4 days)</strong> — add ${formatPrice(diff)}`;
       expeditedWrap.style.display = 'block';
     } else {
       expeditedWrap.style.display = 'none';
@@ -483,9 +484,9 @@
     card.className = 'service-card';
 
     const priceHtml = service.expedited_price != null
-      ? `<div class="service-price">$${Number(service.price).toFixed(0)}</div>
-         <div class="service-price-exp">or $${Number(service.expedited_price).toFixed(0)} expedited (4-day turnaround)</div>`
-      : `<div class="service-price">$${Number(service.price).toFixed(0)}</div>`;
+      ? `<div class="service-price">${formatPrice(service.price)}</div>
+         <div class="service-price-exp">or ${formatPrice(service.expedited_price)} expedited (4-day turnaround)</div>`
+      : `<div class="service-price">${formatPrice(service.price)}</div>`;
 
     const turnaroundDays = service.turnaround_days || 7;
 
@@ -516,7 +517,7 @@
       <div class="service-name">${escapeHtml(service.name)}</div>
       <p class="service-description">${escapeHtml(service.description)}</p>
       <div class="service-meta">
-        <div class="service-price">$${Number(service.price).toFixed(0)}<span style="font-size:14px;color:var(--text-muted);font-family:'Raleway',sans-serif;font-weight:300;"> / session</span></div>
+        <div class="service-price">${formatPrice(service.price)}<span style="font-size:14px;color:var(--text-muted);font-family:'Raleway',sans-serif;font-weight:300;"> / session</span></div>
       </div>
       <div class="service-actions">
         <button class="btn-ghost" id="btn-book-session">Book a Session</button>
