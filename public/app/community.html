@@ -2060,6 +2060,7 @@
           if (targets.length > 0) {
             await Promise.all(targets.map(async followerId => {
               try {
+                console.log('post_reply context_id:', postId, typeof postId);
                 const { data: existing } = await supabase.from('notifications')
                   .select('id, notification_count')
                   .eq('user_id', followerId).eq('type', 'post_reply').eq('read', false)
@@ -2073,6 +2074,7 @@
                     link: `/app/post.html?id=${postId}`,
                   }).eq('id', existing.id);
                 } else {
+                  console.log('post_reply context_id:', postId, typeof postId);
                   await supabase.from('notifications').insert({
                     user_id: followerId, type: 'post_reply',
                     title: "New reply on a post you're following",
