@@ -1,57 +1,6 @@
-import busboy from 'busboy';
 import { supabaseRequest } from '../lib/supabaseAdmin.js';
 
-export const config = { api: { bodyParser: false } };
-
 const ADMIN_ID = '6abb9d4d-ed5f-456e-aebb-aa76c8696c44';
-
-function parseMultipart(req) {
-  return new Promise((resolve, reject) => {
-    const bb = busboy({ headers: req.headers, limits: { fileSize: 50 * 1024 * 1024 } });
-    const fields = {};
-    let fileBuffer = null;
-    let fileName = null;
-    let fileMime = 'application/octet-stream';
-
-    bb.on('field', (name, value) => { fields[name] = value; });
-    bb.on('file', (_name, stream, info) => {
-      fileName = info.filename;
-      fileMime = info.mimeType || 'application/octet-stream';
-      const chunks = [];
-      stream.on('data', chunk => chunks.push(chunk));
-      stream.on('end', () => { fileBuffer = Buffer.concat(chunks); });
-      stream.on('error', reject);
-    });
-    bb.on('finish', () => resolve({ fields, fileBuffer, fileName, fileMime }));
-    bb.on('error', reject);
-    req.pipe(bb);
-  });
-}
-
-function parseJsonBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', chunk => chunks.push(chunk));
-    req.on('end', () => {
-      try {
-        const body = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
-        resolve({
-          fields: {
-            orderId: body.orderId,
-            deliveryUrl: body.deliveryUrl || '',
-            notes: body.notes || '',
-          },
-          fileBuffer: null,
-          fileName: null,
-          fileMime: null,
-        });
-      } catch (err) {
-        reject(err);
-      }
-    });
-    req.on('error', reject);
-  });
-}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -81,26 +30,11 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Forbidden — admin only' });
   }
 
-  // Parse request body based on Content-Type
-  const contentType = req.headers['content-type'] || '';
-  let fields, fileBuffer, fileName, fileMime;
-  try {
-    if (contentType.includes('multipart/form-data')) {
-      ({ fields, fileBuffer, fileName, fileMime } = await parseMultipart(req));
-    } else {
-      ({ fields, fileBuffer, fileName, fileMime } = await parseJsonBody(req));
-    }
-  } catch (err) {
-    console.error('[fulfill] body parse error:', err.message);
-    return res.status(400).json({ error: 'Failed to parse request' });
-  }
-
-  const { orderId } = fields;
-  const deliveryUrl = (fields.deliveryUrl || '').trim();
-  const notes = (fields.notes || '').trim();
+  // Parse JSON body (file already uploaded to storage client-side)
+  const { orderId, fileUrl, fileName, deliveryUrl, notes } = req.body || {};
 
   if (!orderId) return res.status(400).json({ error: 'Missing orderId' });
-  if (!fileBuffer && !deliveryUrl) {
+  if (!fileUrl && !deliveryUrl) {
     return res.status(400).json({ error: 'Please provide a file or delivery link' });
   }
 
@@ -140,34 +74,10 @@ export default async function handler(req, res) {
   });
   const { email: memberEmail } = await emailRes.json();
 
-  // Upload file to storage (only when a file was provided)
-  let storagePath = null;
-  if (fileBuffer && fileName) {
-    storagePath = `${memberId}/${orderId}/${fileName}`;
-    const uploadRes = await fetch(
-      `${process.env.SUPABASE_URL}/storage/v1/object/service-deliveries/${storagePath}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-          'Content-Type': fileMime,
-          'x-upsert': 'false',
-        },
-        body: fileBuffer,
-      }
-    );
-    if (!uploadRes.ok) {
-      const uploadErr = await uploadRes.text();
-      console.error('[fulfill] storage upload error:', uploadErr);
-      return res.status(500).json({ error: 'File upload failed' });
-    }
-  }
-
-  // INSERT service_deliveries
+  // INSERT service_deliveries (file already in storage — just record the path)
   await supabaseRequest('POST', '/rest/v1/service_deliveries', {
     order_id: orderId,
-    file_url: storagePath || null,
+    file_url: fileUrl || null,
     file_name: fileName || null,
     delivery_url: deliveryUrl || null,
     notes: notes || null,

@@ -4415,56 +4415,83 @@
 
   window.fulfillOrder = async function(orderId, btn) {
     const fileInput = document.getElementById(`fulfill-file-${orderId}`);
-    const notesEl = document.getElementById(`fulfill-notes-${orderId}`);
-    const urlEl = document.getElementById(`fulfill-url-${orderId}`);
-    const errEl = document.getElementById(`fulfill-error-${orderId}`);
+    const notesEl  = document.getElementById(`fulfill-notes-${orderId}`);
+    const urlEl    = document.getElementById(`fulfill-url-${orderId}`);
+    const errEl    = document.getElementById(`fulfill-error-${orderId}`);
 
-    const file = fileInput?.files?.[0] || null;
-    const deliveryUrl = (urlEl?.value || '').trim();
-    const notes = (notesEl?.value || '').trim();
+    const file        = fileInput?.files?.[0] || null;
+    const deliveryUrl = (urlEl?.value || '').trim() || null;
+    const notes       = (notesEl?.value || '').trim() || null;
+
+    if (errEl) errEl.textContent = '';
 
     if (!file && !deliveryUrl) {
       if (errEl) errEl.textContent = 'Please provide a file or delivery link.';
       return;
     }
 
-    if (errEl) errEl.textContent = '';
     btn.disabled = true;
-    btn.textContent = 'Uploading…';
+    btn.textContent = 'Fulfilling…';
 
-    const { data: { session } } = await sbClient.auth.getSession();
+    let fileUrl  = null;
+    let fileName = null;
 
-    try {
-      let res;
-      if (file) {
-        const formData = new FormData();
-        formData.append('orderId', orderId);
-        formData.append('file', file);
-        if (deliveryUrl) formData.append('deliveryUrl', deliveryUrl);
-        if (notes) formData.append('notes', notes);
-        res = await fetch('/api/services/fulfill', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${session.access_token}` },
-          body: formData,
-        });
-      } else {
-        res = await fetch('/api/services/fulfill', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ orderId, deliveryUrl, notes }),
-        });
-      }
+    // Step 1: Upload file directly to Supabase Storage from browser (bypasses Vercel 4.5MB limit)
+    if (file) {
+      const { data: orderData } = await sbClient
+        .from('service_orders')
+        .select('member_id')
+        .eq('id', orderId)
+        .single();
 
-      const data = await res.json();
-      if (!res.ok) {
-        if (errEl) errEl.textContent = data.error || 'Fulfillment failed.';
+      if (!orderData) {
+        if (errEl) errEl.textContent = 'Could not load order data.';
         btn.disabled = false;
         btn.textContent = 'Upload & Fulfill';
         return;
       }
+
+      const memberId  = orderData.member_id;
+      const timestamp = Date.now();
+      const safeName  = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path      = `${memberId}/${orderId}/${timestamp}-${safeName}`;
+
+      const { error: uploadError } = await sbClient.storage
+        .from('service-deliveries')
+        .upload(path, file, { upsert: false });
+
+      if (uploadError) {
+        if (errEl) errEl.textContent = 'File upload failed: ' + uploadError.message;
+        btn.disabled = false;
+        btn.textContent = 'Upload & Fulfill';
+        return;
+      }
+
+      fileUrl  = path;
+      fileName = file.name;
+    }
+
+    // Step 2: POST only metadata to serverless function
+    try {
+      const { data: { session } } = await sbClient.auth.getSession();
+
+      const res = await fetch('/api/services/fulfill', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ orderId, fileUrl, fileName, deliveryUrl, notes }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        if (errEl) errEl.textContent = json.error || 'Fulfillment failed.';
+        btn.disabled = false;
+        btn.textContent = 'Upload & Fulfill';
+        return;
+      }
+
       switchSvcSection('orders');
       await loadSvcOrders();
       showToast('Order fulfilled. Member notified.');
