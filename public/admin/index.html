@@ -1984,6 +1984,10 @@
       clearInterval(window._actionItemsRefreshId);
       window._actionItemsRefreshId = null;
     }
+    if (outgoing?.id === 'panel-action-items' && window._actionCountdownId) {
+      clearInterval(window._actionCountdownId);
+      window._actionCountdownId = null;
+    }
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -4826,6 +4830,16 @@
     });
   }
 
+  function updateActionCountdowns() {
+    document.querySelectorAll('[data-action-deadline]').forEach(el => {
+      const { text, color, dot } = buildCountdown(parseInt(el.dataset.actionDeadline, 10));
+      el.innerHTML = dot
+        ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>${text}`
+        : text;
+      el.style.color = color;
+    });
+  }
+
   function updateAdminBell(count) {
     const bellBadge = document.getElementById('admin-bell-badge');
     if (!bellBadge) return;
@@ -4919,18 +4933,23 @@
     const svcMap = {};
     (servicesRes.data || []).forEach(s => { svcMap[s.id] = s; });
 
-    // Filter in-progress orders within 48h of deadline
+    // Split in-progress orders by urgency (mutually exclusive sections)
     const now = Date.now();
     const nearOrders = (inProgressOrders || []).filter(o => {
-      const days = svcMap[o.service_id]?.turnaround_days || 7;
-      const deadline = new Date(o.created_at).getTime() + days * 86400000;
+      const turnaround = o.expedited ? 4 : (svcMap[o.service_id]?.turnaround_days || 7);
+      const deadline = new Date(o.created_at).getTime() + turnaround * 86400000;
       return deadline - now < 172800000; // within 48h
     });
+    const notUrgentOrders = (inProgressOrders || []).filter(o => {
+      const turnaround = o.expedited ? 4 : (svcMap[o.service_id]?.turnaround_days || 7);
+      const deadline = new Date(o.created_at).getTime() + turnaround * 86400000;
+      return deadline - now >= 172800000; // more than 48h remaining
+    });
 
-    // Build badge count
+    // Build badge count (notUrgentOrders excluded — being handled, not urgent)
     const totalCount =
       (pendingOrders?.length || 0) +
-      (inProgressOrders?.length || 0) +
+      nearOrders.length +
       (pendingSubmissions?.length || 0) +
       (pendingQuotes?.length || 0);
 
@@ -4950,8 +4969,8 @@
         const member = orderProfMap[o.member_id] || {};
         const svc = svcMap[o.service_id] || {};
         const dateStr = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const days = svc.turnaround_days || 7;
-        const deadline = new Date(o.created_at).getTime() + days * 86400000;
+        const turnaround = o.expedited ? 4 : (svc.turnaround_days || 7);
+        const deadline = new Date(o.created_at).getTime() + turnaround * 86400000;
         const deadlineStr = new Date(deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         return `
           <div class="sub-row" style="margin-bottom:8px;">
@@ -4960,6 +4979,7 @@
                 <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
                 <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
                 <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Ordered ${dateStr} · Due ${deadlineStr}${o.expedited ? ' · <span style="color:var(--gold)">Expedited</span>' : ''}</div>
+                <div data-action-deadline="${deadline}" style="font-size:12px;margin-top:2px;font-weight:500;display:flex;align-items:center;gap:5px;"></div>
               </div>
               <button class="action-btn" onclick="window.switchServiceSection('orders')" style="font-size:10px;white-space:nowrap;">View in Orders →</button>
             </div>
@@ -4967,27 +4987,25 @@
       }).join('');
     }
 
-    // ── Section B — Orders In Progress ──
+    // ── Section B — Orders In Progress (not urgent) ──
     let sectionBRows = '';
-    if (!inProgressOrders?.length) {
-      sectionBRows = '<div class="sub-empty">No orders currently in progress.</div>';
+    if (!notUrgentOrders.length) {
+      sectionBRows = '<div class="sub-empty">No orders in progress with more than 48 hours remaining.</div>';
     } else {
-      sectionBRows = inProgressOrders.map(o => {
+      sectionBRows = notUrgentOrders.map(o => {
         const member = orderProfMap[o.member_id] || {};
         const svc = svcMap[o.service_id] || {};
         const dateStr = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const days = svc.turnaround_days || 7;
-        const deadline = new Date(o.created_at).getTime() + days * 86400000;
-        const { text: cntText, color: cntColor, dot } = buildCountdown(deadline);
-        const dotHtml = dot ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>` : '';
+        const turnaround = o.expedited ? 4 : (svc.turnaround_days || 7);
+        const deadline = new Date(o.created_at).getTime() + turnaround * 86400000;
         return `
           <div class="sub-row" style="margin-bottom:8px;">
             <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
               <div style="flex:1;min-width:0;">
                 <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
                 <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
-                <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Ordered ${dateStr}</div>
-                <div style="font-size:12px;color:${cntColor};margin-top:2px;display:flex;align-items:center;gap:5px;font-weight:500;">${dotHtml}${escStr(cntText)}</div>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Ordered ${dateStr}${o.expedited ? ' · <span style="color:var(--gold)">Expedited</span>' : ''}</div>
+                <div data-action-deadline="${deadline}" style="font-size:12px;margin-top:2px;font-weight:500;display:flex;align-items:center;gap:5px;"></div>
               </div>
               <button class="action-btn" onclick="window.switchServiceSection('orders')" style="font-size:10px;white-space:nowrap;">View in Orders →</button>
             </div>
@@ -4995,25 +5013,24 @@
       }).join('');
     }
 
-    // ── Section C — Near-deadline orders ──
+    // ── Section C — Approaching Deadline ──
     let sectionCRows = '';
     if (!nearOrders.length) {
-      sectionCRows = '<div class="sub-empty">No orders near deadline.</div>';
+      sectionCRows = '<div class="sub-empty">No orders approaching deadline.</div>';
     } else {
       sectionCRows = nearOrders.map(o => {
         const member = orderProfMap[o.member_id] || {};
         const svc = svcMap[o.service_id] || {};
-        const days = svc.turnaround_days || 7;
-        const deadline = new Date(o.created_at).getTime() + days * 86400000;
-        const { text: cntText, color: cntColor, dot } = buildCountdown(deadline);
-        const dotHtml = dot ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>` : '';
+        const turnaround = o.expedited ? 4 : (svc.turnaround_days || 7);
+        const deadline = new Date(o.created_at).getTime() + turnaround * 86400000;
         return `
           <div class="sub-row" style="margin-bottom:8px;">
             <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
               <div style="flex:1;min-width:0;">
                 <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
                 <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
-                <div style="font-size:12px;color:${cntColor};margin-top:2px;display:flex;align-items:center;gap:5px;font-weight:500;">${dotHtml}${escStr(cntText)}</div>
+                ${o.expedited ? `<div style="font-size:12px;color:var(--text-dim);margin-top:2px;"><span style="color:var(--gold)">Expedited</span></div>` : ''}
+                <div data-action-deadline="${deadline}" style="font-size:12px;margin-top:2px;font-weight:500;display:flex;align-items:center;gap:5px;"></div>
               </div>
               <button class="action-btn" onclick="window.switchServiceSection('orders')" style="font-size:10px;white-space:nowrap;">View in Orders →</button>
             </div>
@@ -5031,8 +5048,6 @@
         const submitted = new Date(sub.submitted_at);
         const subStr = submitted.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const deadline48 = submitted.getTime() + 48 * 3600000;
-        const { text: cntText, color: cntColor, dot } = buildCountdown(deadline48);
-        const dotHtml = dot ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>` : '';
         return `
           <div class="sub-row" style="margin-bottom:8px;">
             <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
@@ -5040,7 +5055,7 @@
                 <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
                 <div style="font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--gold);">${escStr(sub.song_title || '')}${sub.show_artist ? ` <span style="font-size:13px;color:var(--text-muted);">— ${escStr(sub.show_artist)}</span>` : ''}</div>
                 <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Submitted ${subStr}</div>
-                <div style="font-size:12px;color:${cntColor};margin-top:2px;display:flex;align-items:center;gap:5px;font-weight:500;">${dotHtml}${escStr(cntText)}</div>
+                <div data-action-deadline="${deadline48}" style="font-size:12px;margin-top:2px;font-weight:500;display:flex;align-items:center;gap:5px;"></div>
               </div>
               <button class="action-btn" onclick="switchPanel(document.querySelector('[data-panel=submissions]'),'submissions'); window.initSubmissions?.()" style="font-size:10px;white-space:nowrap;">View in Submissions →</button>
             </div>
@@ -5058,8 +5073,6 @@
         const sentStr = new Date(q.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const priceDisplay = '$' + (q.price / 100).toFixed(q.price % 100 === 0 ? 0 : 2);
         const expiresMs = new Date(q.expires_at).getTime();
-        const { text: cntText, color: cntColor, dot } = buildCountdown(expiresMs);
-        const dotHtml = dot ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>` : '';
         return `
           <div class="sub-row" style="margin-bottom:8px;">
             <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
@@ -5067,7 +5080,7 @@
                 <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
                 <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(q.title)}</div>
                 <div style="font-size:13px;color:var(--text-muted);font-weight:300;">${priceDisplay} · Sent ${sentStr}</div>
-                <div style="font-size:12px;color:${cntColor};margin-top:2px;display:flex;align-items:center;gap:5px;font-weight:500;">${dotHtml}${escStr(cntText)}</div>
+                <div data-action-deadline="${expiresMs}" style="font-size:12px;margin-top:2px;font-weight:500;display:flex;align-items:center;gap:5px;"></div>
               </div>
               <button class="action-btn" onclick="window.switchServiceSection('quotes')" style="font-size:10px;white-space:nowrap;">View in Quotes →</button>
             </div>
@@ -5075,13 +5088,14 @@
       }).join('');
     }
 
-    const sectionTitle = (text, count) => `
+    const sectionTitle = (text, count, subtitle = '') => `
       <div style="font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;
-        color:var(--text-dim);margin-bottom:0.75rem;padding-bottom:0.5rem;
+        color:var(--text-dim);margin-bottom:${subtitle ? '0.35rem' : '0.75rem'};padding-bottom:0.5rem;
         border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px;">
         ${escStr(text)}
         ${count > 0 ? `<span style="background:var(--gold-dim);color:var(--gold);border:0.5px solid var(--border-gold);border-radius:10px;font-size:9px;padding:2px 7px;">${count}</span>` : ''}
-      </div>`;
+      </div>
+      ${subtitle ? `<div style="font-size:11px;color:var(--text-dim);font-weight:300;margin-bottom:0.75rem;">${subtitle}</div>` : ''}`;
 
     content.innerHTML = `
       <div style="margin-bottom:2rem;">
@@ -5089,11 +5103,11 @@
         ${sectionARows}
       </div>
       <div style="margin-bottom:2rem;">
-        ${sectionTitle('Orders In Progress', inProgressOrders?.length || 0)}
+        ${sectionTitle('Orders In Progress', notUrgentOrders.length, 'Being worked on — more than 48 hours remaining')}
         ${sectionBRows}
       </div>
       <div style="margin-bottom:2rem;">
-        ${sectionTitle('Orders Approaching Deadline', nearOrders.length)}
+        ${sectionTitle('Approaching Deadline', nearOrders.length, 'In progress — less than 48 hours remaining')}
         ${sectionCRows}
       </div>
       <div style="margin-bottom:2rem;">
@@ -5109,6 +5123,10 @@
         <div class="sub-empty" style="font-style:italic;">Support ticket system coming soon.</div>
       </div>
     `;
+
+    updateActionCountdowns();
+    if (window._actionCountdownId) clearInterval(window._actionCountdownId);
+    window._actionCountdownId = setInterval(updateActionCountdowns, 60000);
   }
 
   // ── switchServiceSection helper ──────────────────────────────────────────────
