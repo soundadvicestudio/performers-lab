@@ -944,6 +944,127 @@
   #help-quill-wrap .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
   #help-quill-wrap .ql-snow button:hover .ql-fill,
   #help-quill-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
+
+  /* ── AVAILABILITY ── */
+  .avail-section-pane { display: none; }
+  .avail-section-pane.active { display: block; }
+  .avail-day-row {
+    display: grid;
+    grid-template-columns: 120px 60px 1fr 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .avail-day-row:last-child { border-bottom: none; }
+  .avail-day-name {
+    font-size: 13px; font-weight: 500; color: var(--text);
+  }
+  .avail-day-row.inactive .avail-day-name { color: var(--text-dim); }
+  .avail-status {
+    font-size: 11px; height: 16px; transition: opacity 0.3s;
+  }
+  .avail-status.saved { color: var(--green); }
+  .avail-status.error { color: #e53935; }
+  .avail-cal-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 1rem;
+  }
+  .avail-cal-nav {
+    background: none; border: 0.5px solid var(--border-mid);
+    color: var(--text-muted); padding: 6px 14px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .avail-cal-nav:hover:not(:disabled) {
+    border-color: var(--border-gold); color: var(--gold);
+  }
+  .avail-cal-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+  .avail-cal-month {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 500; color: var(--text);
+  }
+  .avail-cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; margin-bottom: 1rem;
+  }
+  .avail-cal-dow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-dim);
+    text-align: center; padding: 6px 0;
+  }
+  .avail-cal-day {
+    aspect-ratio: 1; border: 0.5px solid var(--border);
+    border-radius: 4px; padding: 6px; cursor: pointer;
+    transition: all 0.15s; position: relative;
+    display: flex; flex-direction: column;
+    background: var(--bg-2);
+  }
+  .avail-cal-day:hover:not(.past):not(.empty) {
+    border-color: var(--border-gold);
+  }
+  .avail-cal-day.today { border-color: var(--gold); }
+  .avail-cal-day.past { opacity: 0.35; cursor: default; }
+  .avail-cal-day.empty {
+    background: transparent; border-color: transparent;
+    cursor: default;
+  }
+  .avail-cal-day.selected {
+    border-color: var(--gold); background: var(--gold-dim);
+  }
+  .avail-cal-day.blocked {
+    background: rgba(220,50,50,0.08);
+    border-color: rgba(220,50,50,0.25);
+  }
+  .avail-cal-day.custom-hours {
+    background: var(--gold-dim); border-color: var(--border-gold);
+  }
+  .avail-cal-date {
+    font-size: 12px; font-weight: 500; color: var(--text);
+    align-self: flex-start; margin-left: auto;
+  }
+  .avail-cal-label {
+    font-size: 9px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-top: auto; line-height: 1.2;
+  }
+  .avail-cal-day.blocked .avail-cal-label { color: rgba(220,50,50,0.7); }
+  .avail-cal-day.custom-hours .avail-cal-label { color: var(--gold); }
+  .avail-override-panel {
+    background: var(--bg-3); border: 0.5px solid var(--border-gold);
+    border-radius: 4px; padding: 1.25rem; margin-top: 0.5rem;
+    position: relative; overflow: hidden;
+  }
+  .avail-override-panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .avail-override-date {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px; font-weight: 500; color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .avail-override-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .avail-block-btn {
+    background: none; border: 0.5px solid rgba(220,50,50,0.4);
+    color: rgba(220,50,50,0.8); padding: 8px 16px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .avail-block-btn:hover { background: rgba(220,50,50,0.06); }
+  .avail-remove-btn {
+    background: none; border: 0.5px solid var(--border-mid);
+    color: var(--text-muted); padding: 8px 16px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .avail-remove-btn:hover {
+    border-color: rgba(220,50,50,0.4);
+    color: rgba(220,50,50,0.8);
+  }
 </style>
 </head>
 <body>
@@ -1020,6 +1141,15 @@
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
         </svg>
         Member Services
+      </div>
+      <div class="nav-item" data-panel="availability" onclick="switchPanel(this,'availability'); window.initAvailability?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Availability
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -1799,6 +1929,37 @@
 
           <!-- Quotes list -->
           <div id="svc-quotes-list"><div class="sub-loading">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- ══ AVAILABILITY ══ -->
+      <div class="panel" id="panel-availability">
+        <div class="panel-title">Coaching Availability</div>
+        <div class="panel-desc">Manage your coaching schedule and override calendar.</div>
+
+        <nav class="section-nav">
+          <button class="section-nav-btn active" data-avail-section="schedule" onclick="switchAvailSection('schedule')">Weekly Schedule</button>
+          <button class="section-nav-btn" data-avail-section="overrides" onclick="switchAvailSection('overrides')">Override Calendar</button>
+        </nav>
+
+        <!-- ── WEEKLY SCHEDULE ── -->
+        <div class="avail-section-pane active" id="avail-pane-schedule">
+          <div class="panel-title" style="font-size:15px;margin-bottom:0.3rem;">Weekly Schedule</div>
+          <div class="panel-desc">Set your recurring weekly availability for coaching sessions. Slots are generated every 30 minutes.</div>
+          <div id="avail-schedule-rows"></div>
+        </div>
+
+        <!-- ── OVERRIDE CALENDAR ── -->
+        <div class="avail-section-pane" id="avail-pane-overrides">
+          <div class="panel-title" style="font-size:15px;margin-bottom:0.3rem;">Availability Overrides</div>
+          <div class="panel-desc">Block out dates or set custom hours for specific days. Overrides take priority over your weekly schedule.</div>
+          <div class="avail-cal-header">
+            <button class="avail-cal-nav" id="avail-cal-prev" onclick="window.availCalPrev()">← Prev</button>
+            <div class="avail-cal-month" id="avail-cal-month-label"></div>
+            <button class="avail-cal-nav" id="avail-cal-next" onclick="window.availCalNext()">Next →</button>
+          </div>
+          <div class="avail-cal-grid" id="avail-cal-grid"></div>
+          <div id="avail-override-panel-wrap"></div>
         </div>
       </div>
 
@@ -5178,6 +5339,351 @@
       await reloadHelpData();
       showToast('Topic created.');
     }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // AVAILABILITY MANAGER
+  // ══════════════════════════════════════════════════════════════════════════
+
+  let availabilityMap = {};
+  let availOverridesCache = {};
+  let availCurrentYear = new Date().getFullYear();
+  let availCurrentMonth = new Date().getMonth();
+  let availSelectedDate = null;
+
+  function switchAvailSection(id) {
+    document.querySelectorAll('.avail-section-pane').forEach(p => {
+      p.classList.remove('active');
+      p.style.display = 'none';
+    });
+    const pane = document.getElementById('avail-pane-' + id);
+    if (pane) { pane.classList.add('active'); pane.style.display = 'block'; }
+    document.querySelectorAll('[data-avail-section]').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-avail-section="${id}"]`)?.classList.add('active');
+  }
+  window.switchAvailSection = switchAvailSection;
+
+  window.initAvailability = async function() {
+    if (window._availabilityInitialized) return;
+    window._availabilityInitialized = true;
+    buildAvailScheduleRows();
+    await loadWeeklySchedule();
+    renderOverrideCalendar(availCurrentYear, availCurrentMonth);
+  };
+
+  function buildAvailScheduleRows() {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const container = document.getElementById('avail-schedule-rows');
+    if (!container) return;
+    container.innerHTML = days.map((name, i) => `
+      <div>
+        <div class="avail-day-row inactive" id="avail-row-${i}">
+          <div class="avail-day-name">${name}</div>
+          <div>
+            <input type="checkbox" class="res-toggle-input" id="avail-toggle-${i}" onchange="window.availToggleDay(${i})">
+            <label class="res-toggle-label" for="avail-toggle-${i}"></label>
+          </div>
+          <input type="time" class="evt-datetime-input" id="avail-start-${i}" disabled>
+          <input type="time" class="evt-datetime-input" id="avail-end-${i}" disabled>
+          <button class="action-btn" onclick="window.saveAvailDay(${i})" style="white-space:nowrap;">Save</button>
+        </div>
+        <div class="avail-status" id="avail-status-${i}"></div>
+      </div>
+    `).join('');
+  }
+
+  async function loadWeeklySchedule() {
+    const { data } = await sbClient.from('coaching_availability')
+      .select('*').order('day_of_week', { ascending: true });
+    availabilityMap = {};
+    (data || []).forEach(r => { availabilityMap[r.day_of_week] = r; });
+    for (let i = 0; i <= 6; i++) {
+      const row = availabilityMap[i];
+      const toggleEl = document.getElementById(`avail-toggle-${i}`);
+      const startEl = document.getElementById(`avail-start-${i}`);
+      const endEl = document.getElementById(`avail-end-${i}`);
+      const rowEl = document.getElementById(`avail-row-${i}`);
+      if (!toggleEl) continue;
+      if (row) {
+        toggleEl.checked = row.active;
+        startEl.value = row.start_time || '';
+        endEl.value = row.end_time || '';
+        if (row.active) {
+          startEl.disabled = false;
+          endEl.disabled = false;
+          rowEl.classList.remove('inactive');
+        }
+      }
+    }
+  }
+
+  window.availToggleDay = function(dayNum) {
+    const toggleEl = document.getElementById(`avail-toggle-${dayNum}`);
+    const startEl = document.getElementById(`avail-start-${dayNum}`);
+    const endEl = document.getElementById(`avail-end-${dayNum}`);
+    const rowEl = document.getElementById(`avail-row-${dayNum}`);
+    const active = toggleEl.checked;
+    startEl.disabled = !active;
+    endEl.disabled = !active;
+    rowEl.classList.toggle('inactive', !active);
+  };
+
+  window.saveAvailDay = async function(dayNum) {
+    const toggleEl = document.getElementById(`avail-toggle-${dayNum}`);
+    const startEl = document.getElementById(`avail-start-${dayNum}`);
+    const endEl = document.getElementById(`avail-end-${dayNum}`);
+    const statusEl = document.getElementById(`avail-status-${dayNum}`);
+    const active = toggleEl.checked;
+    const start_time = startEl.value || null;
+    const end_time = endEl.value || null;
+
+    statusEl.textContent = '';
+    statusEl.className = 'avail-status';
+
+    if (active) {
+      if (!start_time || !end_time) {
+        statusEl.textContent = 'Both times required when active.';
+        statusEl.classList.add('error');
+        return;
+      }
+      if (end_time <= start_time) {
+        statusEl.textContent = 'End time must be after start time.';
+        statusEl.classList.add('error');
+        return;
+      }
+    }
+
+    const existing = availabilityMap[dayNum];
+    let error;
+    if (existing) {
+      ({ error } = await sbClient.from('coaching_availability')
+        .update({ active, start_time, end_time })
+        .eq('day_of_week', dayNum));
+    } else {
+      ({ error } = await sbClient.from('coaching_availability')
+        .insert({ day_of_week: dayNum, start_time, end_time, active, slot_duration_minutes: 30 }));
+    }
+
+    if (error) {
+      statusEl.textContent = 'Save failed: ' + (error.message || 'Unknown error');
+      statusEl.classList.add('error');
+      return;
+    }
+
+    availabilityMap[dayNum] = {
+      ...(existing || { day_of_week: dayNum, slot_duration_minutes: 30 }),
+      active, start_time, end_time,
+    };
+
+    statusEl.textContent = 'Saved';
+    statusEl.classList.add('saved');
+    setTimeout(() => {
+      statusEl.style.opacity = '0';
+      setTimeout(() => {
+        statusEl.textContent = '';
+        statusEl.style.opacity = '1';
+        statusEl.className = 'avail-status';
+      }, 300);
+    }, 3000);
+  };
+
+  window.availCalPrev = function() {
+    availCurrentMonth--;
+    if (availCurrentMonth < 0) { availCurrentMonth = 11; availCurrentYear--; }
+    renderOverrideCalendar(availCurrentYear, availCurrentMonth);
+  };
+
+  window.availCalNext = function() {
+    availCurrentMonth++;
+    if (availCurrentMonth > 11) { availCurrentMonth = 0; availCurrentYear++; }
+    renderOverrideCalendar(availCurrentYear, availCurrentMonth);
+  };
+
+  async function renderOverrideCalendar(year, month) {
+    const grid = document.getElementById('avail-cal-grid');
+    const monthLabel = document.getElementById('avail-cal-month-label');
+    const prevBtn = document.getElementById('avail-cal-prev');
+    if (!grid) return;
+
+    const today = new Date();
+    const todayY = today.getFullYear();
+    const todayM = today.getMonth();
+    const todayD = today.getDate();
+
+    const MONTH_NAMES = ['January','February','March','April','May','June','July',
+      'August','September','October','November','December'];
+    if (monthLabel) monthLabel.textContent = `${MONTH_NAMES[month]} ${year}`;
+    if (prevBtn) prevBtn.disabled = (year === todayY && month === todayM);
+
+    const padM = String(month + 1).padStart(2, '0');
+    const lastDayNum = new Date(year, month + 1, 0).getDate();
+    const firstDay = `${year}-${padM}-01`;
+    const lastDay = `${year}-${padM}-${String(lastDayNum).padStart(2, '0')}`;
+
+    const { data: overrides } = await sbClient.from('coaching_availability_overrides')
+      .select('*').gte('date', firstDay).lte('date', lastDay);
+
+    availOverridesCache = {};
+    (overrides || []).forEach(o => { availOverridesCache[o.date] = o; });
+
+    const firstDOW = new Date(year, month, 1).getDay();
+    let html = '';
+
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+      html += `<div class="avail-cal-dow">${d}</div>`;
+    });
+    for (let i = 0; i < firstDOW; i++) html += `<div class="avail-cal-day empty"></div>`;
+
+    for (let d = 1; d <= lastDayNum; d++) {
+      const dateStr = `${year}-${padM}-${String(d).padStart(2, '0')}`;
+      const isPast = (year < todayY)
+        || (year === todayY && month < todayM)
+        || (year === todayY && month === todayM && d < todayD);
+      const isToday = (year === todayY && month === todayM && d === todayD);
+      const isSelected = availSelectedDate === dateStr;
+      const ov = availOverridesCache[dateStr];
+
+      let cls = 'avail-cal-day';
+      if (isPast) cls += ' past';
+      if (isToday) cls += ' today';
+      if (isSelected) cls += ' selected';
+      if (ov?.type === 'block') cls += ' blocked';
+      else if (ov?.type === 'custom') cls += ' custom-hours';
+
+      let label = '';
+      if (ov?.type === 'block') {
+        label = `<div class="avail-cal-label">Blocked</div>`;
+      } else if (ov?.type === 'custom') {
+        const fmt = t => {
+          if (!t) return '';
+          const [h, m] = t.split(':');
+          const hr = parseInt(h, 10);
+          return `${hr % 12 || 12}${m !== '00' ? ':' + m : ''}${hr >= 12 ? 'pm' : 'am'}`;
+        };
+        label = `<div class="avail-cal-label">${fmt(ov.start_time)}–${fmt(ov.end_time)}</div>`;
+      }
+
+      const onclick = isPast ? '' : `onclick="window.availDayClick('${dateStr}')"`;
+      html += `<div class="${cls}" data-date="${dateStr}" ${onclick}><div class="avail-cal-date">${d}</div>${label}</div>`;
+    }
+
+    grid.innerHTML = html;
+    document.getElementById('avail-override-panel-wrap').innerHTML = '';
+    availSelectedDate = null;
+  }
+
+  window.availDayClick = function(dateStr) {
+    availSelectedDate = dateStr;
+    document.querySelectorAll('.avail-cal-day').forEach(el => el.classList.remove('selected'));
+    document.querySelector(`.avail-cal-day[data-date="${dateStr}"]`)?.classList.add('selected');
+    renderOverridePanel(dateStr);
+  };
+
+  function renderOverridePanel(dateStr) {
+    const wrap = document.getElementById('avail-override-panel-wrap');
+    if (!wrap) return;
+    const ov = availOverridesCache[dateStr];
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const MONTH_NAMES = ['January','February','March','April','May','June','July',
+      'August','September','October','November','December'];
+    const heading = `${DAY_NAMES[dateObj.getDay()]}, ${MONTH_NAMES[dateObj.getMonth()]} ${d}, ${y}`;
+    const key = dateStr.replace(/-/g, '');
+
+    let body;
+    if (!ov) {
+      body = `
+        <div class="avail-override-actions">
+          <button class="avail-block-btn" onclick="window.availBlockDay('${dateStr}')">Block This Day</button>
+          <button class="action-btn primary" onclick="window.availShowCustomHours('${dateStr}')">Set Custom Hours</button>
+        </div>
+        <div id="avail-custom-form-${key}" style="display:none;margin-top:1rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
+            <div>
+              <label style="display:block;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Start Time</label>
+              <input type="time" class="evt-datetime-input" id="avail-custom-start-${key}">
+            </div>
+            <div>
+              <label style="display:block;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">End Time</label>
+              <input type="time" class="evt-datetime-input" id="avail-custom-end-${key}">
+            </div>
+          </div>
+          <div id="avail-custom-err-${key}" style="font-size:12px;color:#e53935;margin-bottom:8px;min-height:14px;"></div>
+          <button class="action-btn primary" onclick="window.availSaveCustomHours('${dateStr}')">Save Custom Hours</button>
+        </div>`;
+    } else {
+      const detail = ov.type === 'block'
+        ? 'Blocked — no sessions this day.'
+        : `Custom hours: ${ov.start_time || '?'} – ${ov.end_time || '?'}`;
+      body = `
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;font-weight:300;">${detail}</div>
+        <button class="avail-remove-btn" onclick="window.availRemoveOverride('${dateStr}')">Remove Override</button>`;
+    }
+
+    wrap.innerHTML = `
+      <div class="avail-override-panel">
+        <div class="avail-override-date">${heading}</div>
+        ${body}
+        <div id="avail-panel-error" style="font-size:12px;color:#e53935;margin-top:8px;min-height:14px;"></div>
+      </div>`;
+  }
+
+  window.availBlockDay = async function(dateStr) {
+    const { error } = await sbClient.from('coaching_availability_overrides')
+      .insert({ date: dateStr, type: 'block' });
+    if (error) {
+      const errEl = document.getElementById('avail-panel-error');
+      if (errEl) errEl.textContent = 'Error: ' + (error.message || 'Could not block day.');
+      return;
+    }
+    await renderOverrideCalendar(availCurrentYear, availCurrentMonth);
+    showToast('Day blocked.');
+  };
+
+  window.availShowCustomHours = function(dateStr) {
+    const key = dateStr.replace(/-/g, '');
+    const form = document.getElementById(`avail-custom-form-${key}`);
+    if (form) form.style.display = 'block';
+  };
+
+  window.availSaveCustomHours = async function(dateStr) {
+    const key = dateStr.replace(/-/g, '');
+    const start_time = document.getElementById(`avail-custom-start-${key}`)?.value || null;
+    const end_time = document.getElementById(`avail-custom-end-${key}`)?.value || null;
+    const errEl = document.getElementById(`avail-custom-err-${key}`);
+
+    if (errEl) errEl.textContent = '';
+    if (!start_time || !end_time) {
+      if (errEl) errEl.textContent = 'Both start and end times are required.';
+      return;
+    }
+    if (end_time <= start_time) {
+      if (errEl) errEl.textContent = 'End time must be after start time.';
+      return;
+    }
+
+    const { error } = await sbClient.from('coaching_availability_overrides')
+      .insert({ date: dateStr, type: 'custom', start_time, end_time });
+    if (error) {
+      const panelErr = document.getElementById('avail-panel-error');
+      if (panelErr) panelErr.textContent = 'Error: ' + (error.message || 'Could not save custom hours.');
+      return;
+    }
+    await renderOverrideCalendar(availCurrentYear, availCurrentMonth);
+    showToast('Custom hours saved.');
+  };
+
+  window.availRemoveOverride = async function(dateStr) {
+    const { error } = await sbClient.from('coaching_availability_overrides')
+      .delete().eq('date', dateStr);
+    if (error) {
+      const errEl = document.getElementById('avail-panel-error');
+      if (errEl) errEl.textContent = 'Error: ' + (error.message || 'Could not remove override.');
+      return;
+    }
+    await renderOverrideCalendar(availCurrentYear, availCurrentMonth);
+    showToast('Override removed.');
   };
 </script>
 </body>
