@@ -15,7 +15,8 @@
     --bg: #070707; --bg-2: #0d0d0d; --bg-3: #131313; --bg-4: #181818;
     --text: #f0ede6; --text-muted: rgba(240,237,230,0.58); --text-dim: rgba(240,237,230,0.28);
     --border: rgba(240,237,230,0.08); --border-mid: rgba(240,237,230,0.14);
-    --red: #e05c5c;
+    --green: #4caf84; --green-dim: rgba(76,175,132,0.12);
+    --red: #e05c5c; --red-dim: rgba(224,92,92,0.1);
   }
   html, body { height: 100%; }
   body { font-family: 'Raleway', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -36,6 +37,21 @@
   .page-eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 0.75rem; }
   .page-heading { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 400; color: var(--text); line-height: 1.1; margin-bottom: 0.5rem; }
   .page-subheading { font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.7; margin-bottom: 3rem; max-width: 520px; }
+
+  /* ── TAB NAV ── */
+  .svc-tab-nav {
+    display: flex; gap: 4px;
+    margin-bottom: 2.5rem; padding-bottom: 1.25rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .svc-main-tab {
+    background: none; border: 0.5px solid var(--border); color: var(--text-dim);
+    padding: 6px 16px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.15s;
+  }
+  .svc-main-tab:hover { border-color: var(--border-mid); color: var(--text-muted); }
+  .svc-main-tab.active { background: var(--gold-dim); border-color: var(--border-gold); color: var(--gold); }
 
   /* ── SECTION ── */
   .section { margin-bottom: 3.5rem; }
@@ -180,10 +196,82 @@
   .btn-modal-cancel:hover { border-color: var(--border-mid); color: var(--text-muted); }
   .modal-error { font-size: 12px; color: var(--red); font-weight: 500; min-height: 18px; margin-top: 0.5rem; }
 
+  /* ── MY ORDERS TAB ── */
+  .ord-section { margin-bottom: 2.5rem; }
+  .ord-section-heading { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400; color: var(--text); margin-bottom: 1rem; }
+  .ord-quote-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 6px; padding: 1.5rem; margin-bottom: 1rem;
+    position: relative; overflow: hidden;
+  }
+  .ord-quote-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .ord-quote-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--text); margin-bottom: 0.25rem; }
+  .ord-quote-desc { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.65; margin-bottom: 0.75rem; }
+  .ord-quote-price { font-size: 22px; font-family: 'Cormorant Garamond', serif; font-weight: 400; color: var(--gold); margin-bottom: 0.5rem; }
+  .ord-quote-expiry { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 1.25rem; }
+  .ord-quote-expiry.urgent { color: var(--red); }
+  .ord-quote-actions { display: flex; gap: 0.75rem; }
+  .ord-order-card {
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 1.5rem; margin-bottom: 0.75rem;
+    transition: border-color 0.2s;
+  }
+  .ord-order-card:hover { border-color: var(--border-mid); }
+  .ord-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .ord-service-name { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 400; color: var(--text); margin-bottom: 2px; }
+  .ord-date { font-size: 12px; color: var(--text-dim); font-weight: 300; }
+  .ord-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+  .ord-badge {
+    display: inline-flex; align-items: center;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 2px;
+  }
+  .ord-badge-pending { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
+  .ord-badge-progress { background: rgba(100,149,237,0.15); color: rgba(100,149,237,0.8); border: 0.5px solid rgba(100,149,237,0.3); }
+  .ord-badge-fulfilled { background: var(--green-dim); color: var(--green); border: 0.5px solid rgba(76,175,132,0.25); }
+  .ord-badge-cancelled { background: var(--red-dim); color: var(--red); border: 0.5px solid rgba(224,92,92,0.25); }
+  .ord-badge-expedited { background: var(--gold-dim); color: var(--gold); border: 0.5px solid var(--border-gold); }
+  .ord-badge-q-declined { background: rgba(240,237,230,0.05); color: var(--text-dim); border: 0.5px solid var(--border); }
+  .ord-badge-q-expired { background: var(--red-dim); color: var(--red); border: 0.5px solid rgba(224,92,92,0.25); }
+  .ord-detail-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 2px; }
+  .ord-detail-value { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.55; word-break: break-word; }
+  .ord-detail-value a { color: var(--gold); text-decoration: none; }
+  .ord-deadline { font-size: 12px; color: var(--text-muted); font-weight: 300; }
+  .ord-countdown { font-size: 12px; font-weight: 500; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .ord-countdown-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: #dc3232; flex-shrink: 0;
+    animation: ord-cnt-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes ord-cnt-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .btn-gold-ord {
+    background: var(--gold); color: #070707;
+    border: none; padding: 10px 22px; border-radius: 2px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-gold-ord:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-gold-ord:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-outline-ord {
+    background: none; color: var(--text-muted);
+    border: 0.5px solid var(--border-mid); padding: 9px 20px; border-radius: 2px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-outline-ord:hover { border-color: var(--border-gold); color: var(--gold); }
+  .btn-outline-ord:disabled { opacity: 0.4; cursor: not-allowed; }
+  .ord-empty { text-align: center; padding: 3rem 1rem; }
+  .ord-empty p { font-size: 14px; color: var(--text-dim); font-weight: 300; line-height: 1.7; }
+
   @media (max-width: 600px) {
     .main { padding: 2rem 1.25rem 5rem; }
     .page-heading { font-size: 32px; }
     .order-modal { padding: 1.5rem; }
+    .ord-quote-actions { flex-direction: column; }
   }
 </style>
 </head>
@@ -201,61 +289,77 @@
   <div id="app-subnav"></div>
 
   <main class="main">
-    <div class="page-eyebrow">For Members</div>
-    <h1 class="page-heading">Member Services</h1>
-    <p class="page-subheading">Personalized services to support your growth as a performer.</p>
 
-    <!-- Section 1: Deliverable Services -->
-    <section class="section" id="section-deliverable">
-      <h2 class="section-heading">Deliverable Services</h2>
-      <p class="section-subheading">Submit your materials and receive a finished file, delivered within your chosen turnaround.</p>
-      <div class="services-grid" id="deliverable-grid">
-        <!-- rendered by JS -->
+    <!-- Tab navigation -->
+    <div class="svc-tab-nav">
+      <button class="svc-main-tab active" data-tab="browse" onclick="switchSvcTab('browse')">Browse Services</button>
+      <button class="svc-main-tab" data-tab="orders" onclick="switchSvcTab('orders')">My Orders</button>
+    </div>
+
+    <!-- ── TAB: Browse Services ── -->
+    <div id="tab-browse">
+      <div class="page-eyebrow">For Members</div>
+      <h1 class="page-heading">Member Services</h1>
+      <p class="page-subheading">Personalized services to support your growth as a performer.</p>
+
+      <section class="section" id="section-deliverable">
+        <h2 class="section-heading">Deliverable Services</h2>
+        <p class="section-subheading">Submit your materials and receive a finished file, delivered within your chosen turnaround.</p>
+        <div class="services-grid" id="deliverable-grid"></div>
+      </section>
+
+      <section class="section" id="section-coaching">
+        <h2 class="section-heading">1:1 Coaching Sessions</h2>
+        <p class="section-subheading">Private video coaching, one-on-one with Jonathan.</p>
+        <div id="coaching-card-wrap"></div>
+      </section>
+
+      <section class="section" id="section-studio">
+        <h2 class="section-heading">In-Studio Services</h2>
+        <p class="section-subheading">Bring professional vocal production to your recording session.</p>
+        <div id="studio-card-wrap"></div>
+      </section>
+    </div>
+
+    <!-- ── TAB: My Orders ── -->
+    <div id="tab-orders" style="display:none;">
+      <div id="ord-loading-msg" style="text-align:center;padding:3rem 1rem;font-size:14px;color:var(--text-dim);">Loading your orders…</div>
+
+      <!-- Active Quotes -->
+      <div class="ord-section" id="ord-quotes-section" style="display:none;">
+        <h2 class="ord-section-heading">Quotes Awaiting Your Response</h2>
+        <div id="ord-quotes-list"></div>
       </div>
-    </section>
 
-    <!-- Section 2: Coaching Sessions -->
-    <section class="section" id="section-coaching">
-      <h2 class="section-heading">1:1 Coaching Sessions</h2>
-      <p class="section-subheading">Private video coaching, one-on-one with Jonathan.</p>
-      <div id="coaching-card-wrap"></div>
-    </section>
+      <!-- Order History -->
+      <div class="ord-section" id="ord-history-section" style="display:none;">
+        <h2 class="ord-section-heading">Order History</h2>
+        <div id="ord-orders-list"></div>
+      </div>
+    </div>
 
-    <!-- Section 3: In-Studio -->
-    <section class="section" id="section-studio">
-      <h2 class="section-heading">In-Studio Services</h2>
-      <p class="section-subheading">Bring professional vocal production to your recording session.</p>
-      <div id="studio-card-wrap"></div>
-    </section>
   </main>
 
   <div id="app-footer"></div>
 </div>
 
-<!-- Order Modal -->
+<!-- Order Modal (for Browse Services tab) -->
 <div id="order-modal-overlay">
   <div class="order-modal">
     <h2 class="modal-title" id="modal-service-name">Service</h2>
     <div class="modal-price-display" id="modal-price-display"></div>
-
     <hr class="modal-divider">
-
-    <!-- Expedited toggle (shown/hidden per service) -->
     <div class="modal-field" id="modal-expedited-wrap" style="display:none;">
       <label class="expedited-toggle">
         <input type="checkbox" id="modal-expedited-check">
         <span class="expedited-toggle-text" id="modal-expedited-label">Expedited turnaround (4 days)</span>
       </label>
     </div>
-
-    <!-- Notes -->
     <div class="modal-field">
       <label class="modal-label" for="modal-notes">Notes <span class="opt">(optional)</span></label>
       <textarea class="modal-textarea" id="modal-notes" rows="3" maxlength="500" placeholder="Anything specific you'd like me to know?"></textarea>
       <div class="char-count"><span id="modal-notes-count">0</span> / 500</div>
     </div>
-
-    <!-- Reference file -->
     <div class="modal-field">
       <label class="modal-label">Reference materials <span class="opt">(optional)</span></label>
       <div class="file-upload-area" id="file-upload-area" role="button" tabindex="0">
@@ -264,14 +368,10 @@
       </div>
       <input type="file" id="modal-file-input" accept=".pdf,.mp3,.wav,.jpg,.jpeg,.png" style="display:none;" aria-hidden="true">
     </div>
-
-    <!-- Reference link -->
     <div class="modal-field">
       <label class="modal-label" for="modal-drive-link">Google Drive or YouTube link <span class="opt">(optional)</span></label>
       <input type="url" class="modal-input" id="modal-drive-link" placeholder="https://">
     </div>
-
-    <!-- Cancellation policy -->
     <div class="policy-box">
       <p class="policy-text">All sales are final. Refunds are at the sole discretion of Sound Advice Vocal Studio.</p>
       <label class="policy-agree">
@@ -279,9 +379,7 @@
         <span class="policy-agree-text">I understand and agree to the cancellation policy.</span>
       </label>
     </div>
-
     <div class="modal-error" id="modal-error"></div>
-
     <div class="modal-actions">
       <button class="btn-checkout" id="btn-checkout" disabled>Proceed to Checkout →</button>
       <button class="btn-modal-cancel" id="btn-modal-cancel">Cancel</button>
@@ -313,6 +411,19 @@
   let currentUser = null;
   let currentService = null;
   let selectedFile = null;
+  let ordersTabLoaded = false;
+  let ordersCountdownTimer = null;
+
+  // ── TAB SWITCHING ──
+  window.switchSvcTab = function(tab) {
+    document.querySelectorAll('.svc-main-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.svc-main-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById('tab-browse').style.display = tab === 'browse' ? '' : 'none';
+    document.getElementById('tab-orders').style.display = tab === 'orders' ? '' : 'none';
+    if (tab === 'orders' && !ordersTabLoaded) {
+      loadMyOrders();
+    }
+  };
 
   // ── MODAL STATE ──
   const overlay       = document.getElementById('order-modal-overlay');
@@ -348,10 +459,7 @@
     currentService = service;
     selectedFile = null;
     modalError.textContent = '';
-
     modalTitle.textContent = service.name;
-
-    // Reset fields
     notesEl.value = '';
     notesCount.textContent = '0';
     driveLinkEl.value = '';
@@ -362,8 +470,6 @@
     fileInput.value = '';
     btnCheckout.disabled = true;
     btnCheckout.textContent = 'Proceed to Checkout →';
-
-    // Expedited toggle
     if (service.expedited_price != null) {
       const diff = Number(service.expedited_price) - Number(service.price);
       expeditedLbl.innerHTML = `<strong>Expedited turnaround (4 days)</strong> — add ${formatPrice(diff)}`;
@@ -371,7 +477,6 @@
     } else {
       expeditedWrap.style.display = 'none';
     }
-
     updateModalPrice();
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -385,15 +490,8 @@
   }
 
   expeditedChk.addEventListener('change', updateModalPrice);
-
-  notesEl.addEventListener('input', () => {
-    notesCount.textContent = notesEl.value.length;
-  });
-
-  policyChk.addEventListener('change', () => {
-    btnCheckout.disabled = !policyChk.checked;
-  });
-
+  notesEl.addEventListener('input', () => { notesCount.textContent = notesEl.value.length; });
+  policyChk.addEventListener('change', () => { btnCheckout.disabled = !policyChk.checked; });
   fileUploadArea.addEventListener('click', () => fileInput.click());
   fileUploadArea.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
 
@@ -412,28 +510,20 @@
   });
 
   btnCancel.addEventListener('click', closeModal);
-
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) closeModal();
-  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
   btnCheckout.addEventListener('click', async () => {
     if (!currentService || !policyChk.checked) return;
-
     modalError.textContent = '';
     btnCheckout.disabled = true;
     btnCheckout.textContent = 'Processing…';
-
     try {
       let referenceFileUrl = '';
-
-      // Upload reference file if selected
       if (selectedFile) {
         const filePath = `${currentUser.id}/${Date.now()}-${selectedFile.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('service-references')
           .upload(filePath, selectedFile, { upsert: false });
-
         if (uploadError) {
           modalError.textContent = 'File upload failed. Please try again.';
           btnCheckout.disabled = false;
@@ -442,9 +532,7 @@
         }
         referenceFileUrl = uploadData.path;
       }
-
       const { data: { session } } = await supabase.auth.getSession();
-
       const res = await fetch('/api/checkout/createCheckout', {
         method: 'POST',
         headers: {
@@ -460,16 +548,13 @@
           referenceDriveUrl: driveLinkEl.value.trim() || null,
         }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         modalError.textContent = data.error || 'Could not start checkout. Please try again.';
         btnCheckout.disabled = false;
         btnCheckout.textContent = 'Proceed to Checkout →';
         return;
       }
-
       window.location.href = data.url;
     } catch {
       modalError.textContent = 'Connection error. Please try again.';
@@ -478,23 +563,18 @@
     }
   });
 
-  // ── RENDER DELIVERABLE CARDS ──
+  // ── SERVICE CARD RENDERERS ──
   function renderDeliverableCard(service) {
     const card = document.createElement('div');
     card.className = 'service-card';
-
     const priceHtml = service.expedited_price != null
       ? `<div class="service-price">${formatPrice(service.price)}</div>
          <div class="service-price-exp">or ${formatPrice(service.expedited_price)} expedited (4-day turnaround)</div>`
       : `<div class="service-price">${formatPrice(service.price)}</div>`;
-
     const turnaroundDays = service.turnaround_days || 7;
-
     card.innerHTML = `
-      <div class="service-card-header">
-        <div class="service-name">${escapeHtml(service.name)}</div>
-      </div>
-      <p class="service-description">${escapeHtml(service.description)}</p>
+      <div class="service-card-header"><div class="service-name">${escHtml(service.name)}</div></div>
+      <p class="service-description">${escHtml(service.description)}</p>
       <div class="service-meta">
         ${priceHtml}
         <div class="turnaround-badge">${turnaroundDays}-day turnaround</div>
@@ -503,19 +583,17 @@
         <button class="btn-order" data-service-id="${service.id}">Order Now</button>
       </div>
     `;
-
     card.querySelector('.btn-order').addEventListener('click', () => openModal(service));
     return card;
   }
 
-  // ── RENDER COACHING CARD ──
   function renderCoachingCard(service) {
     const wrap = document.getElementById('coaching-card-wrap');
     const card = document.createElement('div');
     card.className = 'service-card single-card';
     card.innerHTML = `
-      <div class="service-name">${escapeHtml(service.name)}</div>
-      <p class="service-description">${escapeHtml(service.description)}</p>
+      <div class="service-name">${escHtml(service.name)}</div>
+      <p class="service-description">${escHtml(service.description)}</p>
       <div class="service-meta">
         <div class="service-price">${formatPrice(service.price)}<span style="font-size:14px;color:var(--text-muted);font-family:'Raleway',sans-serif;font-weight:300;"> / session</span></div>
       </div>
@@ -530,14 +608,13 @@
     wrap.appendChild(card);
   }
 
-  // ── RENDER STUDIO CARD ──
   async function renderStudioCard(service) {
     const wrap = document.getElementById('studio-card-wrap');
     const card = document.createElement('div');
     card.className = 'service-card single-card';
     card.innerHTML = `
-      <div class="service-name">${escapeHtml(service.name)}</div>
-      <p class="service-description">${escapeHtml(service.description)}</p>
+      <div class="service-name">${escHtml(service.name)}</div>
+      <p class="service-description">${escHtml(service.description)}</p>
       <div class="service-actions">
         <button class="btn-ghost" id="btn-quote-request">Request a Quote</button>
         <p class="btn-inline-msg" id="quote-msg" style="display:none;"></p>
@@ -547,22 +624,18 @@
     wrap.appendChild(card);
   }
 
-  // ── QUOTE REQUEST (DM) ──
   async function handleQuoteRequest(service) {
     const btn = document.getElementById('btn-quote-request');
     const msg = document.getElementById('quote-msg');
     btn.disabled = true;
     btn.textContent = 'Sending…';
     msg.style.display = 'none';
-
     try {
-      // Find or create conversation with admin
       const { data: convs } = await supabase
         .from('conversations')
         .select('id')
         .or(`and(participant_1_id.eq.${currentUser.id},participant_2_id.eq.${ADMIN_ID}),and(participant_1_id.eq.${ADMIN_ID},participant_2_id.eq.${currentUser.id})`)
         .limit(1);
-
       let conversationId;
       if (convs && convs.length > 0) {
         conversationId = convs[0].id;
@@ -570,38 +643,23 @@
         const { data: newConv, error: convErr } = await supabase
           .from('conversations')
           .insert({ participant_1_id: currentUser.id, participant_2_id: ADMIN_ID })
-          .select('id')
-          .single();
+          .select('id').single();
         if (convErr) throw convErr;
         conversationId = newConv.id;
       }
-
-      // Fetch display_name for message
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('user_id', currentUser.id)
-        .single();
+      const { data: profile } = await supabase.from('profiles').select('display_name').eq('user_id', currentUser.id).single();
       const displayName = profile?.display_name || 'A member';
-
-      // INSERT message
       await supabase.from('messages').insert({
         conversation_id: conversationId,
         sender_id: currentUser.id,
         content: `Hi Jonathan, I'm interested in the ${service.name} service and would like to request a quote. [Member can add details in the conversation.]`,
         read: false,
       });
-
-      // INSERT notification for admin
       await supabase.from('notifications').insert({
-        user_id: ADMIN_ID,
-        type: 'quote_request',
-        title: 'New quote request',
+        user_id: ADMIN_ID, type: 'quote_request', title: 'New quote request',
         body: `${displayName} requested a quote for ${service.name}`,
-        link: '/app/messages.html',
-        read: false,
+        link: '/app/messages.html', read: false,
       });
-
       window.location.href = `/app/messages.html?conversation=${conversationId}`;
     } catch (err) {
       console.error('[quote request]', err.message);
@@ -612,12 +670,270 @@
     }
   }
 
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  // ── SHARED HELPERS ──
+  function escHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatDate(isoString) {
+    return new Date(isoString).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  // ── MY ORDERS TAB LOGIC ──
+  function ordBuildCountdown(deadlineMs) {
+    const diff = deadlineMs - Date.now();
+    const abs = Math.abs(diff);
+    const totalH = Math.floor(abs / 3600000);
+    const mins = Math.floor((abs % 3600000) / 60000);
+    const days = Math.floor(totalH / 24);
+    const remH = totalH % 24;
+    if (diff < 0) return { text: `Overdue by ${totalH}h`, color: '#dc3232', dot: true };
+    if (diff < 86400000) return { text: `${totalH}h ${mins}m remaining`, color: '#dc3232', dot: true };
+    if (diff < 172800000) return { text: `${days} day${days !== 1 ? 's' : ''}, ${remH}h remaining`, color: 'var(--gold)', dot: false };
+    return { text: `${days} day${days !== 1 ? 's' : ''}, ${remH}h remaining`, color: 'var(--text-muted)', dot: false };
+  }
+
+  function ordUpdateCountdowns() {
+    document.querySelectorAll('.ord-countdown[data-deadline]').forEach(el => {
+      const { text, color, dot } = ordBuildCountdown(parseInt(el.dataset.deadline, 10));
+      el.innerHTML = dot ? `<span class="ord-countdown-dot"></span>${text}` : text;
+      el.style.color = color;
+    });
+  }
+
+  function ordGetQuoteCountdown(expiresAt) {
+    const diff = new Date(expiresAt).getTime() - Date.now();
+    if (diff <= 0) return { text: 'Expired', urgent: false };
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    if (diff < 86400000) return { text: `Expires in ${hours}h ${minutes}m`, urgent: true };
+    const days = Math.floor(diff / 86400000);
+    return { text: `Expires in ${days} day${days !== 1 ? 's' : ''}`, urgent: false };
+  }
+
+  function renderOrdQuoteCard(quote) {
+    const card = document.createElement('div');
+    card.className = 'ord-quote-card';
+    card.dataset.quoteId = quote.id;
+    const countdown = ordGetQuoteCountdown(quote.expires_at);
+    const isExpired = new Date(quote.expires_at) <= new Date();
+    card.innerHTML = `
+      <div class="ord-quote-title">${escHtml(quote.title)}</div>
+      <p class="ord-quote-desc">${escHtml(quote.description)}</p>
+      <div class="ord-quote-price">${formatPrice(quote.price)}</div>
+      <div class="ord-quote-expiry${countdown.urgent ? ' urgent' : ''}">${countdown.text}</div>
+      ${!isExpired ? `
+        <div class="ord-quote-actions">
+          <button class="btn-gold-ord" id="ord-accept-${quote.id}">Accept &amp; Pay →</button>
+          <button class="btn-outline-ord" id="ord-decline-${quote.id}">Decline</button>
+        </div>
+        <div id="ord-quote-err-${quote.id}" style="font-size:12px;color:var(--red);margin-top:0.5rem;min-height:16px;"></div>
+      ` : `<p style="font-size:13px;color:var(--text-dim);font-weight:300;margin-top:0.25rem;">This quote has expired.</p>`}
+    `;
+    if (!isExpired) {
+      card.querySelector(`#ord-accept-${quote.id}`).addEventListener('click', () => ordAcceptQuote(quote.id));
+      card.querySelector(`#ord-decline-${quote.id}`).addEventListener('click', () => ordDeclineQuote(quote.id));
+    }
+    return card;
+  }
+
+  async function ordAcceptQuote(quoteId) {
+    const btn = document.getElementById(`ord-accept-${quoteId}`);
+    const errEl = document.getElementById(`ord-quote-err-${quoteId}`);
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+    errEl.textContent = '';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/services/createQuote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ action: 'checkout', quoteId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Could not start checkout. Please try again.';
+        btn.disabled = false;
+        btn.textContent = 'Accept & Pay →';
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      errEl.textContent = 'Connection error. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Accept & Pay →';
+    }
+  }
+
+  async function ordDeclineQuote(quoteId) {
+    const btn = document.getElementById(`ord-decline-${quoteId}`);
+    btn.disabled = true;
+    btn.textContent = 'Declining…';
+    const { error } = await supabase.from('service_quotes').update({ status: 'declined' }).eq('id', quoteId);
+    if (error) { btn.disabled = false; btn.textContent = 'Decline'; return; }
+    const card = document.querySelector(`[data-quote-id="${quoteId}"]`);
+    if (card) card.remove();
+    const quotesList = document.getElementById('ord-quotes-list');
+    if (quotesList && !quotesList.querySelector('.ord-quote-card')) {
+      document.getElementById('ord-quotes-section').style.display = 'none';
+    }
+    ordShowToast('Quote declined.');
+  }
+
+  async function renderOrdOrderCard(order, service, delivery) {
+    const card = document.createElement('div');
+    card.className = 'ord-order-card';
+    const turnaround = order.expedited ? 4 : (service?.turnaround_days || 7);
+    const turnaroundLabel = order.expedited ? `Expedited (4-day)` : `Standard (${turnaround}-day)`;
+    const deadline = new Date(new Date(order.created_at).getTime() + turnaround * 24 * 3600 * 1000);
+    const deadlineStr = deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    let statusBadge = '';
+    if (order.status === 'pending_approval') statusBadge = `<span class="ord-badge ord-badge-pending">Pending Review</span>`;
+    else if (order.status === 'in_progress') statusBadge = `<span class="ord-badge ord-badge-progress">In Progress</span>`;
+    else if (order.status === 'fulfilled') statusBadge = `<span class="ord-badge ord-badge-fulfilled">Fulfilled</span>`;
+    else if (order.status === 'cancelled') statusBadge = `<span class="ord-badge ord-badge-cancelled">Cancelled</span>`;
+
+    if (order.status === 'fulfilled') {
+      let deliveryHtml = '';
+      if (delivery?.notes) {
+        deliveryHtml += `<p style="font-size:13px;color:var(--text-muted);font-weight:300;font-style:italic;line-height:1.65;margin-bottom:0.75rem;">${escHtml(delivery.notes)}</p>`;
+      }
+      if (delivery?.file_url) {
+        const { data: signedData } = await supabase.storage.from('service-deliveries').createSignedUrl(delivery.file_url, 604800);
+        if (signedData?.signedUrl) {
+          deliveryHtml += `<a href="${signedData.signedUrl}" class="btn-gold-ord" download="${escHtml(delivery.file_name || 'download')}" style="margin-right:0.5rem;">Download Your File ↓</a>`;
+        }
+      }
+      if (delivery?.delivery_url) {
+        deliveryHtml += `<a href="${escHtml(delivery.delivery_url)}" target="_blank" rel="noopener" style="font-size:13px;color:var(--gold);font-weight:600;text-decoration:none;">Access Your Delivery →</a>`;
+      }
+      if (!deliveryHtml) {
+        deliveryHtml = `<p style="font-size:13px;color:var(--text-dim);font-weight:300;">Delivery not yet available.</p>`;
+      }
+      card.innerHTML = `
+        <div class="ord-card-header">
+          <div><div class="ord-service-name">${escHtml(service?.name || 'Service')}</div><div class="ord-date">${formatDate(order.created_at)}</div></div>
+          <div>${statusBadge}</div>
+        </div>
+        <div style="margin-top:0.5rem;">${deliveryHtml}</div>
+      `;
+      return card;
+    }
+
+    if (order.status === 'cancelled') {
+      card.innerHTML = `
+        <div class="ord-card-header">
+          <div><div class="ord-service-name">${escHtml(service?.name || 'Service')}</div><div class="ord-date">${formatDate(order.created_at)}</div></div>
+          <div>${statusBadge}</div>
+        </div>
+      `;
+      return card;
+    }
+
+    const detailRows = [];
+    if (order.expedited) detailRows.push(`<span class="ord-badge ord-badge-expedited">Expedited</span>`);
+    if (order.notes) detailRows.push(`<div style="margin-bottom:0.5rem;"><div class="ord-detail-label">Notes Submitted</div><div class="ord-detail-value">${escHtml(order.notes)}</div></div>`);
+    if (order.reference_file_url) detailRows.push(`<div style="margin-bottom:0.5rem;"><div class="ord-detail-label">Reference File</div><div class="ord-detail-value" style="font-size:12px;color:var(--text-dim);">File submitted ✓</div></div>`);
+    if (order.reference_drive_url) detailRows.push(`<div style="margin-bottom:0.5rem;"><div class="ord-detail-label">Reference Link</div><div class="ord-detail-value"><a href="${escHtml(order.reference_drive_url)}" target="_blank" rel="noopener">View Link ↗</a></div></div>`);
+
+    card.innerHTML = `
+      <div class="ord-card-header">
+        <div><div class="ord-service-name">${escHtml(service?.name || 'Service')}</div><div class="ord-date">${formatDate(order.created_at)}</div></div>
+        <div class="ord-badges">${statusBadge}</div>
+      </div>
+      ${detailRows.length ? `<div style="margin-bottom:0.75rem;">${detailRows.join('')}</div>` : ''}
+      <div class="ord-deadline">Due by ${deadlineStr} · ${turnaroundLabel}</div>
+      <div class="ord-countdown" data-deadline="${deadline.getTime()}"></div>
+    `;
+    return card;
+  }
+
+  function renderOrdQuoteHistoryCard(quote) {
+    const card = document.createElement('div');
+    card.className = 'ord-order-card';
+    let badge = '';
+    if (quote.status === 'declined') badge = `<span class="ord-badge ord-badge-q-declined">Declined</span>`;
+    else if (quote.status === 'expired') badge = `<span class="ord-badge ord-badge-q-expired">Expired</span>`;
+    card.innerHTML = `
+      <div class="ord-card-header">
+        <div><div class="ord-service-name">${escHtml(quote.title)}</div><div class="ord-date">${formatDate(quote.created_at)}</div></div>
+        <div>${badge}</div>
+      </div>
+    `;
+    return card;
+  }
+
+  let ordToastTimer = null;
+  function ordShowToast(msg) {
+    let toast = document.getElementById('ord-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'ord-toast';
+      toast.style.cssText = 'position:fixed;bottom:2rem;right:2rem;background:var(--bg-3);border:0.5px solid var(--border-gold);color:var(--text);padding:12px 20px;border-radius:4px;font-size:13px;font-weight:500;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:1000;';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    requestAnimationFrame(() => { toast.style.transform = 'translateY(0)'; toast.style.opacity = '1'; });
+    if (ordToastTimer) clearTimeout(ordToastTimer);
+    ordToastTimer = setTimeout(() => { toast.style.transform = 'translateY(80px)'; toast.style.opacity = '0'; }, 3000);
+  }
+
+  async function loadMyOrders() {
+    ordersTabLoaded = true;
+    const loadingMsg = document.getElementById('ord-loading-msg');
+
+    const [ordersRes, quotesRes] = await Promise.all([
+      supabase.from('service_orders').select('*').eq('member_id', currentUser.id).order('created_at', { ascending: false }),
+      supabase.from('service_quotes').select('*').eq('member_id', currentUser.id).order('created_at', { ascending: false }),
+    ]);
+
+    const orders = ordersRes.data || [];
+    const quotes = quotesRes.data || [];
+
+    const serviceIds = [...new Set(orders.map(o => o.service_id).filter(Boolean))];
+    let serviceMap = {};
+    if (serviceIds.length) {
+      const { data: svcs } = await supabase.from('services').select('id, name, turnaround_days, type').in('id', serviceIds);
+      (svcs || []).forEach(s => { serviceMap[s.id] = s; });
+    }
+
+    const fulfilledIds = orders.filter(o => o.status === 'fulfilled').map(o => o.id);
+    let deliveryMap = {};
+    if (fulfilledIds.length) {
+      const { data: deliveries } = await supabase.from('service_deliveries').select('order_id, file_url, file_name, delivery_url, notes').in('order_id', fulfilledIds);
+      (deliveries || []).forEach(d => { deliveryMap[d.order_id] = d; });
+    }
+
+    if (loadingMsg) loadingMsg.style.display = 'none';
+
+    const activeQuotes = quotes.filter(q => q.status === 'pending' && new Date(q.expires_at) > new Date());
+    if (activeQuotes.length) {
+      const section = document.getElementById('ord-quotes-section');
+      section.style.display = 'block';
+      const list = document.getElementById('ord-quotes-list');
+      activeQuotes.forEach(q => list.appendChild(renderOrdQuoteCard(q)));
+    }
+
+    const historySection = document.getElementById('ord-history-section');
+    historySection.style.display = 'block';
+    const ordersList = document.getElementById('ord-orders-list');
+
+    if (!orders.length && !quotes.filter(q => q.status === 'declined' || q.status === 'expired').length) {
+      ordersList.innerHTML = `<div class="ord-empty"><p>No orders yet.<br><button class="btn-ghost" style="width:auto;padding:10px 20px;margin-top:1rem;" onclick="window.switchSvcTab('browse')">Browse Services →</button></p></div>`;
+    } else {
+      for (const order of orders) {
+        const card = await renderOrdOrderCard(order, serviceMap[order.service_id], deliveryMap[order.id]);
+        ordersList.appendChild(card);
+      }
+      const pastQuotes = quotes.filter(q => q.status === 'declined' || q.status === 'expired');
+      pastQuotes.forEach(q => ordersList.appendChild(renderOrdQuoteHistoryCard(q)));
+    }
+
+    ordUpdateCountdowns();
+    if (ordersCountdownTimer) clearInterval(ordersCountdownTimer);
+    ordersCountdownTimer = setInterval(ordUpdateCountdowns, 60000);
   }
 
   // ── INIT ──
@@ -638,7 +954,6 @@
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
     initSubnav('services', supabase);
 
-    // Fetch all active services ordered by position
     const { data: services } = await supabase
       .from('services')
       .select('*')
@@ -646,20 +961,21 @@
       .order('position', { ascending: true });
 
     const deliverableGrid = document.getElementById('deliverable-grid');
-
     for (const service of (services || [])) {
-      if (service.type === 'deliverable') {
-        deliverableGrid.appendChild(renderDeliverableCard(service));
-      } else if (service.type === 'virtual_session') {
-        renderCoachingCard(service);
-      } else if (service.type === 'local') {
-        renderStudioCard(service);
-      }
+      if (service.type === 'deliverable') deliverableGrid.appendChild(renderDeliverableCard(service));
+      else if (service.type === 'virtual_session') renderCoachingCard(service);
+      else if (service.type === 'local') renderStudioCard(service);
     }
 
     initFooter();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+
+    // Check URL param to auto-switch tab
+    const tabParam = new URLSearchParams(window.location.search).get('tab');
+    if (tabParam === 'orders') {
+      switchSvcTab('orders');
+    }
   }
 
   init();

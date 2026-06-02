@@ -4293,17 +4293,17 @@
     const now = Date.now();
     const urgentThreshold = now + 24 * 3600 * 1000;
 
-    // Sort by deadline
+    // Sort by deadline (expedited orders use 4 days, standard use service turnaround_days)
     orders.sort((a, b) => {
-      const daysA = svcMap[a.service_id]?.turnaround_days || 7;
-      const daysB = svcMap[b.service_id]?.turnaround_days || 7;
+      const daysA = a.expedited ? 4 : (svcMap[a.service_id]?.turnaround_days || 7);
+      const daysB = b.expedited ? 4 : (svcMap[b.service_id]?.turnaround_days || 7);
       return (new Date(a.created_at).getTime() + daysA * 86400000) - (new Date(b.created_at).getTime() + daysB * 86400000);
     });
 
     list.innerHTML = orders.map(order => {
       const svc = svcMap[order.service_id] || {};
       const member = profMap[order.member_id] || {};
-      const turnaroundDays = svc.turnaround_days || 7;
+      const turnaroundDays = order.expedited ? 4 : (svc.turnaround_days || 7);
       const deadline = new Date(order.created_at).getTime() + turnaroundDays * 86400000;
       const isUrgent = deadline < urgentThreshold;
       const deadlineStr = new Date(deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -4522,36 +4522,107 @@
     }
 
     const serviceIds = [...new Set(orders.map(o => o.service_id).filter(Boolean))];
-    const memberIds = [...new Set(orders.map(o => o.member_id).filter(Boolean))];
-    const [{ data: services }, { data: profiles }] = await Promise.all([
-      sbClient.from('services').select('id, name').in('id', serviceIds),
+    const memberIds  = [...new Set(orders.map(o => o.member_id).filter(Boolean))];
+    const orderIds   = orders.map(o => o.id);
+
+    const [{ data: services }, { data: profiles }, { data: deliveries }] = await Promise.all([
+      sbClient.from('services').select('id, name, type').in('id', serviceIds),
       sbClient.from('profiles').select('user_id, display_name').in('user_id', memberIds),
+      sbClient.from('service_deliveries').select('order_id, file_url, file_name, delivery_url, notes, created_at').in('order_id', orderIds),
     ]);
     const svcMap = {};
     (services || []).forEach(s => { svcMap[s.id] = s; });
     const profMap = {};
     (profiles || []).forEach(p => { profMap[p.user_id] = p; });
+    const deliveryMap = {};
+    (deliveries || []).forEach(d => { deliveryMap[d.order_id] = d; });
 
-    list.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.75rem;">Completed Orders</div>` +
-      orders.map(order => {
-        const svc = svcMap[order.service_id] || {};
-        const member = profMap[order.member_id] || {};
-        const badge = order.status === 'fulfilled'
-          ? `<span class="res-pub-badge published">Fulfilled</span>`
-          : `<span style="background:rgba(224,92,92,0.1);color:#e05c5c;border:0.5px solid rgba(224,92,92,0.25);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Cancelled</span>`;
-        const dateStr = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        return `
-          <div class="sub-row">
-            <div class="sub-row-header" style="cursor:default;">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
-                <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
-                <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${dateStr}</div>
+    const rows = await Promise.all(orders.map(async (order, idx) => {
+      const svc    = svcMap[order.service_id] || {};
+      const member = profMap[order.member_id] || {};
+      const dlv    = deliveryMap[order.id];
+      const badge  = order.status === 'fulfilled'
+        ? `<span class="res-pub-badge published">Fulfilled</span>`
+        : `<span style="background:rgba(224,92,92,0.1);color:#e05c5c;border:0.5px solid rgba(224,92,92,0.25);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Cancelled</span>`;
+      const orderedStr = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const typeLabel = svc.type === 'deliverable' ? 'Deliverable' : svc.type === 'virtual_session' ? 'Coaching' : svc.type === 'local' ? 'In-Studio' : '';
+      const typeTag = typeLabel ? `<span style="background:var(--bg-3);border:0.5px solid var(--border);border-radius:3px;padding:2px 7px;font-size:10px;color:var(--text-dim);">${typeTag || typeLabel}</span>` : '';
+      const fulfilledStr = dlv?.created_at ? new Date(dlv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+
+      // Build reference file link (signed URL on demand via onclick handler)
+      let refFileHtml = '';
+      if (order.reference_file_url) {
+        const sId = escStr(order.id);
+        refFileHtml = `<div style="margin-top:4px;">
+          <button class="action-btn" style="font-size:10px;" onclick="window.openCompletedRefFile('${escStr(order.reference_file_url)}', this)">View Reference File ↗</button>
+        </div>`;
+      }
+
+      // Build delivery section
+      let deliveryHtml = '';
+      if (dlv) {
+        if (dlv.notes) {
+          deliveryHtml += `<div style="font-size:12px;color:var(--text-muted);font-style:italic;line-height:1.55;margin-top:6px;">"${escStr(dlv.notes)}"</div>`;
+        }
+        if (dlv.file_url) {
+          let signedUrl = null;
+          try {
+            const { data: su } = await sbClient.storage.from('service-deliveries').createSignedUrl(dlv.file_url, 3600);
+            signedUrl = su?.signedUrl;
+          } catch (_) {}
+          if (signedUrl) {
+            deliveryHtml += `<div style="margin-top:6px;"><a href="${escStr(signedUrl)}" download="${escStr(dlv.file_name || 'download')}" style="color:var(--gold);font-size:12px;font-weight:600;text-decoration:none;">⬇ Download Delivery File</a></div>`;
+          }
+        }
+        if (dlv.delivery_url) {
+          deliveryHtml += `<div style="margin-top:4px;"><a href="${escStr(dlv.delivery_url)}" target="_blank" rel="noopener" style="color:var(--gold);font-size:12px;font-weight:600;text-decoration:none;">↗ Open Delivery Link</a></div>`;
+        }
+      }
+
+      const detailId = `comp-detail-${escStr(order.id)}`;
+      return `
+        <div class="sub-row">
+          <div class="sub-row-header" onclick="
+            const d=document.getElementById('${detailId}');
+            const c=this.querySelector('.sub-chevron');
+            d.style.display=d.style.display==='none'?'block':'none';
+            if(c)c.textContent=d.style.display==='none'?'›':'⌄';">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);">
+                <a href="/app/member.html?id=${escStr(order.member_id)}" target="_blank" style="color:var(--text);text-decoration:none;" onclick="event.stopPropagation()">${escStr(member.display_name || 'Unknown')}</a>
               </div>
-              <div>${badge}</div>
+              <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
+              <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${orderedStr}</div>
             </div>
-          </div>`;
-      }).join('');
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${badge}
+              <span class="sub-chevron" style="font-size:16px;color:var(--text-dim);">›</span>
+            </div>
+          </div>
+          <div id="${detailId}" style="display:none;padding:12px 24px 16px;border-top:0.5px solid var(--border);">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <span style="background:var(--bg-3);border:0.5px solid var(--border);border-radius:3px;padding:2px 7px;font-size:10px;color:var(--text-dim);">${escStr(typeLabel)}</span>
+              ${order.expedited ? `<span style="background:var(--gold-dim);color:var(--gold);border:0.5px solid var(--border-gold);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Expedited</span>` : ''}
+            </div>
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Ordered ${orderedStr}${fulfilledStr ? ` · Fulfilled ${fulfilledStr}` : ''}</div>
+            ${order.notes ? `<div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:6px;">Member notes: ${escStr(order.notes)}</div>` : ''}
+            ${order.reference_drive_url ? `<div style="font-size:12px;margin-bottom:4px;">Reference link: <a href="${escStr(order.reference_drive_url)}" target="_blank" rel="noopener" style="color:var(--gold);">Open ↗</a></div>` : ''}
+            ${refFileHtml}
+            ${deliveryHtml ? `<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">${deliveryHtml}</div>` : ''}
+          </div>
+        </div>`;
+    }));
+
+    list.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.75rem;">Completed Orders</div>` + rows.join('');
+  };
+
+  window.openCompletedRefFile = async function(path, btn) {
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Getting link…';
+    const { data } = await sbClient.storage.from('service-references').createSignedUrl(path, 3600);
+    btn.disabled = false; btn.textContent = orig;
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+    else showToast('Could not generate link.');
   };
 
   // ── QUOTES ───────────────────────────────────────────────────────────────────

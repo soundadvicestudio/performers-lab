@@ -75,7 +75,8 @@ export default async function handler(req, res) {
   const { email: memberEmail } = await emailRes.json();
 
   // INSERT service_deliveries (file already in storage — just record the path)
-  await supabaseRequest('POST', '/rest/v1/service_deliveries', {
+  console.log('[fulfill] inserting service_deliveries for order', orderId, { fileUrl, fileName, deliveryUrl, notes });
+  const deliveryInsert = await supabaseRequest('POST', '/rest/v1/service_deliveries', {
     order_id: orderId,
     file_url: fileUrl || null,
     file_name: fileName || null,
@@ -83,6 +84,7 @@ export default async function handler(req, res) {
     notes: notes || null,
     fulfilled_by: ADMIN_ID,
   });
+  console.log('[fulfill] service_deliveries insert result:', deliveryInsert.ok, deliveryInsert.status);
 
   // PATCH service_orders status
   await supabaseRequest(

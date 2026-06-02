@@ -260,6 +260,30 @@ function hideLiveState() {
   if (dot) dot.remove();
 }
 
+async function updateServicesBadge(supabase) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const [ordersRes, quotesRes] = await Promise.all([
+    supabase.from('service_orders').select('id', { count: 'exact', head: true })
+      .eq('member_id', user.id).in('status', ['pending_approval', 'in_progress']),
+    supabase.from('service_quotes').select('id', { count: 'exact', head: true })
+      .eq('member_id', user.id).eq('status', 'pending'),
+  ]);
+
+  const count = (ordersRes.count || 0) + (quotesRes.count || 0);
+  if (count <= 0) return;
+
+  const tab = document.querySelector('#app-subnav a[href="/app/services.html"]');
+  if (!tab || tab.querySelector('.svc-badge')) return;
+
+  const badge = document.createElement('span');
+  badge.className = 'svc-badge';
+  badge.textContent = count > 99 ? '99+' : count;
+  badge.style.cssText = 'position:absolute;top:4px;right:4px;background:var(--gold);color:#070707;font-size:9px;font-weight:700;padding:2px 5px;border-radius:10px;line-height:1;pointer-events:none;';
+  tab.appendChild(badge);
+}
+
 export function initSubnav(activeTab, supabase) {
   injectStyles();
 
@@ -286,6 +310,8 @@ export function initSubnav(activeTab, supabase) {
   injectMobileOverflow();
 
   if (!supabase) return;
+
+  updateServicesBadge(supabase);
 
   supabase
     .from('events')
