@@ -113,6 +113,16 @@
   .empty-state a { color: var(--gold); text-decoration: none; }
   .empty-state a:hover { text-decoration: underline; }
 
+  .order-countdown { font-size: 12px; font-weight: 500; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .countdown-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: #dc3232; flex-shrink: 0;
+    animation: cnt-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes cnt-pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.35; }
+  }
+
   @media (max-width: 600px) {
     .main { padding: 2rem 1.25rem 5rem; }
     .order-details-grid { grid-template-columns: 1fr; }
@@ -377,6 +387,7 @@
       </div>
       ${detailRows.length ? `<div style="margin-bottom:0.75rem;">${detailRows.join('')}</div>` : ''}
       <div class="order-deadline">Due by ${deadlineStr} · ${turnaroundLabel}</div>
+      <div class="order-countdown" data-deadline="${deadline.getTime()}"></div>
     `;
     return card;
   }
@@ -429,6 +440,28 @@
       toast.style.transform = 'translateY(80px)';
       toast.style.opacity = '0';
     }, 3000);
+  }
+
+  // ── COUNTDOWN HELPERS ──
+  function buildCountdown(deadlineMs) {
+    const diff = deadlineMs - Date.now();
+    const absDiff = Math.abs(diff);
+    const totalHours = Math.floor(absDiff / (1000 * 60 * 60));
+    const mins = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const days = Math.floor(totalHours / 24);
+    const remH = totalHours % 24;
+    if (diff < 0) return { text: `Overdue by ${totalHours}h`, color: '#dc3232', dot: true };
+    if (diff < 24 * 60 * 60 * 1000) return { text: `${totalHours}h ${mins}m remaining`, color: '#dc3232', dot: true };
+    if (diff < 48 * 60 * 60 * 1000) return { text: `${days} day${days !== 1 ? 's' : ''}, ${remH}h remaining`, color: 'var(--gold)', dot: false };
+    return { text: `${days} day${days !== 1 ? 's' : ''}, ${remH}h remaining`, color: 'var(--text-muted)', dot: false };
+  }
+
+  function updateAllCountdowns() {
+    document.querySelectorAll('.order-countdown[data-deadline]').forEach(el => {
+      const { text, color, dot } = buildCountdown(parseInt(el.dataset.deadline, 10));
+      el.innerHTML = dot ? `<span class="countdown-dot"></span>${text}` : text;
+      el.style.color = color;
+    });
   }
 
   // ── INIT ──
@@ -504,6 +537,9 @@
     initFooter();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+
+    updateAllCountdowns();
+    setInterval(updateAllCountdowns, 60000);
   }
 
   init();

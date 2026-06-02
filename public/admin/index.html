@@ -968,7 +968,12 @@
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section" style="margin-top:0.5rem;">Tools</div>
-      <div class="nav-item active" data-panel="landing" onclick="switchPanel(this,'landing')">
+      <div class="nav-item active" data-panel="action-items" onclick="switchPanel(this,'action-items'); window.initActionItems?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Action Items
+        <span id="action-items-badge" style="margin-left:auto;background:#dc3232;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;display:none;"></span>
+      </div>
+      <div class="nav-item" data-panel="landing" onclick="switchPanel(this,'landing')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
         Landing Page
       </div>
@@ -1026,8 +1031,20 @@
 
     <div class="content">
 
+      <!-- ACTION ITEMS -->
+      <div class="panel active" id="panel-action-items">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+          <div class="panel-title" style="margin-bottom:0;">Action Items</div>
+          <button class="action-btn" id="action-refresh-btn" onclick="window.refreshActionItems()" style="font-size:10px;">↻ Refresh</button>
+        </div>
+        <div class="panel-desc">Everything requiring your attention right now.</div>
+        <div id="action-items-content">
+          <div class="sub-loading">Loading…</div>
+        </div>
+      </div>
+
       <!-- HERO -->
-      <div class="panel active" id="panel-landing">
+      <div class="panel" id="panel-landing">
         <div class="panel-title">Landing Page</div>
         <div class="panel-desc">Edit sections of the public landing page at performers-lab.com.</div>
 
@@ -1952,6 +1969,12 @@
   }
 
   function switchPanel(el,id) {
+    // Clear action-items auto-refresh when leaving that panel
+    const outgoing = document.querySelector('.panel.active');
+    if (outgoing?.id === 'panel-action-items' && window._actionItemsRefreshId) {
+      clearInterval(window._actionItemsRefreshId);
+      window._actionItemsRefreshId = null;
+    }
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -4225,6 +4248,12 @@
     const list = document.getElementById('svc-orders-active-list');
     if (!list) return;
 
+    // Clear existing countdown interval before re-render
+    if (window._svcOrdersTimerId) {
+      clearInterval(window._svcOrdersTimerId);
+      window._svcOrdersTimerId = null;
+    }
+
     const { data: orders } = await sbClient
       .from('service_orders')
       .select('*')
@@ -4315,6 +4344,7 @@
               </div>
               <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
               <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Ordered ${orderedStr} · Due ${deadlineStr}</div>
+              <div class="admin-countdown" data-deadline="${deadline}" style="font-size:11px;font-weight:500;margin-top:3px;display:flex;align-items:center;gap:5px;"></div>
             </div>
             <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
               ${markInProgressBtn}
@@ -4324,6 +4354,9 @@
           ${fulfillSection}
         </div>`;
     }).join('');
+
+    updateAdminCountdowns();
+    window._svcOrdersTimerId = setInterval(updateAdminCountdowns, 60000);
   }
 
   window.openRefFile = async function(path, btn) {
@@ -4618,6 +4651,282 @@
   }
 
   // ── END MEMBER SERVICES ─────────────────────────────────────────────────────
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // COUNTDOWN HELPERS (shared between orders panel and action items)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function buildCountdown(deadlineMs) {
+    const diff = deadlineMs - Date.now();
+    const abs = Math.abs(diff);
+    const totalH = Math.floor(abs / 3600000);
+    const mins = Math.floor((abs % 3600000) / 60000);
+    const days = Math.floor(totalH / 24);
+    const remH = totalH % 24;
+    if (diff < 0) return { text: `Overdue by ${totalH}h`, color: '#dc3232', dot: true };
+    if (diff < 86400000) return { text: `${totalH}h ${mins}m remaining`, color: '#dc3232', dot: true };
+    if (diff < 172800000) return { text: `${days} day${days !== 1 ? 's' : ''}, ${remH}h remaining`, color: 'var(--gold)', dot: false };
+    return { text: `${days} day${days !== 1 ? 's' : ''}, ${remH}h remaining`, color: 'var(--text-muted)', dot: false };
+  }
+
+  function updateAdminCountdowns() {
+    document.querySelectorAll('.admin-countdown[data-deadline]').forEach(el => {
+      const { text, color, dot } = buildCountdown(parseInt(el.dataset.deadline, 10));
+      el.innerHTML = dot
+        ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>${text}`
+        : text;
+      el.style.color = color;
+    });
+  }
+
+  // Inject the countdown keyframe once
+  (function() {
+    if (!document.getElementById('admin-cnt-style')) {
+      const s = document.createElement('style');
+      s.id = 'admin-cnt-style';
+      s.textContent = '@keyframes cnt-pulse{0%,100%{opacity:1}50%{opacity:.35}}';
+      document.head.appendChild(s);
+    }
+  })();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ACTION ITEMS PANEL
+  // ══════════════════════════════════════════════════════════════════════════
+
+  let actionItemsLoaded = false;
+
+  window.initActionItems = async function() {
+    actionItemsLoaded = false; // allow re-run on refresh
+    await renderActionItems();
+
+    // Auto-refresh every 5 minutes while panel is active
+    if (window._actionItemsRefreshId) clearInterval(window._actionItemsRefreshId);
+    window._actionItemsRefreshId = setInterval(() => {
+      if (document.getElementById('panel-action-items')?.classList.contains('active')) {
+        renderActionItems();
+      }
+    }, 5 * 60 * 1000);
+  };
+
+  window.refreshActionItems = async function() {
+    const btn = document.getElementById('action-refresh-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '↻ Refreshing…'; }
+    await renderActionItems();
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+  };
+
+  async function renderActionItems() {
+    const content = document.getElementById('action-items-content');
+    if (!content) return;
+
+    // Fetch all four data sets in parallel
+    const [
+      { data: pendingOrders },
+      { data: inProgressOrders },
+      { data: pendingSubmissions },
+      { data: pendingQuotes },
+    ] = await Promise.all([
+      sbClient.from('service_orders').select('*').eq('status', 'pending_approval').order('created_at', { ascending: true }),
+      sbClient.from('service_orders').select('*').eq('status', 'in_progress').order('created_at', { ascending: true }),
+      sbClient.from('submissions').select('id,member_id,song_title,show_artist,submitted_at,status').eq('status', 'Pending').order('submitted_at', { ascending: true }),
+      sbClient.from('service_quotes').select('*').eq('status', 'pending').order('created_at', { ascending: true }),
+    ]);
+
+    // Gather all unique member/user ids for two-query profile join
+    const orderUserIds = [...new Set([
+      ...(pendingOrders || []).map(o => o.member_id),
+      ...(inProgressOrders || []).map(o => o.member_id),
+    ].filter(Boolean))];
+    const subUserIds = [...new Set((pendingSubmissions || []).map(s => s.member_id).filter(Boolean))];
+    const quoteUserIds = [...new Set((pendingQuotes || []).map(q => q.member_id).filter(Boolean))];
+
+    const orderServiceIds = [...new Set([
+      ...(pendingOrders || []).map(o => o.service_id),
+      ...(inProgressOrders || []).map(o => o.service_id),
+    ].filter(Boolean))];
+
+    const [profilesRes1, profilesRes2, profilesRes3, servicesRes] = await Promise.all([
+      orderUserIds.length ? sbClient.from('profiles').select('user_id,display_name').in('user_id', orderUserIds) : Promise.resolve({ data: [] }),
+      subUserIds.length ? sbClient.from('profiles').select('user_id,display_name').in('user_id', subUserIds) : Promise.resolve({ data: [] }),
+      quoteUserIds.length ? sbClient.from('profiles').select('user_id,display_name').in('user_id', quoteUserIds) : Promise.resolve({ data: [] }),
+      orderServiceIds.length ? sbClient.from('services').select('id,name,turnaround_days').in('id', orderServiceIds) : Promise.resolve({ data: [] }),
+    ]);
+
+    const orderProfMap = {};
+    (profilesRes1.data || []).forEach(p => { orderProfMap[p.user_id] = p; });
+    const subProfMap = {};
+    (profilesRes2.data || []).forEach(p => { subProfMap[p.user_id] = p; });
+    const quoteProfMap = {};
+    (profilesRes3.data || []).forEach(p => { quoteProfMap[p.user_id] = p; });
+    const svcMap = {};
+    (servicesRes.data || []).forEach(s => { svcMap[s.id] = s; });
+
+    // Filter in-progress orders within 48h of deadline
+    const now = Date.now();
+    const nearOrders = (inProgressOrders || []).filter(o => {
+      const days = svcMap[o.service_id]?.turnaround_days || 7;
+      const deadline = new Date(o.created_at).getTime() + days * 86400000;
+      return deadline - now < 172800000; // within 48h
+    });
+
+    // Build badge count
+    const totalCount =
+      (pendingOrders?.length || 0) +
+      nearOrders.length +
+      (pendingSubmissions?.length || 0) +
+      (pendingQuotes?.length || 0);
+
+    const badge = document.getElementById('action-items-badge');
+    if (badge) {
+      badge.textContent = totalCount;
+      badge.style.display = totalCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // ── Section A — Pending Service Orders ──
+    let sectionARows = '';
+    if (!pendingOrders?.length) {
+      sectionARows = '<div class="sub-empty">No orders pending review.</div>';
+    } else {
+      sectionARows = pendingOrders.map(o => {
+        const member = orderProfMap[o.member_id] || {};
+        const svc = svcMap[o.service_id] || {};
+        const dateStr = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const days = svc.turnaround_days || 7;
+        const deadline = new Date(o.created_at).getTime() + days * 86400000;
+        const deadlineStr = new Date(deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return `
+          <div class="sub-row" style="margin-bottom:8px;">
+            <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
+                <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Ordered ${dateStr} · Due ${deadlineStr}${o.expedited ? ' · <span style="color:var(--gold)">Expedited</span>' : ''}</div>
+              </div>
+              <button class="action-btn" onclick="window.switchServiceSection('orders')" style="font-size:10px;white-space:nowrap;">View in Orders →</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Section B — Near-deadline orders ──
+    let sectionBRows = '';
+    if (!nearOrders.length) {
+      sectionBRows = '<div class="sub-empty">No orders near deadline.</div>';
+    } else {
+      sectionBRows = nearOrders.map(o => {
+        const member = orderProfMap[o.member_id] || {};
+        const svc = svcMap[o.service_id] || {};
+        const days = svc.turnaround_days || 7;
+        const deadline = new Date(o.created_at).getTime() + days * 86400000;
+        const { text: cntText, color: cntColor, dot } = buildCountdown(deadline);
+        const dotHtml = dot ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>` : '';
+        return `
+          <div class="sub-row" style="margin-bottom:8px;">
+            <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
+                <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
+                <div style="font-size:12px;color:${cntColor};margin-top:2px;display:flex;align-items:center;gap:5px;font-weight:500;">${dotHtml}${escStr(cntText)}</div>
+              </div>
+              <button class="action-btn" onclick="window.switchServiceSection('orders')" style="font-size:10px;white-space:nowrap;">View in Orders →</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Section C — Pending Submissions ──
+    let sectionCRows = '';
+    if (!pendingSubmissions?.length) {
+      sectionCRows = '<div class="sub-empty">No submissions pending feedback.</div>';
+    } else {
+      sectionCRows = pendingSubmissions.map(sub => {
+        const member = subProfMap[sub.member_id] || {};
+        const submitted = new Date(sub.submitted_at);
+        const subStr = submitted.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const deadline48 = submitted.getTime() + 48 * 3600000;
+        const { text: cntText, color: cntColor, dot } = buildCountdown(deadline48);
+        const dotHtml = dot ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>` : '';
+        return `
+          <div class="sub-row" style="margin-bottom:8px;">
+            <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--gold);">${escStr(sub.song_title || '')}${sub.show_artist ? ` <span style="font-size:13px;color:var(--text-muted);">— ${escStr(sub.show_artist)}</span>` : ''}</div>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Submitted ${subStr}</div>
+                <div style="font-size:12px;color:${cntColor};margin-top:2px;display:flex;align-items:center;gap:5px;font-weight:500;">${dotHtml}${escStr(cntText)}</div>
+              </div>
+              <button class="action-btn" onclick="switchPanel(document.querySelector('[data-panel=submissions]'),'submissions'); window.initSubmissions?.()" style="font-size:10px;white-space:nowrap;">View in Submissions →</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Section D — Pending Quotes ──
+    let sectionDRows = '';
+    if (!pendingQuotes?.length) {
+      sectionDRows = '<div class="sub-empty">No quotes pending response.</div>';
+    } else {
+      sectionDRows = pendingQuotes.map(q => {
+        const member = quoteProfMap[q.member_id] || {};
+        const sentStr = new Date(q.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const priceDisplay = '$' + (q.price / 100).toFixed(q.price % 100 === 0 ? 0 : 2);
+        const expiresMs = new Date(q.expires_at).getTime();
+        const { text: cntText, color: cntColor, dot } = buildCountdown(expiresMs);
+        const dotHtml = dot ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>` : '';
+        return `
+          <div class="sub-row" style="margin-bottom:8px;">
+            <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
+                <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(q.title)}</div>
+                <div style="font-size:13px;color:var(--text-muted);font-weight:300;">${priceDisplay} · Sent ${sentStr}</div>
+                <div style="font-size:12px;color:${cntColor};margin-top:2px;display:flex;align-items:center;gap:5px;font-weight:500;">${dotHtml}${escStr(cntText)}</div>
+              </div>
+              <button class="action-btn" onclick="window.switchServiceSection('quotes')" style="font-size:10px;white-space:nowrap;">View in Quotes →</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    const sectionTitle = (text, count) => `
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;
+        color:var(--text-dim);margin-bottom:0.75rem;padding-bottom:0.5rem;
+        border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px;">
+        ${escStr(text)}
+        ${count > 0 ? `<span style="background:var(--gold-dim);color:var(--gold);border:0.5px solid var(--border-gold);border-radius:10px;font-size:9px;padding:2px 7px;">${count}</span>` : ''}
+      </div>`;
+
+    content.innerHTML = `
+      <div style="margin-bottom:2rem;">
+        ${sectionTitle('Service Orders Awaiting Review', pendingOrders?.length || 0)}
+        ${sectionARows}
+      </div>
+      <div style="margin-bottom:2rem;">
+        ${sectionTitle('Orders Approaching Deadline', nearOrders.length)}
+        ${sectionBRows}
+      </div>
+      <div style="margin-bottom:2rem;">
+        ${sectionTitle('Video Submissions Awaiting Feedback', pendingSubmissions?.length || 0)}
+        ${sectionCRows}
+      </div>
+      <div style="margin-bottom:2rem;">
+        ${sectionTitle('Quotes Awaiting Member Response', pendingQuotes?.length || 0)}
+        ${sectionDRows}
+      </div>
+    `;
+  }
+
+  // ── switchServiceSection helper ──────────────────────────────────────────────
+
+  window.switchServiceSection = function(sectionName) {
+    const navItem = document.querySelector('[data-panel="services"]');
+    if (navItem) switchPanel(navItem, 'services');
+    window.initServicesPanel?.();
+    setTimeout(() => switchSvcSection(sectionName), 50);
+  };
+
+  // Auto-initialize action items on page load (it's the default panel)
+  window.initActionItems?.();
 
   window.saveHelpTopic = async function() {
     const editingId = helpEditingId;
