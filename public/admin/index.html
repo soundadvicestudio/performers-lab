@@ -4334,12 +4334,24 @@
       if (order.status === 'in_progress') {
         fulfillSection = `
           <div id="fulfill-section-${escStr(order.id)}" style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Fulfill Order</div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <input type="file" id="fulfill-file-${escStr(order.id)}" accept=".pdf,.mp3,.wav,.jpg,.jpeg,.png" style="font-size:12px;color:var(--text-muted);">
-              <button class="action-btn primary" onclick="window.fulfillOrder('${escStr(order.id)}', this)">Upload &amp; Fulfill</button>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;">Deliver Completed Order</div>
+            <div class="res-form-field">
+              <label class="res-form-label">Delivery Notes <span style="font-weight:300;text-transform:none;letter-spacing:0;opacity:0.65;">(optional)</span></label>
+              <textarea id="fulfill-notes-${escStr(order.id)}" placeholder="Add a message to the member about their delivery…" style="min-height:70px;"></textarea>
             </div>
-            <div id="fulfill-err-${escStr(order.id)}" style="font-size:12px;color:#e05c5c;margin-top:6px;min-height:14px;"></div>
+            <div class="res-form-field">
+              <label class="res-form-label">Delivery File</label>
+              <input type="file" id="fulfill-file-${escStr(order.id)}" accept=".pdf,.mp3,.wav,.jpg,.jpeg,.png" style="font-size:12px;color:var(--text-muted);">
+              <div class="field-hint">PDF, MP3, WAV, JPG, PNG — max 50MB</div>
+            </div>
+            <div style="text-align:center;padding:6px 0;color:var(--text-dim);font-size:12px;">— or —</div>
+            <div class="res-form-field">
+              <label class="res-form-label">Delivery Link</label>
+              <input type="text" id="fulfill-url-${escStr(order.id)}" placeholder="Google Drive, Dropbox, or other link…">
+              <div class="field-hint">Use for files over 50MB or external deliveries</div>
+            </div>
+            <div id="fulfill-error-${escStr(order.id)}" style="color:#e53935;font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+            <button class="action-btn primary" onclick="window.fulfillOrder('${escStr(order.id)}', this)">Upload &amp; Fulfill</button>
           </div>`;
       }
 
@@ -4403,30 +4415,52 @@
 
   window.fulfillOrder = async function(orderId, btn) {
     const fileInput = document.getElementById(`fulfill-file-${orderId}`);
-    const errEl = document.getElementById(`fulfill-err-${orderId}`);
-    if (!fileInput?.files?.[0]) {
-      errEl.textContent = 'Please select a file first.';
+    const notesEl = document.getElementById(`fulfill-notes-${orderId}`);
+    const urlEl = document.getElementById(`fulfill-url-${orderId}`);
+    const errEl = document.getElementById(`fulfill-error-${orderId}`);
+
+    const file = fileInput?.files?.[0] || null;
+    const deliveryUrl = (urlEl?.value || '').trim();
+    const notes = (notesEl?.value || '').trim();
+
+    if (!file && !deliveryUrl) {
+      if (errEl) errEl.textContent = 'Please provide a file or delivery link.';
       return;
     }
 
-    const { data: { session } } = await sbClient.auth.getSession();
+    if (errEl) errEl.textContent = '';
     btn.disabled = true;
     btn.textContent = 'Uploading…';
-    errEl.textContent = '';
 
-    const formData = new FormData();
-    formData.append('orderId', orderId);
-    formData.append('file', fileInput.files[0]);
+    const { data: { session } } = await sbClient.auth.getSession();
 
     try {
-      const res = await fetch('/api/services/fulfill', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
-        body: formData,
-      });
+      let res;
+      if (file) {
+        const formData = new FormData();
+        formData.append('orderId', orderId);
+        formData.append('file', file);
+        if (deliveryUrl) formData.append('deliveryUrl', deliveryUrl);
+        if (notes) formData.append('notes', notes);
+        res = await fetch('/api/services/fulfill', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+          body: formData,
+        });
+      } else {
+        res = await fetch('/api/services/fulfill', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ orderId, deliveryUrl, notes }),
+        });
+      }
+
       const data = await res.json();
       if (!res.ok) {
-        errEl.textContent = data.error || 'Fulfillment failed.';
+        if (errEl) errEl.textContent = data.error || 'Fulfillment failed.';
         btn.disabled = false;
         btn.textContent = 'Upload & Fulfill';
         return;
@@ -4435,7 +4469,7 @@
       await loadSvcOrders();
       showToast('Order fulfilled. Member notified.');
     } catch {
-      errEl.textContent = 'Connection error. Please try again.';
+      if (errEl) errEl.textContent = 'Connection error. Please try again.';
       btn.disabled = false;
       btn.textContent = 'Upload & Fulfill';
     }
@@ -4798,7 +4832,7 @@
     // Build badge count
     const totalCount =
       (pendingOrders?.length || 0) +
-      nearOrders.length +
+      (inProgressOrders?.length || 0) +
       (pendingSubmissions?.length || 0) +
       (pendingQuotes?.length || 0);
 
@@ -4835,12 +4869,40 @@
       }).join('');
     }
 
-    // ── Section B — Near-deadline orders ──
+    // ── Section B — Orders In Progress ──
     let sectionBRows = '';
-    if (!nearOrders.length) {
-      sectionBRows = '<div class="sub-empty">No orders near deadline.</div>';
+    if (!inProgressOrders?.length) {
+      sectionBRows = '<div class="sub-empty">No orders currently in progress.</div>';
     } else {
-      sectionBRows = nearOrders.map(o => {
+      sectionBRows = inProgressOrders.map(o => {
+        const member = orderProfMap[o.member_id] || {};
+        const svc = svcMap[o.service_id] || {};
+        const dateStr = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const days = svc.turnaround_days || 7;
+        const deadline = new Date(o.created_at).getTime() + days * 86400000;
+        const { text: cntText, color: cntColor, dot } = buildCountdown(deadline);
+        const dotHtml = dot ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc3232;animation:cnt-pulse 1.4s ease-in-out infinite;"></span>` : '';
+        return `
+          <div class="sub-row" style="margin-bottom:8px;">
+            <div class="sub-row-header" style="cursor:default;padding:14px 18px;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">${escStr(member.display_name || 'Unknown')}</div>
+                <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(svc.name || 'Service')}</div>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Ordered ${dateStr}</div>
+                <div style="font-size:12px;color:${cntColor};margin-top:2px;display:flex;align-items:center;gap:5px;font-weight:500;">${dotHtml}${escStr(cntText)}</div>
+              </div>
+              <button class="action-btn" onclick="window.switchServiceSection('orders')" style="font-size:10px;white-space:nowrap;">View in Orders →</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Section C — Near-deadline orders ──
+    let sectionCRows = '';
+    if (!nearOrders.length) {
+      sectionCRows = '<div class="sub-empty">No orders near deadline.</div>';
+    } else {
+      sectionCRows = nearOrders.map(o => {
         const member = orderProfMap[o.member_id] || {};
         const svc = svcMap[o.service_id] || {};
         const days = svc.turnaround_days || 7;
@@ -4861,12 +4923,12 @@
       }).join('');
     }
 
-    // ── Section C — Pending Submissions ──
-    let sectionCRows = '';
+    // ── Section D — Pending Submissions ──
+    let sectionDRows = '';
     if (!pendingSubmissions?.length) {
-      sectionCRows = '<div class="sub-empty">No submissions pending feedback.</div>';
+      sectionDRows = '<div class="sub-empty">No submissions pending feedback.</div>';
     } else {
-      sectionCRows = pendingSubmissions.map(sub => {
+      sectionDRows = pendingSubmissions.map(sub => {
         const member = subProfMap[sub.member_id] || {};
         const submitted = new Date(sub.submitted_at);
         const subStr = submitted.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -4888,12 +4950,12 @@
       }).join('');
     }
 
-    // ── Section D — Pending Quotes ──
-    let sectionDRows = '';
+    // ── Section E — Pending Quotes ──
+    let sectionERows = '';
     if (!pendingQuotes?.length) {
-      sectionDRows = '<div class="sub-empty">No quotes pending response.</div>';
+      sectionERows = '<div class="sub-empty">No quotes pending response.</div>';
     } else {
-      sectionDRows = pendingQuotes.map(q => {
+      sectionERows = (pendingQuotes || []).map(q => {
         const member = quoteProfMap[q.member_id] || {};
         const sentStr = new Date(q.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const priceDisplay = '$' + (q.price / 100).toFixed(q.price % 100 === 0 ? 0 : 2);
@@ -4929,16 +4991,20 @@
         ${sectionARows}
       </div>
       <div style="margin-bottom:2rem;">
-        ${sectionTitle('Orders Approaching Deadline', nearOrders.length)}
+        ${sectionTitle('Orders In Progress', inProgressOrders?.length || 0)}
         ${sectionBRows}
       </div>
       <div style="margin-bottom:2rem;">
-        ${sectionTitle('Video Submissions Awaiting Feedback', pendingSubmissions?.length || 0)}
+        ${sectionTitle('Orders Approaching Deadline', nearOrders.length)}
         ${sectionCRows}
       </div>
       <div style="margin-bottom:2rem;">
-        ${sectionTitle('Quotes Awaiting Member Response', pendingQuotes?.length || 0)}
+        ${sectionTitle('Video Submissions Awaiting Feedback', pendingSubmissions?.length || 0)}
         ${sectionDRows}
+      </div>
+      <div style="margin-bottom:2rem;">
+        ${sectionTitle('Quotes Awaiting Member Response', pendingQuotes?.length || 0)}
+        ${sectionERows}
       </div>
       <div style="margin-bottom:2rem;">
         ${sectionTitle('Support Tickets', 0)}

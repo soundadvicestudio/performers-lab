@@ -298,7 +298,7 @@
   }
 
   // ── RENDER ORDER CARD ──
-  async function renderOrderCard(order, service) {
+  async function renderOrderCard(order, service, delivery) {
     const card = document.createElement('div');
     card.className = 'order-card';
 
@@ -314,22 +314,28 @@
     else if (order.status === 'cancelled') statusBadge = `<span class="badge badge-cancelled">Cancelled</span>`;
 
     if (order.status === 'fulfilled') {
-      // Get delivery info
-      const { data: deliveries } = await supabase
-        .from('service_deliveries')
-        .select('file_url, file_name')
-        .eq('order_id', order.id)
-        .limit(1)
-        .maybeSingle();
+      // Build delivery actions from pre-fetched delivery record
+      let deliveryHtml = '';
 
-      let downloadHtml = '';
-      if (deliveries?.file_url) {
+      if (delivery?.notes) {
+        deliveryHtml += `<p style="font-size:13px;color:var(--text-muted);font-weight:300;font-style:italic;line-height:1.65;margin-bottom:0.75rem;">${escHtml(delivery.notes)}</p>`;
+      }
+
+      if (delivery?.file_url) {
         const { data: signedData } = await supabase.storage
           .from('service-deliveries')
-          .createSignedUrl(deliveries.file_url, 604800);
+          .createSignedUrl(delivery.file_url, 604800);
         if (signedData?.signedUrl) {
-          downloadHtml = `<a href="${signedData.signedUrl}" class="btn-gold" download="${escHtml(deliveries.file_name || 'download')}">Download Your File ↓</a>`;
+          deliveryHtml += `<a href="${signedData.signedUrl}" class="btn-gold" download="${escHtml(delivery.file_name || 'download')}" style="margin-right:0.5rem;">Download Your File ↓</a>`;
         }
+      }
+
+      if (delivery?.delivery_url) {
+        deliveryHtml += `<a href="${escHtml(delivery.delivery_url)}" target="_blank" rel="noopener" style="font-size:13px;color:var(--gold);font-weight:600;text-decoration:none;">Access Your Delivery →</a>`;
+      }
+
+      if (!deliveryHtml) {
+        deliveryHtml = `<p style="font-size:13px;color:var(--text-dim);font-weight:300;">Delivery not yet available.</p>`;
       }
 
       card.innerHTML = `
@@ -340,7 +346,7 @@
           </div>
           <div>${statusBadge}</div>
         </div>
-        ${downloadHtml ? `<div style="margin-top:0.25rem;">${downloadHtml}</div>` : `<p style="font-size:13px;color:var(--text-dim);font-weight:300;">Delivery file not yet available.</p>`}
+        <div style="margin-top:0.5rem;">${deliveryHtml}</div>
       `;
       return card;
     }
@@ -503,6 +509,17 @@
       (services || []).forEach(s => { serviceMap[s.id] = s; });
     }
 
+    // Fetch deliveries for fulfilled orders (one query, build map by order_id)
+    const fulfilledOrderIds = orders.filter(o => o.status === 'fulfilled').map(o => o.id);
+    let deliveryMap = {};
+    if (fulfilledOrderIds.length) {
+      const { data: deliveries } = await supabase
+        .from('service_deliveries')
+        .select('order_id, file_url, file_name, delivery_url, notes')
+        .in('order_id', fulfilledOrderIds);
+      (deliveries || []).forEach(d => { deliveryMap[d.order_id] = d; });
+    }
+
     // ── Active quotes ──
     const activeQuotes = quotes.filter(q =>
       q.status === 'pending' && new Date(q.expires_at) > new Date()
@@ -525,7 +542,7 @@
       `;
     } else {
       for (const order of orders) {
-        const card = await renderOrderCard(order, serviceMap[order.service_id]);
+        const card = await renderOrderCard(order, serviceMap[order.service_id], deliveryMap[order.id]);
         ordersList.appendChild(card);
       }
 

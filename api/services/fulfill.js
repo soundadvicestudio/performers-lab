@@ -13,24 +13,43 @@ function parseMultipart(req) {
     let fileName = null;
     let fileMime = 'application/octet-stream';
 
-    bb.on('field', (name, value) => {
-      fields[name] = value;
-    });
-
+    bb.on('field', (name, value) => { fields[name] = value; });
     bb.on('file', (_name, stream, info) => {
       fileName = info.filename;
       fileMime = info.mimeType || 'application/octet-stream';
       const chunks = [];
       stream.on('data', chunk => chunks.push(chunk));
-      stream.on('end', () => {
-        fileBuffer = Buffer.concat(chunks);
-      });
+      stream.on('end', () => { fileBuffer = Buffer.concat(chunks); });
       stream.on('error', reject);
     });
-
     bb.on('finish', () => resolve({ fields, fileBuffer, fileName, fileMime }));
     bb.on('error', reject);
     req.pipe(bb);
+  });
+}
+
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
+        resolve({
+          fields: {
+            orderId: body.orderId,
+            deliveryUrl: body.deliveryUrl || '',
+            notes: body.notes || '',
+          },
+          fileBuffer: null,
+          fileName: null,
+          fileMime: null,
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', reject);
   });
 }
 
@@ -62,18 +81,28 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Forbidden — admin only' });
   }
 
-  // Parse multipart
+  // Parse request body based on Content-Type
+  const contentType = req.headers['content-type'] || '';
   let fields, fileBuffer, fileName, fileMime;
   try {
-    ({ fields, fileBuffer, fileName, fileMime } = await parseMultipart(req));
+    if (contentType.includes('multipart/form-data')) {
+      ({ fields, fileBuffer, fileName, fileMime } = await parseMultipart(req));
+    } else {
+      ({ fields, fileBuffer, fileName, fileMime } = await parseJsonBody(req));
+    }
   } catch (err) {
-    console.error('[fulfill] multipart parse error:', err.message);
-    return res.status(400).json({ error: 'Failed to parse upload' });
+    console.error('[fulfill] body parse error:', err.message);
+    return res.status(400).json({ error: 'Failed to parse request' });
   }
 
   const { orderId } = fields;
+  const deliveryUrl = (fields.deliveryUrl || '').trim();
+  const notes = (fields.notes || '').trim();
+
   if (!orderId) return res.status(400).json({ error: 'Missing orderId' });
-  if (!fileBuffer || !fileName) return res.status(400).json({ error: 'Missing file' });
+  if (!fileBuffer && !deliveryUrl) {
+    return res.status(400).json({ error: 'Please provide a file or delivery link' });
+  }
 
   // Validate order
   const { data: orders } = await supabaseRequest(
@@ -111,32 +140,37 @@ export default async function handler(req, res) {
   });
   const { email: memberEmail } = await emailRes.json();
 
-  // Upload file to service-deliveries bucket
-  const storagePath = `${memberId}/${orderId}/${fileName}`;
-  const uploadRes = await fetch(
-    `${process.env.SUPABASE_URL}/storage/v1/object/service-deliveries/${storagePath}`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-        'Content-Type': fileMime,
-        'x-upsert': 'false',
-      },
-      body: fileBuffer,
+  // Upload file to storage (only when a file was provided)
+  let storagePath = null;
+  if (fileBuffer && fileName) {
+    storagePath = `${memberId}/${orderId}/${fileName}`;
+    const uploadRes = await fetch(
+      `${process.env.SUPABASE_URL}/storage/v1/object/service-deliveries/${storagePath}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+          'Content-Type': fileMime,
+          'x-upsert': 'false',
+        },
+        body: fileBuffer,
+      }
+    );
+    if (!uploadRes.ok) {
+      const uploadErr = await uploadRes.text();
+      console.error('[fulfill] storage upload error:', uploadErr);
+      return res.status(500).json({ error: 'File upload failed' });
     }
-  );
-  if (!uploadRes.ok) {
-    const uploadErr = await uploadRes.text();
-    console.error('[fulfill] storage upload error:', uploadErr);
-    return res.status(500).json({ error: 'File upload failed' });
   }
 
   // INSERT service_deliveries
   await supabaseRequest('POST', '/rest/v1/service_deliveries', {
     order_id: orderId,
-    file_url: storagePath,
-    file_name: fileName,
+    file_url: storagePath || null,
+    file_name: fileName || null,
+    delivery_url: deliveryUrl || null,
+    notes: notes || null,
     fulfilled_by: ADMIN_ID,
   });
 
@@ -194,8 +228,8 @@ function buildFulfillmentEmail(displayName, serviceName) {
         <tr>
           <td style="padding:32px;">
             <p style="margin:0 0 16px;font-size:15px;color:rgba(240,237,230,0.85);line-height:1.7;font-weight:300;">Hi ${displayName},</p>
-            <p style="margin:0 0 16px;font-size:15px;color:rgba(240,237,230,0.85);line-height:1.7;font-weight:300;">Your <strong style="color:#f0ede6;font-weight:600;">${serviceName}</strong> is complete and ready to download.</p>
-            <p style="margin:0 0 24px;font-size:15px;color:rgba(240,237,230,0.85);line-height:1.7;font-weight:300;">Log in to your account and visit My Orders to access your file. Your download link will be available for 7 days after generation.</p>
+            <p style="margin:0 0 16px;font-size:15px;color:rgba(240,237,230,0.85);line-height:1.7;font-weight:300;">Your <strong style="color:#f0ede6;font-weight:600;">${serviceName}</strong> is complete and ready to access.</p>
+            <p style="margin:0 0 24px;font-size:15px;color:rgba(240,237,230,0.85);line-height:1.7;font-weight:300;">Log in to your account and visit My Orders to access your delivery.</p>
             <table cellpadding="0" cellspacing="0"><tr><td>
               <a href="https://performers-lab.com/app/my-orders.html"
                  style="display:inline-block;background:#c9a96e;color:#070707;text-decoration:none;padding:12px 28px;border-radius:2px;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;">
