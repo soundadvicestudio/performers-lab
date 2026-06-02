@@ -12,5 +12,6 @@ export default function handler(req, res) {
     STRIPE_PUBLISHABLE_KEY:    process.env.STRIPE_PUBLISHABLE_KEY     || '',
     STRIPE_FOUNDING_PRICE_ID:  process.env.STRIPE_FOUNDING_PRICE_ID  || '',
     STRIPE_STANDARD_PRICE_ID:  process.env.STRIPE_STANDARD_PRICE_ID  || '',
+    PREMIUM_ENABLED:           process.env.PREMIUM_ENABLED            || 'false',
   })};`);
 }

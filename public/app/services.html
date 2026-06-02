@@ -267,6 +267,98 @@
   .ord-empty { text-align: center; padding: 3rem 1rem; }
   .ord-empty p { font-size: 14px; color: var(--text-dim); font-weight: 300; line-height: 1.7; }
 
+  /* ── BOOKING MODAL ── */
+  #booking-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+    display: none; align-items: center; justify-content: center;
+    z-index: 500; padding: 1rem;
+  }
+  #booking-modal-overlay.open { display: flex; }
+  .booking-modal {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 6px; width: 100%; max-width: 640px; max-height: 90vh;
+    overflow-y: auto; position: relative;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .booking-modal::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .booking-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 1.5rem; border-bottom: 0.5px solid var(--border);
+    position: sticky; top: 0; background: var(--bg-2); z-index: 10;
+  }
+  .booking-modal-title {
+    font-family: 'Cormorant Garamond', serif; font-size: 22px;
+    font-weight: 400; color: var(--text);
+  }
+  .booking-step-indicator { font-size: 11px; color: var(--text-dim); font-weight: 500; letter-spacing: 0.06em; }
+  .booking-modal-body { padding: 1.5rem; }
+  .booking-back-btn {
+    background: none; border: none; cursor: pointer; color: var(--text-dim);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; padding: 0; transition: color 0.2s;
+  }
+  .booking-back-btn:hover { color: var(--text-muted); }
+  .booking-close-btn {
+    background: none; border: none; cursor: pointer; color: var(--text-dim);
+    font-size: 22px; line-height: 1; font-family: 'Raleway', sans-serif;
+    padding: 0; transition: color 0.2s;
+  }
+  .booking-close-btn:hover { color: var(--text); }
+  .bk-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .bk-cal-nav {
+    background: none; border: 0.5px solid var(--border-mid);
+    color: var(--text-muted); padding: 6px 14px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s;
+  }
+  .bk-cal-nav:hover:not(:disabled) { border-color: var(--border-gold); color: var(--gold); }
+  .bk-cal-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+  .bk-cal-month { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; color: var(--text); }
+  .bk-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 1rem; }
+  .bk-cal-dow { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); text-align: center; padding: 6px 0; }
+  .bk-cal-day {
+    aspect-ratio: 1; border: 0.5px solid var(--border); border-radius: 4px;
+    padding: 4px; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500; color: var(--text); background: var(--bg-3);
+  }
+  .bk-cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
+  .bk-cal-day.unavailable { opacity: 0.3; cursor: not-allowed; }
+  .bk-cal-day.available:hover { border-color: var(--border-gold); color: var(--gold); }
+  .bk-cal-day.selected { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+  .bk-cal-day.today { border-color: rgba(201,169,110,0.45); }
+  .bk-slots-wrap { margin-top: 1rem; }
+  .bk-slots-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.75rem; }
+  .bk-slots-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .bk-slot-btn {
+    background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    border-radius: 3px; padding: 8px 12px; cursor: pointer;
+    font-family: 'Raleway', sans-serif; transition: all 0.15s; text-align: center; min-width: 80px;
+  }
+  .bk-slot-btn:hover:not(:disabled):not(.unavailable) { border-color: var(--border-gold); }
+  .bk-slot-btn.selected { background: var(--gold-dim); border-color: var(--border-gold); }
+  .bk-slot-btn.unavailable { opacity: 0.3; cursor: not-allowed; }
+  .bk-slot-time { font-size: 13px; font-weight: 600; color: var(--text); }
+  .bk-slot-ct { font-size: 10px; color: var(--text-dim); font-weight: 300; margin-top: 2px; }
+  .bk-slot-btn.selected .bk-slot-time { color: var(--gold); }
+  .bk-continue-btn {
+    width: 100%; background: var(--gold); color: #070707;
+    border: none; padding: 12px; border-radius: 2px; margin-top: 1.25rem;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: 'Raleway', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .bk-continue-btn:hover:not(:disabled) { background: var(--gold-light); }
+  .bk-continue-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .bk-summary { background: var(--bg-3); border: 0.5px solid var(--border-gold); border-radius: 3px; padding: 12px 16px; margin-bottom: 1.25rem; }
+  .bk-summary-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .bk-summary-detail { font-size: 14px; color: var(--text); font-weight: 300; line-height: 1.6; }
+  .bk-summary-detail strong { color: var(--gold); font-weight: 500; }
+  .bk-error { font-size: 12px; color: var(--red); font-weight: 500; min-height: 18px; margin-top: 0.5rem; }
+  .bk-loading { text-align: center; padding: 2rem 1rem; font-size: 13px; color: var(--text-dim); font-style: italic; }
+
   @media (max-width: 600px) {
     .main { padding: 2rem 1.25rem 5rem; }
     .page-heading { font-size: 32px; }
@@ -387,6 +479,23 @@
   </div>
 </div>
 
+<!-- Booking Modal -->
+<div id="booking-modal-overlay">
+  <div class="booking-modal">
+    <div class="booking-modal-header">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <button class="booking-back-btn" id="bk-back-btn" style="display:none;">← Back</button>
+        <div class="booking-modal-title">Book a Session</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div class="booking-step-indicator" id="bk-step-indicator"></div>
+        <button class="booking-close-btn" id="bk-close-btn">×</button>
+      </div>
+    </div>
+    <div class="booking-modal-body" id="bk-modal-body"></div>
+  </div>
+</div>
+
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   import { initNav } from './components/nav.js';
@@ -407,12 +516,27 @@
   });
 
   const ADMIN_ID = '6abb9d4d-ed5f-456e-aebb-aa76c8696c44';
+  const VIRTUAL_SESSION_ID = '920fec9d-03e5-4ade-9ddc-e5d225c354e2';
 
   let currentUser = null;
+  let currentProfile = null;
   let currentService = null;
   let selectedFile = null;
   let ordersTabLoaded = false;
   let ordersCountdownTimer = null;
+
+  // Booking modal — MUST be module-level (race condition lesson from P3.6)
+  let selectedDate = null;
+  let selectedSlot = null;
+  let sessionDuration = 60;
+  let sessionPrice = 6000;
+  let usingCredit = false;
+  let bookingCalYear = new Date().getFullYear();
+  let bookingCalMonth = new Date().getMonth();
+  let bookingAvailMap = {};
+  let bookingOverridesMap = {};
+  let bookedSlots = [];
+  let bookingCurrentStep = 2;
 
   // ── TAB SWITCHING ──
   window.switchSvcTab = function(tab) {
@@ -599,12 +723,9 @@
       </div>
       <div class="service-actions">
         <button class="btn-ghost" id="btn-book-session">Book a Session</button>
-        <p class="btn-inline-msg" id="booking-soon-msg" style="display:none;">Booking opens soon. Check back shortly.</p>
       </div>
     `;
-    card.querySelector('#btn-book-session').addEventListener('click', () => {
-      document.getElementById('booking-soon-msg').style.display = 'block';
-    });
+    card.querySelector('#btn-book-session').addEventListener('click', () => openBookingModal());
     wrap.appendChild(card);
   }
 
@@ -945,10 +1066,11 @@
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('display_name, is_admin, theme')
+      .select('display_name, is_admin, theme, timezone')
       .eq('user_id', currentUser.id)
       .single();
 
+    currentProfile = profile;
     const name = profile?.display_name || session.user.email.split('@')[0];
     applyTheme(profile?.theme || 'gold');
     initNav(supabase, { userName: name, isAdmin: profile?.is_admin });
@@ -979,6 +1101,394 @@
   }
 
   init();
+
+  // ── BOOKING MODAL ─────────────────────────────────────────────────────────
+
+  // Wire static close/back buttons once at page load
+  document.getElementById('bk-close-btn').addEventListener('click', closeBookingModal);
+  document.getElementById('booking-modal-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('booking-modal-overlay')) closeBookingModal();
+  });
+  document.getElementById('bk-back-btn').addEventListener('click', async () => {
+    bookingCurrentStep = bookingCurrentStep > 2 ? bookingCurrentStep - 1 : bookingCurrentStep;
+    await renderBookingStep(bookingCurrentStep);
+  });
+
+  function closeBookingModal() {
+    document.getElementById('booking-modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function openBookingModal() {
+    const premiumEnabled = (window.__ENV__?.PREMIUM_ENABLED || 'false') === 'true';
+    selectedDate = null;
+    selectedSlot = null;
+    sessionDuration = 60;
+    sessionPrice = 6000;
+    usingCredit = false;
+    bookingCalYear = new Date().getFullYear();
+    bookingCalMonth = new Date().getMonth();
+    bookingCurrentStep = premiumEnabled ? 1 : 2;
+    document.getElementById('booking-modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    renderBookingStep(bookingCurrentStep);
+  }
+
+  async function renderBookingStep(step) {
+    const premiumEnabled = (window.__ENV__?.PREMIUM_ENABLED || 'false') === 'true';
+    const firstStep = premiumEnabled ? 1 : 2;
+    const indicator = document.getElementById('bk-step-indicator');
+    const backBtn = document.getElementById('bk-back-btn');
+    const body = document.getElementById('bk-modal-body');
+    if (indicator) indicator.textContent = `Step ${step} of 3`;
+    if (backBtn) backBtn.style.display = step > firstStep ? 'inline-block' : 'none';
+    if (step === 1) renderStep1(body);
+    else if (step === 2) await renderStep2(body);
+    else if (step === 3) renderStep3(body);
+  }
+
+  function renderStep1(body) {
+    body.innerHTML = '<div class="bk-loading">Checking your credits…</div>';
+    (async () => {
+      const today = new Date();
+      const billingPeriodStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      const { data: credits } = await supabase
+        .from('session_credits')
+        .select('id')
+        .eq('member_id', currentUser.id)
+        .eq('used', false)
+        .eq('billing_period_start', billingPeriodStart);
+      if (!credits || !credits.length) {
+        sessionDuration = 60; sessionPrice = 6000; usingCredit = false;
+        bookingCurrentStep = 2;
+        await renderBookingStep(2);
+        return;
+      }
+      body.innerHTML = `
+        <p style="font-size:14px;color:var(--text-muted);font-weight:300;line-height:1.7;margin-bottom:1.5rem;">Choose your session type:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="service-card" style="cursor:pointer;border-color:var(--border-gold);" id="bk-credit-opt">
+            <div class="service-name" style="font-size:18px;">Use My Monthly Credit</div>
+            <p class="service-description">Your included Premium coaching session</p>
+            <div class="service-price" style="margin-top:auto;">$0</div>
+            <div style="font-size:11px;color:var(--text-dim);font-weight:300;">30-minute session</div>
+          </div>
+          <div class="service-card" style="cursor:pointer;" id="bk-additional-opt">
+            <div class="service-name" style="font-size:18px;">Book Additional Session</div>
+            <p class="service-description">Full 60-minute 1:1 coaching session</p>
+            <div class="service-price" style="margin-top:auto;">$60</div>
+          </div>
+        </div>`;
+      document.getElementById('bk-credit-opt').addEventListener('click', async () => {
+        sessionDuration = 30; sessionPrice = 0; usingCredit = true;
+        bookingCurrentStep = 2; await renderBookingStep(2);
+      });
+      document.getElementById('bk-additional-opt').addEventListener('click', async () => {
+        sessionDuration = 60; sessionPrice = 6000; usingCredit = false;
+        bookingCurrentStep = 2; await renderBookingStep(2);
+      });
+    })();
+  }
+
+  async function renderStep2(body) {
+    body.innerHTML = '<div class="bk-loading">Loading availability…</div>';
+    const padM = String(bookingCalMonth + 1).padStart(2, '0');
+    const lastDayNum = new Date(bookingCalYear, bookingCalMonth + 1, 0).getDate();
+    const firstDay = `${bookingCalYear}-${padM}-01`;
+    const lastDay = `${bookingCalYear}-${padM}-${String(lastDayNum).padStart(2, '0')}`;
+
+    const [availRes, overridesRes, ordersRes] = await Promise.all([
+      supabase.from('coaching_availability').select('*').eq('active', true),
+      supabase.from('coaching_availability_overrides').select('*').gte('date', firstDay).lte('date', lastDay),
+      supabase.from('service_orders')
+        .select('proposed_slot_start, proposed_slot_end')
+        .eq('service_id', VIRTUAL_SESSION_ID)
+        .not('status', 'in', '(cancelled)')
+        .not('proposed_slot_start', 'is', null),
+    ]);
+
+    bookingAvailMap = {};
+    (availRes.data || []).forEach(r => { bookingAvailMap[r.day_of_week] = r; });
+    bookingOverridesMap = {};
+    (overridesRes.data || []).forEach(o => { bookingOverridesMap[o.date] = o; });
+    bookedSlots = (ordersRes.data || []).map(o => ({ start: o.proposed_slot_start, end: o.proposed_slot_end }));
+
+    buildCalendarDOM(body);
+  }
+
+  function buildCalendarDOM(body) {
+    const today = new Date();
+    const todayY = today.getFullYear(), todayM = today.getMonth(), todayD = today.getDate();
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const padM = String(bookingCalMonth + 1).padStart(2, '0');
+    const lastDayNum = new Date(bookingCalYear, bookingCalMonth + 1, 0).getDate();
+    const firstDOW = new Date(bookingCalYear, bookingCalMonth, 1).getDay();
+    const isPrevDisabled = bookingCalYear === todayY && bookingCalMonth === todayM;
+    // Max: current month + 1
+    const maxYear = todayM === 11 ? todayY + 1 : todayY;
+    const maxMonth = todayM === 11 ? 0 : todayM + 1;
+    const isNextDisabled = bookingCalYear === maxYear && bookingCalMonth === maxMonth;
+
+    let html = `<div class="bk-cal-header">
+      <button class="bk-cal-nav" id="bk-prev" ${isPrevDisabled ? 'disabled' : ''}>← Prev</button>
+      <div class="bk-cal-month">${MONTHS[bookingCalMonth]} ${bookingCalYear}</div>
+      <button class="bk-cal-nav" id="bk-next" ${isNextDisabled ? 'disabled' : ''}>Next →</button>
+    </div>
+    <div class="bk-cal-grid">
+      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="bk-cal-dow">${d}</div>`).join('')}`;
+
+    for (let i = 0; i < firstDOW; i++) html += `<div class="bk-cal-day empty"></div>`;
+
+    for (let d = 1; d <= lastDayNum; d++) {
+      const dateStr = `${bookingCalYear}-${padM}-${String(d).padStart(2, '0')}`;
+      const isPast = bookingCalYear < todayY
+        || (bookingCalYear === todayY && bookingCalMonth < todayM)
+        || (bookingCalYear === todayY && bookingCalMonth === todayM && d < todayD);
+      const isToday = bookingCalYear === todayY && bookingCalMonth === todayM && d === todayD;
+      const ov = bookingOverridesMap[dateStr];
+      const dow = new Date(bookingCalYear, bookingCalMonth, d).getDay();
+      const noSlots = ov?.type === 'block' || (!ov && !bookingAvailMap[dow]);
+      const clickable = !isPast && !noSlots;
+      const isSelected = selectedDate === dateStr;
+
+      let cls = 'bk-cal-day';
+      if (isPast || noSlots) cls += ' unavailable';
+      else if (isSelected) cls += ' selected';
+      else cls += ' available';
+      if (isToday) cls += ' today';
+
+      html += `<div class="${cls}" data-date="${dateStr}"${clickable ? ` onclick="window.bkDayClick('${dateStr}')"` : ''}>${d}</div>`;
+    }
+
+    html += `</div><div id="bk-slots-area">${selectedDate ? buildSlotsHTML(selectedDate) : ''}</div>`;
+    body.innerHTML = html;
+
+    document.getElementById('bk-prev')?.addEventListener('click', async () => {
+      bookingCalMonth--; if (bookingCalMonth < 0) { bookingCalMonth = 11; bookingCalYear--; }
+      selectedDate = null; selectedSlot = null;
+      await renderStep2(document.getElementById('bk-modal-body'));
+    });
+    document.getElementById('bk-next')?.addEventListener('click', async () => {
+      bookingCalMonth++; if (bookingCalMonth > 11) { bookingCalMonth = 0; bookingCalYear++; }
+      selectedDate = null; selectedSlot = null;
+      await renderStep2(document.getElementById('bk-modal-body'));
+    });
+  }
+
+  window.bkDayClick = function(dateStr) {
+    selectedDate = dateStr;
+    selectedSlot = null;
+    document.querySelectorAll('.bk-cal-day').forEach(el => el.classList.remove('selected'));
+    document.querySelector(`.bk-cal-day[data-date="${dateStr}"]`)?.classList.add('selected');
+    const area = document.getElementById('bk-slots-area');
+    if (area) area.innerHTML = buildSlotsHTML(dateStr);
+  };
+
+  window.bkSlotClick = function(startISO, endISO) {
+    selectedSlot = { start: startISO, end: endISO };
+    const area = document.getElementById('bk-slots-area');
+    if (area) area.innerHTML = buildSlotsHTML(selectedDate);
+  };
+
+  window.bkContinue = function() {
+    if (selectedSlot) { bookingCurrentStep = 3; renderBookingStep(3); }
+  };
+
+  function buildSlotsHTML(dateStr) {
+    const slots = generateSlots(dateStr);
+    if (!slots.length) {
+      return `<div class="bk-slots-wrap"><p style="font-size:13px;color:var(--text-dim);font-weight:300;">No available times for this day.</p></div>`;
+    }
+    const userTz = currentProfile?.timezone || 'America/Chicago';
+    const nowMs = Date.now();
+    const h24Ms = 24 * 60 * 60 * 1000;
+    let hasAvailable = false;
+    let html = `<div class="bk-slots-wrap"><div class="bk-slots-label">Available times for ${fmtDisplayDate(dateStr)}</div><div class="bk-slots-grid">`;
+
+    for (const slot of slots) {
+      const slotMs = new Date(slot.startISO).getTime();
+      const within24 = (slotMs - nowMs) < h24Ms;
+      const available = slot.available && !within24;
+      if (available) hasAvailable = true;
+      const localTime = fmtSlotTime(slot.startISO, userTz);
+      const ctTime = fmtSlotTime(slot.startISO, 'America/Chicago') + ' CT';
+      const isSelected = selectedSlot?.start === slot.startISO;
+      let cls = 'bk-slot-btn';
+      if (!available) cls += ' unavailable';
+      if (isSelected && available) cls += ' selected';
+      const title = !available ? (within24 ? 'Less than 24 hours notice required' : 'Already booked') : '';
+      html += `<button class="${cls}" ${available ? `onclick="window.bkSlotClick('${slot.startISO}','${slot.endISO}')"` : 'disabled'} title="${title}">
+        <div class="bk-slot-time">${localTime}</div>
+        ${userTz !== 'America/Chicago' ? `<div class="bk-slot-ct">${ctTime}</div>` : ''}
+      </button>`;
+    }
+
+    html += '</div>';
+    if (!hasAvailable) {
+      return `<div class="bk-slots-wrap"><p style="font-size:13px;color:var(--text-dim);font-weight:300;">No available times for this day.</p></div>`;
+    }
+    html += `<button class="bk-continue-btn" onclick="window.bkContinue()" ${selectedSlot ? '' : 'disabled'}>Continue →</button></div>`;
+    return html;
+  }
+
+  function generateSlots(dateStr) {
+    const ov = bookingOverridesMap[dateStr];
+    let startTime, endTime;
+    if (ov) {
+      if (ov.type === 'block') return [];
+      startTime = ov.start_time; endTime = ov.end_time;
+    } else {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dow = new Date(y, m - 1, d).getDay();
+      const avail = bookingAvailMap[dow];
+      if (!avail || !avail.active) return [];
+      startTime = avail.start_time; endTime = avail.end_time;
+    }
+    const parseT = t => { const p = t.split(':'); return { h: parseInt(p[0], 10), m: parseInt(p[1], 10) }; };
+    const start = parseT(startTime), end = parseT(endTime);
+    const bufMs = 30 * 60 * 1000;
+    const slots = [];
+    let ch = start.h, cm = start.m;
+    while (true) {
+      const endTotalM = ch * 60 + cm + sessionDuration;
+      const endH = Math.floor(endTotalM / 60), endM = endTotalM % 60;
+      if (endH > end.h || (endH === end.h && endM > end.m)) break;
+      const startISO = ctToUTC(dateStr, ch, cm);
+      const endISO = ctToUTC(dateStr, endH, endM);
+      const sMs = new Date(startISO).getTime(), eMs = new Date(endISO).getTime();
+      let available = true;
+      for (const b of bookedSlots) {
+        const bS = new Date(b.start).getTime(), bE = new Date(b.end).getTime();
+        if (sMs < bE + bufMs && eMs > bS) { available = false; break; }
+      }
+      slots.push({ startISO, endISO, available });
+      cm += 30; if (cm >= 60) { cm -= 60; ch++; }
+    }
+    return slots;
+  }
+
+  function ctToUTC(dateStr, h, m) {
+    // Interpret h:m as America/Chicago time, return UTC ISO string
+    const pad = n => String(n).padStart(2, '0');
+    const utcRef = new Date(`${dateStr}T${pad(h)}:${pad(m)}:00Z`);
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    }).formatToParts(utcRef);
+    const get = t => parseInt(parts.find(p => p.type === t)?.value ?? '0', 10);
+    const ctRefMs = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+    const targetMs = Date.UTC(...dateStr.split('-').map(Number), h, m, 0);
+    return new Date(utcRef.getTime() + targetMs - ctRefMs).toISOString();
+  }
+
+  function fmtSlotTime(isoStr, tz) {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(new Date(isoStr));
+  }
+
+  function fmtDisplayDate(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+
+  function renderStep3(body) {
+    const userTz = currentProfile?.timezone || 'America/Chicago';
+    const sessionDateDisplay = selectedSlot
+      ? new Intl.DateTimeFormat('en-US', {
+          timeZone: userTz, weekday: 'long', month: 'long',
+          day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+        }).format(new Date(selectedSlot.start))
+      : '';
+
+    body.innerHTML = `
+      <div class="bk-summary">
+        <div class="bk-summary-title">Session Summary</div>
+        <div class="bk-summary-detail">
+          <strong>${escHtml(sessionDateDisplay)}</strong><br>
+          ${sessionDuration} minutes · ${formatPrice(sessionPrice)}
+        </div>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label" for="bk-goals">What are your goals for this session? *</label>
+        <textarea class="modal-textarea" id="bk-goals" maxlength="500" rows="3" placeholder="What would you like to accomplish?"></textarea>
+        <div class="char-count"><span id="bk-goals-count">0</span> / 500</div>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label" for="bk-repertoire">What songs or repertoire will we be working on? *</label>
+        <textarea class="modal-textarea" id="bk-repertoire" maxlength="500" rows="3" placeholder="Song title, composer, show name…"></textarea>
+        <div class="char-count"><span id="bk-rep-count">0</span> / 500</div>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label" for="bk-focus">What would you specifically like to focus on? *</label>
+        <textarea class="modal-textarea" id="bk-focus" maxlength="500" rows="3" placeholder="Technique, interpretation, specific passages…"></textarea>
+        <div class="char-count"><span id="bk-focus-count">0</span> / 500</div>
+      </div>
+      <div class="policy-box">
+        <p class="policy-text">All sales are final. Session fees are non-refundable. In the event of a scheduling conflict, we will work together to find an alternative time.</p>
+        <label class="policy-agree">
+          <input type="checkbox" id="bk-policy-check">
+          <span class="policy-agree-text">I understand and agree to the cancellation policy.</span>
+        </label>
+      </div>
+      <div class="bk-error" id="bk-error"></div>
+      <div class="modal-actions">
+        <button class="btn-checkout" id="bk-submit-btn" disabled>Proceed to Checkout →</button>
+      </div>`;
+
+    const goalsEl = document.getElementById('bk-goals');
+    const repEl = document.getElementById('bk-repertoire');
+    const focusEl = document.getElementById('bk-focus');
+    const policyEl = document.getElementById('bk-policy-check');
+    const submitBtn = document.getElementById('bk-submit-btn');
+
+    function checkValid() {
+      submitBtn.disabled = !(goalsEl.value.trim() && repEl.value.trim() && focusEl.value.trim() && policyEl.checked);
+    }
+    goalsEl.addEventListener('input', () => { document.getElementById('bk-goals-count').textContent = goalsEl.value.length; checkValid(); });
+    repEl.addEventListener('input', () => { document.getElementById('bk-rep-count').textContent = repEl.value.length; checkValid(); });
+    focusEl.addEventListener('input', () => { document.getElementById('bk-focus-count').textContent = focusEl.value.length; checkValid(); });
+    policyEl.addEventListener('change', checkValid);
+    submitBtn.addEventListener('click', submitBooking);
+  }
+
+  async function submitBooking() {
+    const errEl = document.getElementById('bk-error');
+    const submitBtn = document.getElementById('bk-submit-btn');
+    errEl.textContent = '';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing…';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/sessions/createBooking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          serviceId: VIRTUAL_SESSION_ID,
+          duration: sessionDuration,
+          slotStart: selectedSlot.start,
+          slotEnd: selectedSlot.end,
+          goals: document.getElementById('bk-goals').value.trim(),
+          repertoire: document.getElementById('bk-repertoire').value.trim(),
+          focusAreas: document.getElementById('bk-focus').value.trim(),
+          usingCredit,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Could not complete booking. Please try again.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Proceed to Checkout →';
+        return;
+      }
+      window.location.href = data.url || '/app/checkout-success.html?type=session';
+    } catch {
+      errEl.textContent = 'Connection error. Please try again.';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Proceed to Checkout →';
+    }
+  }
 </script>
 </body>
 </html>
