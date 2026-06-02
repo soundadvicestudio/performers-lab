@@ -4254,9 +4254,6 @@
   // ── ORDERS ──────────────────────────────────────────────────────────────────
 
   async function loadSvcOrders() {
-    const list = document.getElementById('svc-orders-active-list');
-    if (!list) return;
-
     // Clear existing countdown interval before re-render
     if (window._svcOrdersTimerId) {
       clearInterval(window._svcOrdersTimerId);
@@ -4269,10 +4266,16 @@
       .not('status', 'in', '("fulfilled","cancelled")')
       .order('created_at', { ascending: true });
 
+    // Look up the DOM element after the fetch — element may not be visible yet
+    const list = document.getElementById('svc-orders-active-list');
+
     if (!orders?.length) {
-      list.innerHTML = '<div class="sub-empty">No active orders.</div>';
+      if (list) list.innerHTML = '<div class="sub-empty">No active orders.</div>';
       return;
     }
+
+    // Data is fresh; bail out of DOM write only if element still absent
+    if (!list) return;
 
     const serviceIds = [...new Set(orders.map(o => o.service_id).filter(Boolean))];
     const memberIds = [...new Set(orders.map(o => o.member_id).filter(Boolean))];
@@ -4390,10 +4393,12 @@
       btn.disabled = false;
       btn.textContent = 'Mark In Progress';
       showToast('Could not update order.');
-    } else {
-      await loadSvcOrders();
-      showToast('Order marked in progress.');
+      return;
     }
+    // Ensure Orders tab is active so the DOM element exists for re-render
+    switchSvcSection('orders');
+    await loadSvcOrders();
+    showToast('Order marked in progress.');
   };
 
   window.fulfillOrder = async function(orderId, btn) {
@@ -4426,6 +4431,7 @@
         btn.textContent = 'Upload & Fulfill';
         return;
       }
+      switchSvcSection('orders');
       await loadSvcOrders();
       showToast('Order fulfilled. Member notified.');
     } catch {
