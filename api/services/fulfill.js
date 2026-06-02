@@ -83,8 +83,16 @@ export default async function handler(req, res) {
     delivery_url: deliveryUrl || null,
     notes: notes || null,
     fulfilled_by: ADMIN_ID,
-  });
-  console.log('[fulfill] service_deliveries insert result:', deliveryInsert.ok, deliveryInsert.status);
+  }, { 'Prefer': 'return=representation' });
+  console.log('delivery INSERT result:', JSON.stringify(deliveryInsert));
+
+  if (!deliveryInsert.ok) {
+    console.error('delivery INSERT failed:', JSON.stringify(deliveryInsert.data));
+    return res.status(500).json({
+      error: 'Failed to create delivery record',
+      detail: deliveryInsert.data,
+    });
+  }
 
   // PATCH service_orders status
   await supabaseRequest(
