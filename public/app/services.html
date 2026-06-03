@@ -337,13 +337,14 @@
     background: var(--bg-3); border: 0.5px solid var(--border-mid);
     border-radius: 3px; padding: 8px 12px; cursor: pointer;
     font-family: 'Raleway', sans-serif; transition: all 0.15s; text-align: center; min-width: 80px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
   }
   .bk-slot-btn:hover:not(:disabled):not(.unavailable) { border-color: var(--border-gold); }
   .bk-slot-btn.selected { background: var(--gold-dim); border-color: var(--border-gold); }
   .bk-slot-btn.unavailable { opacity: 0.3; cursor: not-allowed; }
-  .bk-slot-time { font-size: 13px; font-weight: 600; color: var(--text); }
-  .bk-slot-ct { font-size: 10px; color: var(--text-dim); font-weight: 300; margin-top: 2px; }
-  .bk-slot-btn.selected .bk-slot-time { color: var(--gold); }
+  .slot-time-primary { font-size: 13px; font-weight: 500; color: var(--text); }
+  .slot-time-secondary { font-size: 10px; color: var(--text-dim); }
+  .bk-slot-btn.selected .slot-time-primary { color: var(--gold); }
   .bk-continue-btn {
     width: 100%; background: var(--gold); color: #070707;
     border: none; padding: 12px; border-radius: 2px; margin-top: 1.25rem;
@@ -1318,8 +1319,8 @@
       if (isSelected && available) cls += ' selected';
       const title = !available ? (within24 ? 'Less than 24 hours notice required' : 'Already booked') : '';
       html += `<button class="${cls}" ${available ? `onclick="window.bkSlotClick('${slot.startISO}','${slot.endISO}')"` : 'disabled'} title="${title}">
-        <div class="bk-slot-time">${localTime}</div>
-        ${userTz !== 'America/Chicago' ? `<div class="bk-slot-ct">${ctTime}</div>` : ''}
+        <span class="slot-time-primary">${localTime}</span>
+        ${userTz !== 'America/Chicago' ? `<span class="slot-time-secondary">${ctTime}</span>` : ''}
       </button>`;
     }
 
