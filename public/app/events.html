@@ -473,6 +473,8 @@
   }
 
   function buildUpcomingCard(evt, rsvpCount) {
+    if (evt.type === 'private') return buildPrivateSessionCard(evt);
+
     const isLive = evt.status === 'live';
     const hasRsvp = !!rsvpMap[evt.id];
     const hasNotify = rsvpMap[evt.id]?.notify === true;
@@ -507,6 +509,29 @@
           ${isLive
             ? `<a href="/app/event.html?id=${evt.id}" class="btn-join">Join Live →</a>`
             : `<a href="/app/event.html?id=${evt.id}" class="btn-view">View Session</a>`}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function buildPrivateSessionCard(evt) {
+    const isLive = evt.status === 'live';
+    const tz = userProfile?.timezone;
+    const showLocal = tz && tz !== 'America/Chicago';
+    return `<div class="evt-card${isLive ? ' live' : ''}" id="card-${evt.id}" style="border-left: 3px solid var(--gold);">
+      <div class="evt-card-body">
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">My Session</div>
+        <div class="badge ${isLive ? 'badge-live' : 'badge-upcoming'}">
+          ${isLive ? '<span class="live-dot"></span>&nbsp;Live Now' : 'Upcoming'}
+        </div>
+        <div class="evt-title">${escHtml(evt.title)}</div>
+        <div class="evt-topic">${escHtml(evt.topic)}</div>
+        <div class="evt-time-primary">${formatCtDate(evt.starts_at)}</div>
+        ${showLocal ? `<div class="evt-time-local">${escHtml(formatLocalTime(evt.starts_at, tz))}</div>` : ''}
+        <div class="evt-card-footer">
+          ${isLive
+            ? `<a href="/app/event.html?id=${evt.id}" class="btn-join">Join Session →</a>`
+            : `<span style="font-size:12px;color:var(--text-dim);font-style:italic;">Host will open the room at session time</span>`}
         </div>
       </div>
     </div>`;

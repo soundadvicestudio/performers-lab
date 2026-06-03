@@ -924,6 +924,26 @@
   .evt-recording-row input { flex: 1; }
   .evt-rec-error { font-size: 12px; color: #e05c5c; margin-top: 5px; min-height: 14px; }
 
+  /* ── INLINE SESSION SLOT PICKER ── */
+  .ia-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+  .ia-cal-nav { background: none; border: 0.5px solid var(--border-mid); color: var(--text-muted); padding: 4px 10px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; font-family: 'Raleway', sans-serif; transition: all 0.2s; }
+  .ia-cal-nav:hover:not(:disabled) { border-color: var(--border-gold); color: var(--gold); }
+  .ia-cal-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+  .ia-cal-month { font-size: 14px; font-weight: 600; color: var(--text); }
+  .ia-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 0.75rem; }
+  .ia-cal-dow { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); text-align: center; padding: 4px 0; }
+  .ia-cal-day { aspect-ratio: 1; border: 0.5px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: var(--text); background: var(--bg-3); cursor: pointer; transition: all 0.15s; }
+  .ia-cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
+  .ia-cal-day.unavailable { opacity: 0.3; cursor: not-allowed; }
+  .ia-cal-day.available:hover { border-color: var(--border-gold); color: var(--gold); }
+  .ia-cal-day.selected { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+  .ia-cal-day.today { border-color: rgba(201,169,110,0.45); }
+  .ia-slots-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.5rem; }
+  .ia-slot-btn { background: var(--bg-4); border: 0.5px solid var(--border-mid); border-radius: 3px; padding: 6px 10px; cursor: pointer; font-family: 'Raleway', sans-serif; font-size: 11px; font-weight: 600; color: var(--text); transition: all 0.15s; }
+  .ia-slot-btn:hover:not(:disabled):not(.unavailable) { border-color: var(--border-gold); color: var(--gold); }
+  .ia-slot-btn.selected { background: var(--gold-dim); border-color: var(--border-gold); color: var(--gold); }
+  .ia-slot-btn.unavailable { opacity: 0.3; cursor: not-allowed; }
+
   /* ── HELP CENTER QUILL ── */
   #help-quill-wrap .ql-toolbar {
     background: var(--bg-3) !important; border: 0.5px solid var(--border) !important;
@@ -3488,6 +3508,19 @@
   let evtPastData = [];
   let evtInitialized = false;
   let evtPastInitialized = false;
+  let evtPrivateProfileMap = {};
+
+  // ── Inline Session Slot Picker state ───────────────────────────────────
+  const ADMIN_SESS_ID = '920fec9d-03e5-4ade-9ddc-e5d225c354e2';
+  let iaPickerOrderId = null;
+  let iaPickerCalYear = new Date().getFullYear();
+  let iaPickerCalMonth = new Date().getMonth();
+  let iaPickerSelectedDate = null;
+  let iaPickerSelectedSlot = null;
+  let iaPickerSessionDuration = 60;
+  let iaPickerAvailMap = {};
+  let iaPickerOverridesMap = {};
+  let iaPickerBookedSlots = [];
 
   function isoToLocalInputValue(isoString) {
     if (!isoString) return '';
@@ -3543,6 +3576,15 @@
     if (error) { listEl.innerHTML = '<div class="sub-empty">Failed to load events.</div>'; return; }
     evtUpcomingData = data || [];
     const counts = await fetchRsvpCounts(evtUpcomingData.map(e => e.id));
+
+    // Fetch profiles for private session member names
+    const privateMemberIds = [...new Set(evtUpcomingData.filter(e => e.type === 'private' && e.member_id).map(e => e.member_id))];
+    evtPrivateProfileMap = {};
+    if (privateMemberIds.length) {
+      const { data: profData } = await sbClient.from('profiles').select('user_id,display_name').in('user_id', privateMemberIds);
+      (profData || []).forEach(p => { evtPrivateProfileMap[p.user_id] = p; });
+    }
+
     renderUpcomingList(counts);
   }
 
@@ -3561,6 +3603,55 @@
     renderPastList(counts);
   }
 
+  function buildPrivateEvtCard(evt) {
+    const isLive = evt.status === 'live';
+    const memberName = evtPrivateProfileMap[evt.member_id]?.display_name || 'Member';
+    return `<div class="evt-card${isLive ? ' live' : ''}" id="evt-card-${evt.id}">
+      <div class="evt-card-main" id="evt-main-${evt.id}">
+        <div class="evt-card-top">
+          <div style="flex:1;min-width:0;">
+            <span class="evt-badge upcoming" style="margin-bottom:6px;display:inline-block;">Private Session</span>
+            <div class="evt-card-title">${evtEsc(memberName)} — Coaching Session</div>
+            <div class="evt-card-topic">${evtEsc(evt.topic)}</div>
+            <div class="evt-card-date">${formatEvtDate(evt.starts_at)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+            ${isLive
+              ? `<span class="evt-badge live"><span class="evt-live-dot"></span>&nbsp;Live</span>`
+              : `<span class="evt-badge upcoming">Upcoming</span>`}
+          </div>
+        </div>
+        ${evt.daily_room_url ? `
+        <div class="evt-room-row">
+          <span class="evt-room-label">Room</span>
+          <input class="evt-room-url-input" type="text" id="evt-room-url-${evt.id}" value="${evtEsc(evt.daily_room_url)}" readonly>
+          <button class="evt-copy-btn" onclick="window.copyEvtRoomUrl('${evt.id}')">Copy</button>
+        </div>` : ''}
+        <div class="evt-actions" style="margin-top:14px;">
+          <button class="evt-go-live-btn" id="evt-golive-btn-${evt.id}"
+            onclick="window.goLive('${evt.id}')"
+            ${isLive ? 'disabled' : ''}>${isLive ? '▶&nbsp;Live' : '▶&nbsp;Go Live'}</button>
+          ${isLive ? `<button class="evt-end-btn" id="evt-end-btn-${evt.id}" onclick="window.showEndConfirm('${evt.id}')">End Session</button>` : ''}
+          <button class="evt-delete-btn" onclick="window.showEvtDelete('${evt.id}')">Delete</button>
+        </div>
+        <div id="evt-end-confirm-${evt.id}" style="display:none;" class="evt-confirm-wrap">
+          <div class="evt-confirm-text">End this session and mark it as completed?</div>
+          <div class="evt-confirm-btns">
+            <button class="sub-cancel-btn" onclick="window.hideEvtConfirms('${evt.id}')">Cancel</button>
+            <button class="evt-end-btn" id="evt-end-yes-${evt.id}" onclick="window.endSession('${evt.id}')">Yes, End Session</button>
+          </div>
+        </div>
+        <div id="evt-del-confirm-${evt.id}" style="display:none;" class="evt-confirm-wrap">
+          <div class="evt-confirm-text">Delete this private session? This cannot be undone.</div>
+          <div class="evt-confirm-btns">
+            <button class="sub-cancel-btn" onclick="window.hideEvtConfirms('${evt.id}')">Cancel</button>
+            <button class="sub-delete-btn-yes" id="evt-del-yes-${evt.id}" onclick="window.deleteEvt('${evt.id}')">Yes, Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
   function renderUpcomingList(counts) {
     const listEl = document.getElementById('evt-upcoming-list');
     if (!listEl) return;
@@ -3569,6 +3660,7 @@
       return;
     }
     listEl.innerHTML = evtUpcomingData.map(evt => {
+      if (evt.type === 'private') return buildPrivateEvtCard(evt);
       const isLive = evt.status === 'live';
       const count = counts[evt.id] || 0;
       return `<div class="evt-card${isLive ? ' live' : ''}" id="evt-card-${evt.id}">
@@ -5094,6 +5186,10 @@
     const svcMap = {};
     (servicesRes.data || []).forEach(s => { svcMap[s.id] = s; });
 
+    // Split pending orders: session requests vs service orders
+    const sessionOrders = (pendingOrders || []).filter(o => o.service_id === ADMIN_SESS_ID);
+    const nonSessionOrders = (pendingOrders || []).filter(o => o.service_id !== ADMIN_SESS_ID);
+
     // Split in-progress orders by urgency (mutually exclusive sections)
     const now = Date.now();
     const nearOrders = (inProgressOrders || []).filter(o => {
@@ -5109,7 +5205,8 @@
 
     // Build badge count (notUrgentOrders excluded — being handled, not urgent)
     const totalCount =
-      (pendingOrders?.length || 0) +
+      sessionOrders.length +
+      nonSessionOrders.length +
       nearOrders.length +
       (pendingSubmissions?.length || 0) +
       (pendingQuotes?.length || 0);
@@ -5121,12 +5218,43 @@
     }
     updateAdminBell(totalCount);
 
+    // ── Section 0 — Session Booking Requests ──
+    let section0Rows = '';
+    if (!sessionOrders.length) {
+      section0Rows = '<div class="sub-empty">No session booking requests.</div>';
+    } else {
+      section0Rows = sessionOrders.map(o => {
+        const member = orderProfMap[o.member_id] || {};
+        const slotDisplay = formatEvtDate(o.proposed_slot_start);
+        const slotMs = new Date(o.proposed_slot_start).getTime();
+        const notePreview = o.notes ? escStr(o.notes.slice(0, 100)) + (o.notes.length > 100 ? '…' : '') : '';
+        return `
+          <div class="sub-row" id="sess-req-row-${o.id}" style="margin-bottom:4px;">
+            <div class="sub-row-header" style="cursor:default;padding:14px 18px;flex-wrap:wrap;gap:8px;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);">
+                  <a href="/app/member.html?id=${escStr(o.member_id)}" target="_blank" style="color:var(--text);text-decoration:none;">${escStr(member.display_name || 'Unknown')}</a>
+                </div>
+                <div style="font-size:13px;color:var(--gold);font-family:'Cormorant Garamond',serif;">${escStr(String(o.session_duration_minutes || 60))} min session</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Requested: ${escStr(slotDisplay)}</div>
+                ${notePreview ? `<div style="font-size:12px;color:var(--text-dim);margin-top:2px;font-style:italic;">${notePreview}</div>` : ''}
+                <div data-action-deadline="${slotMs}" style="font-size:12px;margin-top:2px;font-weight:500;display:flex;align-items:center;gap:5px;"></div>
+              </div>
+              <div style="display:flex;gap:6px;flex-shrink:0;align-items:flex-start;margin-top:4px;">
+                <button class="action-btn primary" id="approve-btn-${o.id}" onclick="window.approveSessionRequest('${o.id}')" style="font-size:10px;">Approve</button>
+                <button class="action-btn" onclick="window.openInlinePicker('${o.id}', ${o.session_duration_minutes || 60})" style="font-size:10px;">Propose Alternate</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
     // ── Section A — Pending Service Orders ──
     let sectionARows = '';
-    if (!pendingOrders?.length) {
+    if (!nonSessionOrders.length) {
       sectionARows = '<div class="sub-empty">No orders pending review.</div>';
     } else {
-      sectionARows = pendingOrders.map(o => {
+      sectionARows = nonSessionOrders.map(o => {
         const member = orderProfMap[o.member_id] || {};
         const svc = svcMap[o.service_id] || {};
         const dateStr = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -5260,7 +5388,11 @@
 
     content.innerHTML = `
       <div style="margin-bottom:2rem;">
-        ${sectionTitle('Service Orders Awaiting Review', pendingOrders?.length || 0)}
+        ${sectionTitle('Session Booking Requests', sessionOrders.length)}
+        ${section0Rows}
+      </div>
+      <div style="margin-bottom:2rem;">
+        ${sectionTitle('Service Orders Awaiting Review', nonSessionOrders.length)}
         ${sectionARows}
       </div>
       <div style="margin-bottom:2rem;">
@@ -5297,6 +5429,299 @@
     if (navItem) switchPanel(navItem, 'services');
     window.initServicesPanel?.();
     setTimeout(() => switchSvcSection(sectionName), 50);
+  };
+
+  // ── Session Booking Request: Approve ─────────────────────────────────────
+  window.approveSessionRequest = async function(orderId) {
+    const btn = document.getElementById(`approve-btn-${orderId}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+    try {
+      const { data: { session } } = await sbClient.auth.getSession();
+      const res = await fetch('/api/sessions/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast('Error: ' + (data.error || 'Failed to approve'));
+        if (btn) { btn.disabled = false; btn.textContent = 'Approve'; }
+        return;
+      }
+      if (data.hostToken && data.eventId) {
+        sessionStorage.setItem(`host_token_${data.eventId}`, data.hostToken);
+      }
+      showToast('Session confirmed. Member notified.');
+      await renderActionItems();
+    } catch {
+      showToast('Connection error. Please try again.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Approve'; }
+    }
+  };
+
+  // ── Session Booking Request: Inline Slot Picker ───────────────────────────
+  window.openInlinePicker = async function(orderId, sessionDuration) {
+    // Toggle off if same picker
+    if (iaPickerOrderId === orderId) {
+      const el = document.getElementById(`ia-picker-${orderId}`);
+      if (el) el.remove();
+      iaPickerOrderId = null;
+      return;
+    }
+    // Close previous picker
+    if (iaPickerOrderId) {
+      const old = document.getElementById(`ia-picker-${iaPickerOrderId}`);
+      if (old) old.remove();
+    }
+    iaPickerOrderId = orderId;
+    iaPickerSessionDuration = sessionDuration || 60;
+    iaPickerCalYear = new Date().getFullYear();
+    iaPickerCalMonth = new Date().getMonth();
+    iaPickerSelectedDate = null;
+    iaPickerSelectedSlot = null;
+
+    const row = document.getElementById(`sess-req-row-${orderId}`);
+    if (!row) return;
+    const pickerDiv = document.createElement('div');
+    pickerDiv.id = `ia-picker-${orderId}`;
+    pickerDiv.style.cssText = 'margin:6px 0 8px;padding:16px;background:var(--bg-4);border:0.5px solid var(--border-gold);border-radius:4px;';
+    pickerDiv.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:1rem;text-align:center;">Loading availability…</div>';
+    row.after(pickerDiv);
+
+    await loadIAPickerData();
+    renderIACalendar(pickerDiv);
+  };
+
+  window.closeInlinePicker = function() {
+    if (!iaPickerOrderId) return;
+    const el = document.getElementById(`ia-picker-${iaPickerOrderId}`);
+    if (el) el.remove();
+    iaPickerOrderId = null;
+  };
+
+  async function loadIAPickerData() {
+    const padM = String(iaPickerCalMonth + 1).padStart(2, '0');
+    const lastDayNum = new Date(iaPickerCalYear, iaPickerCalMonth + 1, 0).getDate();
+    const firstDay = `${iaPickerCalYear}-${padM}-01`;
+    const lastDay = `${iaPickerCalYear}-${padM}-${String(lastDayNum).padStart(2, '0')}`;
+
+    const [availRes, overridesRes, ordersRes] = await Promise.all([
+      sbClient.from('coaching_availability').select('*').eq('active', true),
+      sbClient.from('coaching_availability_overrides').select('*').gte('date', firstDay).lte('date', lastDay),
+      sbClient.from('service_orders')
+        .select('id, proposed_slot_start, proposed_slot_end')
+        .eq('service_id', ADMIN_SESS_ID)
+        .not('status', 'in', '(cancelled)')
+        .not('proposed_slot_start', 'is', null),
+    ]);
+
+    iaPickerAvailMap = {};
+    (availRes.data || []).forEach(r => { iaPickerAvailMap[r.day_of_week] = r; });
+    iaPickerOverridesMap = {};
+    (overridesRes.data || []).forEach(o => { iaPickerOverridesMap[o.date] = o; });
+    // Exclude the current order's own slot from conflict checking
+    iaPickerBookedSlots = (ordersRes.data || [])
+      .filter(o => o.id !== iaPickerOrderId)
+      .map(o => ({ start: o.proposed_slot_start, end: o.proposed_slot_end }));
+  }
+
+  function renderIACalendar(container) {
+    const today = new Date();
+    const todayY = today.getFullYear(), todayM = today.getMonth(), todayD = today.getDate();
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const padM = String(iaPickerCalMonth + 1).padStart(2, '0');
+    const lastDayNum = new Date(iaPickerCalYear, iaPickerCalMonth + 1, 0).getDate();
+    const firstDOW = new Date(iaPickerCalYear, iaPickerCalMonth, 1).getDay();
+    const isPrevDisabled = iaPickerCalYear === todayY && iaPickerCalMonth === todayM;
+    const maxYear = todayM === 11 ? todayY + 1 : todayY;
+    const maxMonth = todayM === 11 ? 0 : todayM + 1;
+    const isNextDisabled = iaPickerCalYear === maxYear && iaPickerCalMonth === maxMonth;
+
+    let html = `<div class="ia-cal-header">
+      <button class="ia-cal-nav" id="ia-prev" ${isPrevDisabled ? 'disabled' : ''}>← Prev</button>
+      <span class="ia-cal-month">${MONTHS[iaPickerCalMonth]} ${iaPickerCalYear}</span>
+      <button class="ia-cal-nav" id="ia-next" ${isNextDisabled ? 'disabled' : ''}>Next →</button>
+    </div><div class="ia-cal-grid">
+    ${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => `<div class="ia-cal-dow">${d}</div>`).join('')}`;
+
+    for (let i = 0; i < firstDOW; i++) html += `<div class="ia-cal-day empty"></div>`;
+
+    for (let d = 1; d <= lastDayNum; d++) {
+      const dateStr = `${iaPickerCalYear}-${padM}-${String(d).padStart(2, '0')}`;
+      const isPast = iaPickerCalYear < todayY
+        || (iaPickerCalYear === todayY && iaPickerCalMonth < todayM)
+        || (iaPickerCalYear === todayY && iaPickerCalMonth === todayM && d < todayD);
+      const isToday = iaPickerCalYear === todayY && iaPickerCalMonth === todayM && d === todayD;
+      const ov = iaPickerOverridesMap[dateStr];
+      const dow = new Date(iaPickerCalYear, iaPickerCalMonth, d).getDay();
+      const noSlots = ov?.type === 'block' || (!ov && !iaPickerAvailMap[dow]);
+      const clickable = !isPast && !noSlots;
+      const isSelected = iaPickerSelectedDate === dateStr;
+
+      let cls = 'ia-cal-day';
+      if (isPast || noSlots) cls += ' unavailable';
+      else if (isSelected) cls += ' selected';
+      else cls += ' available';
+      if (isToday) cls += ' today';
+
+      html += `<div class="${cls}" ${clickable ? `onclick="window.iaClickDay('${dateStr}')"` : ''}>${d}</div>`;
+    }
+
+    html += `</div>`;
+    html += `<div id="ia-slots-area" style="margin-top:8px;">${iaPickerSelectedDate ? buildIASlotsHTML(iaPickerSelectedDate) : '<div style="font-size:11px;color:var(--text-dim);">Select a date to see available times.</div>'}</div>`;
+    html += `<div id="ia-proposal-row" style="margin-top:10px;display:${iaPickerSelectedSlot ? 'flex' : 'none'};gap:8px;">
+      <button class="action-btn primary" id="ia-send-btn" onclick="window.iaSendProposal('${iaPickerOrderId}')">Send Proposal</button>
+      <button class="action-btn" onclick="window.closeInlinePicker()">Cancel</button>
+    </div>`;
+
+    container.innerHTML = html;
+
+    document.getElementById('ia-prev')?.addEventListener('click', async () => {
+      iaPickerCalMonth--;
+      if (iaPickerCalMonth < 0) { iaPickerCalMonth = 11; iaPickerCalYear--; }
+      iaPickerSelectedDate = null; iaPickerSelectedSlot = null;
+      const cont = document.getElementById(`ia-picker-${iaPickerOrderId}`);
+      if (cont) { cont.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:1rem;text-align:center;">Loading…</div>'; await loadIAPickerData(); renderIACalendar(cont); }
+    });
+    document.getElementById('ia-next')?.addEventListener('click', async () => {
+      iaPickerCalMonth++;
+      if (iaPickerCalMonth > 11) { iaPickerCalMonth = 0; iaPickerCalYear++; }
+      iaPickerSelectedDate = null; iaPickerSelectedSlot = null;
+      const cont = document.getElementById(`ia-picker-${iaPickerOrderId}`);
+      if (cont) { cont.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:1rem;text-align:center;">Loading…</div>'; await loadIAPickerData(); renderIACalendar(cont); }
+    });
+  }
+
+  function buildIASlotsHTML(dateStr) {
+    const slots = generateIASlots(dateStr);
+    const h24Ms = 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    let hasAvail = false;
+    let html = `<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Available times (CT)</div><div class="ia-slots-grid">`;
+    for (const slot of slots) {
+      const slotMs = new Date(slot.startISO).getTime();
+      const within24 = (slotMs - nowMs) < h24Ms;
+      const available = slot.available && !within24;
+      if (available) hasAvail = true;
+      const isSelected = iaPickerSelectedSlot?.start === slot.startISO;
+      let cls = 'ia-slot-btn' + (!available ? ' unavailable' : '') + (isSelected ? ' selected' : '');
+      const title = !available ? (within24 ? 'Less than 24h notice required' : 'Already booked') : '';
+      html += `<button class="${cls}" ${available ? `onclick="window.iaClickSlot('${slot.startISO}','${slot.endISO}')"` : 'disabled'} title="${title}">${fmtIACTTime(slot.startISO)}</button>`;
+    }
+    html += '</div>';
+    if (!hasAvail) return `<div style="font-size:11px;color:var(--text-dim);">No available times for this day.</div>`;
+    return html;
+  }
+
+  function generateIASlots(dateStr) {
+    const ov = iaPickerOverridesMap[dateStr];
+    let startTime, endTime;
+    if (ov) {
+      if (ov.type === 'block') return [];
+      startTime = ov.start_time; endTime = ov.end_time;
+    } else {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dow = new Date(y, m - 1, d).getDay();
+      const avail = iaPickerAvailMap[dow];
+      if (!avail || !avail.active) return [];
+      startTime = avail.start_time; endTime = avail.end_time;
+    }
+    const parseT = t => { const p = t.split(':'); return { h: parseInt(p[0], 10), m: parseInt(p[1], 10) }; };
+    const start = parseT(startTime), end = parseT(endTime);
+    const bufMs = 30 * 60 * 1000;
+    const slots = [];
+    let ch = start.h, cm = start.m;
+    while (true) {
+      const endTotalM = ch * 60 + cm + iaPickerSessionDuration;
+      const endH = Math.floor(endTotalM / 60), endM = endTotalM % 60;
+      if (endH > end.h || (endH === end.h && endM > end.m)) break;
+      const startISO = iaCtToUTC(dateStr, ch, cm);
+      const endISO = iaCtToUTC(dateStr, endH, endM);
+      const sMs = new Date(startISO).getTime(), eMs = new Date(endISO).getTime();
+      let available = true;
+      for (const b of iaPickerBookedSlots) {
+        const bS = new Date(b.start).getTime(), bE = new Date(b.end).getTime();
+        if (sMs < bE + bufMs && eMs > bS) { available = false; break; }
+      }
+      slots.push({ startISO, endISO, available });
+      cm += 30; if (cm >= 60) { cm -= 60; ch++; }
+    }
+    return slots;
+  }
+
+  function iaCtToUTC(dateStr, h, m) {
+    const pad = n => String(n).padStart(2, '0');
+    const utcRef = new Date(`${dateStr}T${pad(h)}:${pad(m)}:00Z`);
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    }).formatToParts(utcRef);
+    const get = t => parseInt(parts.find(p => p.type === t)?.value ?? '0', 10);
+    const ctRefMs = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+    const targetMs = Date.UTC(...dateStr.split('-').map(Number), h, m, 0);
+    return new Date(utcRef.getTime() + targetMs - ctRefMs).toISOString();
+  }
+
+  function fmtIACTTime(isoStr) {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(new Date(isoStr)) + ' CT';
+  }
+
+  window.iaClickDay = function(dateStr) {
+    iaPickerSelectedDate = dateStr;
+    iaPickerSelectedSlot = null;
+    const cont = document.getElementById(`ia-picker-${iaPickerOrderId}`);
+    if (!cont) return;
+    cont.querySelectorAll('.ia-cal-day').forEach(el => el.classList.remove('selected'));
+    // Find day by matching onclick attribute fragment
+    cont.querySelectorAll('.ia-cal-day.available, .ia-cal-day.today').forEach(el => {
+      if (el.getAttribute('onclick')?.includes(`'${dateStr}'`)) el.classList.add('selected');
+    });
+    const area = document.getElementById('ia-slots-area');
+    if (area) area.innerHTML = buildIASlotsHTML(dateStr);
+    const propRow = document.getElementById('ia-proposal-row');
+    if (propRow) propRow.style.display = 'none';
+  };
+
+  window.iaClickSlot = function(startISO, endISO) {
+    iaPickerSelectedSlot = { start: startISO, end: endISO };
+    const cont = document.getElementById(`ia-picker-${iaPickerOrderId}`);
+    if (cont) {
+      cont.querySelectorAll('.ia-slot-btn').forEach(b => b.classList.remove('selected'));
+      cont.querySelectorAll('.ia-slot-btn').forEach(b => {
+        if (b.getAttribute('onclick')?.includes(startISO)) b.classList.add('selected');
+      });
+    }
+    const propRow = document.getElementById('ia-proposal-row');
+    if (propRow) propRow.style.display = 'flex';
+  };
+
+  window.iaSendProposal = async function(orderId) {
+    if (!iaPickerSelectedSlot) return;
+    const btn = document.getElementById('ia-send-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    try {
+      const { data: { session } } = await sbClient.auth.getSession();
+      const res = await fetch('/api/sessions/propose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ orderId, proposedStart: iaPickerSelectedSlot.start, proposedEnd: iaPickerSelectedSlot.end }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast('Error: ' + (data.error || 'Failed to send proposal'));
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Proposal'; }
+        return;
+      }
+      window.closeInlinePicker();
+      showToast('Proposal sent to member.');
+      await renderActionItems();
+    } catch {
+      showToast('Connection error. Please try again.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Send Proposal'; }
+    }
   };
 
   // Auto-initialize action items on page load (it's the default panel)

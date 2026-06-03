@@ -424,6 +424,12 @@
         <div id="ord-quotes-list"></div>
       </div>
 
+      <!-- Session Proposals -->
+      <div class="ord-section" id="ord-proposals-section" style="display:none;">
+        <h2 class="ord-section-heading">Session Time Proposals</h2>
+        <div id="ord-proposals-list"></div>
+      </div>
+
       <!-- Order History -->
       <div class="ord-section" id="ord-history-section" style="display:none;">
         <h2 class="ord-section-heading">Order History</h2>
@@ -1053,9 +1059,118 @@
       pastQuotes.forEach(q => ordersList.appendChild(renderOrdQuoteHistoryCard(q)));
     }
 
+    // Session proposals — show above order history
+    const sessionProposals = orders.filter(o => o.proposal_status === 'pending');
+    if (sessionProposals.length) {
+      const section = document.getElementById('ord-proposals-section');
+      section.style.display = 'block';
+      const list = document.getElementById('ord-proposals-list');
+      sessionProposals.forEach(o => list.appendChild(renderProposalCard(o)));
+    }
+
     ordUpdateCountdowns();
     if (ordersCountdownTimer) clearInterval(ordersCountdownTimer);
     ordersCountdownTimer = setInterval(ordUpdateCountdowns, 60000);
+  }
+
+  function renderProposalCard(order) {
+    const card = document.createElement('div');
+    card.className = 'ord-quote-card';
+    card.dataset.orderId = order.id;
+
+    const memberTz = currentProfile?.timezone || 'America/Chicago';
+    const slotDate = new Date(order.proposed_slot_start);
+
+    const localTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: memberTz,
+      weekday: 'long', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(slotDate);
+
+    const ctTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(slotDate) + ' CT';
+
+    const showCT = memberTz !== 'America/Chicago';
+    const timeDisplay = showCT ? `${localTime} (${ctTime})` : localTime;
+
+    card.innerHTML = `
+      <div class="ord-quote-title">New Session Time Proposed</div>
+      <div class="ord-quote-desc">Jonathan has proposed a time for your ${escHtml(String(order.session_duration_minutes || 60))}-minute coaching session.</div>
+      <div style="font-size:17px;font-family:'Cormorant Garamond',serif;font-weight:400;color:var(--gold);margin-bottom:0.75rem;">${escHtml(timeDisplay)}</div>
+      <div class="ord-quote-actions">
+        <button class="btn-gold-ord" id="prop-accept-${order.id}">Accept →</button>
+        <button class="btn-outline-ord" id="prop-decline-${order.id}">Decline</button>
+      </div>
+      <div id="prop-err-${order.id}" style="font-size:12px;color:var(--red);margin-top:0.5rem;min-height:16px;"></div>
+    `;
+
+    card.querySelector(`#prop-accept-${order.id}`).addEventListener('click', () => handleAcceptProposal(order.id));
+    card.querySelector(`#prop-decline-${order.id}`).addEventListener('click', () => handleDeclineProposal(order.id));
+
+    return card;
+  }
+
+  async function handleAcceptProposal(orderId) {
+    const btn = document.getElementById(`prop-accept-${orderId}`);
+    const errEl = document.getElementById(`prop-err-${orderId}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Accepting…'; }
+    errEl.textContent = '';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/sessions/respondProposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ orderId, response: 'accept' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Could not accept. Please try again.';
+        if (btn) { btn.disabled = false; btn.textContent = 'Accept →'; }
+        return;
+      }
+      const card = document.querySelector(`[data-order-id="${orderId}"]`);
+      if (card) {
+        card.innerHTML = `<div style="padding:0.5rem 0;font-size:13px;color:var(--green);font-weight:600;">Session confirmed! Check your email for a calendar invite.</div>`;
+      }
+      setTimeout(() => {
+        ordersTabLoaded = false;
+        loadMyOrders();
+      }, 2000);
+    } catch {
+      errEl.textContent = 'Connection error. Please try again.';
+      if (btn) { btn.disabled = false; btn.textContent = 'Accept →'; }
+    }
+  }
+
+  async function handleDeclineProposal(orderId) {
+    const btn = document.getElementById(`prop-decline-${orderId}`);
+    const errEl = document.getElementById(`prop-err-${orderId}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Declining…'; }
+    errEl.textContent = '';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/sessions/respondProposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ orderId, response: 'decline' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Could not decline. Please try again.';
+        if (btn) { btn.disabled = false; btn.textContent = 'Decline'; }
+        return;
+      }
+      const card = document.querySelector(`[data-order-id="${orderId}"]`);
+      if (card) {
+        card.innerHTML = `<div style="padding:0.5rem 0;font-size:13px;color:var(--text-muted);font-weight:300;">Proposal declined. A conversation has been opened with Jonathan to find a new time.</div>`;
+      }
+      setTimeout(() => { window.location.href = '/app/messages.html'; }, 2000);
+    } catch {
+      errEl.textContent = 'Connection error. Please try again.';
+      if (btn) { btn.disabled = false; btn.textContent = 'Decline'; }
+    }
   }
 
   // ── INIT ──
