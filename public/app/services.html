@@ -430,6 +430,12 @@
         <div id="ord-proposals-list"></div>
       </div>
 
+      <!-- My Sessions -->
+      <div class="ord-section" id="ord-sessions-section" style="display:none;">
+        <h2 class="ord-section-heading">My Sessions</h2>
+        <div id="ord-sessions-list"></div>
+      </div>
+
       <!-- Order History -->
       <div class="ord-section" id="ord-history-section" style="display:none;">
         <h2 class="ord-section-heading">Order History</h2>
@@ -1019,6 +1025,8 @@
 
     const orders = ordersRes.data || [];
     const quotes = quotesRes.data || [];
+    const sessionOrders = orders.filter(o => o.service_id === VIRTUAL_SESSION_ID);
+    const deliverableOrders = orders.filter(o => o.service_id !== VIRTUAL_SESSION_ID);
 
     const serviceIds = [...new Set(orders.map(o => o.service_id).filter(Boolean))];
     let serviceMap = {};
@@ -1048,10 +1056,10 @@
     historySection.style.display = 'block';
     const ordersList = document.getElementById('ord-orders-list');
 
-    if (!orders.length && !quotes.filter(q => q.status === 'declined' || q.status === 'expired').length) {
+    if (!deliverableOrders.length && !quotes.filter(q => q.status === 'declined' || q.status === 'expired').length) {
       ordersList.innerHTML = `<div class="ord-empty"><p>No orders yet.<br><button class="btn-ghost" style="width:auto;padding:10px 20px;margin-top:1rem;" onclick="window.switchSvcTab('browse')">Browse Services →</button></p></div>`;
     } else {
-      for (const order of orders) {
+      for (const order of deliverableOrders) {
         const card = await renderOrdOrderCard(order, serviceMap[order.service_id], deliveryMap[order.id]);
         ordersList.appendChild(card);
       }
@@ -1066,6 +1074,17 @@
       section.style.display = 'block';
       const list = document.getElementById('ord-proposals-list');
       sessionProposals.forEach(o => list.appendChild(renderProposalCard(o)));
+    }
+
+    // My Sessions — all session orders with session-specific cards
+    if (sessionOrders.length) {
+      const sessSection = document.getElementById('ord-sessions-section');
+      sessSection.style.display = 'block';
+      const sessList = document.getElementById('ord-sessions-list');
+      for (const order of sessionOrders) {
+        const card = await renderSessionOrderCard(order);
+        sessList.appendChild(card);
+      }
     }
 
     ordUpdateCountdowns();
@@ -1171,6 +1190,94 @@
       errEl.textContent = 'Connection error. Please try again.';
       if (btn) { btn.disabled = false; btn.textContent = 'Decline'; }
     }
+  }
+
+  async function renderSessionOrderCard(order) {
+    const card = document.createElement('div');
+    card.className = 'ord-order-card';
+
+    const memberTz = currentProfile?.timezone || 'America/Chicago';
+    const dateStr = formatDate(order.created_at);
+    const durationStr = `${order.session_duration_minutes || 60} minutes`;
+
+    function fmtSessionSlot(isoStr) {
+      const d = new Date(isoStr);
+      const local = new Intl.DateTimeFormat('en-US', {
+        timeZone: memberTz, weekday: 'long', month: 'long', day: 'numeric',
+        hour: 'numeric', minute: '2-digit', hour12: true,
+      }).format(d);
+      if (memberTz === 'America/Chicago') return local;
+      const ct = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit', hour12: true,
+      }).format(d) + ' CT';
+      return `${local} (${ct})`;
+    }
+
+    const slotDisplay = order.proposed_slot_start ? fmtSessionSlot(order.proposed_slot_start) : '—';
+
+    if (order.status === 'pending_approval') {
+      card.innerHTML = `
+        <div class="ord-card-header">
+          <div><div class="ord-service-name">1:1 Vocal Coaching Session</div><div class="ord-date">Booked ${dateStr}</div></div>
+          <div><span class="ord-badge ord-badge-pending">Awaiting Confirmation</span></div>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);font-weight:300;margin-bottom:4px;">${escHtml(slotDisplay)}</div>
+        <div style="font-size:12px;color:var(--text-dim);">${durationStr}</div>
+      `;
+      return card;
+    }
+
+    if (order.status === 'scheduled') {
+      let eventLink = '/app/events.html';
+      if (order.proposed_slot_start && currentUser) {
+        const { data: evtRow } = await supabase
+          .from('events')
+          .select('id')
+          .eq('type', 'private')
+          .eq('member_id', currentUser.id)
+          .eq('starts_at', order.proposed_slot_start)
+          .limit(1)
+          .maybeSingle();
+        if (evtRow?.id) eventLink = `/app/event.html?id=${evtRow.id}`;
+      }
+      card.innerHTML = `
+        <div class="ord-card-header">
+          <div><div class="ord-service-name">1:1 Vocal Coaching Session</div><div class="ord-date">Booked ${dateStr}</div></div>
+          <div><span class="ord-badge ord-badge-fulfilled">Confirmed</span></div>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);font-weight:300;margin-bottom:4px;">${escHtml(slotDisplay)}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:1rem;">${durationStr}</div>
+        <a href="${escHtml(eventLink)}" class="btn-gold-ord">Join Session →</a>
+      `;
+      return card;
+    }
+
+    if (order.status === 'fulfilled') {
+      card.innerHTML = `
+        <div class="ord-card-header">
+          <div><div class="ord-service-name">1:1 Vocal Coaching Session</div><div class="ord-date">${dateStr}</div></div>
+          <div><span class="ord-badge ord-badge-fulfilled">Completed</span></div>
+        </div>
+      `;
+      return card;
+    }
+
+    if (order.status === 'cancelled') {
+      card.innerHTML = `
+        <div class="ord-card-header">
+          <div><div class="ord-service-name">1:1 Vocal Coaching Session</div><div class="ord-date">${dateStr}</div></div>
+          <div><span class="ord-badge ord-badge-cancelled">Cancelled</span></div>
+        </div>
+      `;
+      return card;
+    }
+
+    card.innerHTML = `
+      <div class="ord-card-header">
+        <div><div class="ord-service-name">1:1 Vocal Coaching Session</div><div class="ord-date">${dateStr}</div></div>
+      </div>
+    `;
+    return card;
   }
 
   // ── INIT ──

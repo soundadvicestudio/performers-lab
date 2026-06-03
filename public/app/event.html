@@ -806,21 +806,44 @@
   window.handleGoLive=async function() {
     const btn=document.getElementById('btn-go-live');
     if (btn) { btn.disabled=true; btn.textContent='Going live…'; }
-    const {data:{user}}=await supabase.auth.getUser();
-    if (!user) { if(btn){btn.disabled=false;btn.textContent='⚡ Go Live';} return; }
-    const res=await fetch('/api/events/createRoom',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({admin_user_id:user.id, event_id:eventId}),
-    });
-    const json=await res.json();
-    if (!res.ok) {
-      if (btn) { btn.disabled=false; btn.textContent='⚡ Go Live'; }
-      showToast('Error: '+(json.error||'Failed to create room'));
-      return;
+
+    if (currentEvent?.type === 'private') {
+      // Private session: room already exists — get a host token and set status to live
+      const {data:{session}}=await supabase.auth.getSession();
+      if (!session) { if(btn){btn.disabled=false;btn.textContent='⚡ Go Live';} return; }
+      const res=await fetch('/api/sessions/getHostToken',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+        body:JSON.stringify({eventId}),
+      });
+      const json=await res.json();
+      if (!res.ok) {
+        if (btn) { btn.disabled=false; btn.textContent='⚡ Go Live'; }
+        showToast('Error: '+(json.error||'Failed to start session'));
+        return;
+      }
+      if (json.token) sessionStorage.setItem(`host_token_${eventId}`, json.token);
+      // Patch status to live — Realtime subscription fires and swaps the embed
+      await supabase.from('events').update({status:'live'}).eq('id',eventId);
+      showToast('Session is live');
+    } else {
+      // Group session: create a new Daily.co room via createRoom.js
+      const {data:{user}}=await supabase.auth.getUser();
+      if (!user) { if(btn){btn.disabled=false;btn.textContent='⚡ Go Live';} return; }
+      const res=await fetch('/api/events/createRoom',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({admin_user_id:user.id, event_id:eventId}),
+      });
+      const json=await res.json();
+      if (!res.ok) {
+        if (btn) { btn.disabled=false; btn.textContent='⚡ Go Live'; }
+        showToast('Error: '+(json.error||'Failed to create room'));
+        return;
+      }
+      if (json.host_token) sessionStorage.setItem(`host_token_${eventId}`, json.host_token);
+      showToast('Session is live');
+      // Realtime subscription on events UPDATE fires and swaps the embed automatically
     }
-    if (json.host_token) sessionStorage.setItem(`host_token_${eventId}`, json.host_token);
-    showToast('Session is live');
-    // Realtime subscription on events UPDATE fires and swaps the embed automatically
   };
 
   window.handleEndSession=function() {

@@ -3628,9 +3628,7 @@
           <button class="evt-copy-btn" onclick="window.copyEvtRoomUrl('${evt.id}')">Copy</button>
         </div>` : ''}
         <div class="evt-actions" style="margin-top:14px;">
-          <button class="evt-go-live-btn" id="evt-golive-btn-${evt.id}"
-            onclick="window.goLive('${evt.id}')"
-            ${isLive ? 'disabled' : ''}>${isLive ? '▶&nbsp;Live' : '▶&nbsp;Go Live'}</button>
+          <button class="action-btn primary" onclick="window.open('/app/event.html?id=${evt.id}', '_blank')" style="font-size:10px;">Open Session Page →</button>
           ${isLive ? `<button class="evt-end-btn" id="evt-end-btn-${evt.id}" onclick="window.showEndConfirm('${evt.id}')">End Session</button>` : ''}
           <button class="evt-delete-btn" onclick="window.showEvtDelete('${evt.id}')">Delete</button>
         </div>
