@@ -560,6 +560,12 @@
     }
     updateChatStateForStatus(event.status);
     if (event.status==='live'&&currentEvent?.type==='private') initPrivateChat();
+    if (event.status==='live'&&currentEvent?.type==='group') {
+      const inputRow=document.getElementById('chat-input-row');
+      const banner=document.getElementById('chat-readonly-banner');
+      if (inputRow) inputRow.style.setProperty('display','flex','important');
+      if (banner) banner.style.setProperty('display','none','important');
+    }
   }
 
   // ── RSVP handlers ───────────────────────────────────────────────────────
@@ -1083,6 +1089,12 @@
     if (currentEvent?.type==='private') {
       document.getElementById('chat-panel').style.display='none';
       if (currentEvent.status==='live') initPrivateChat();
+    }
+    if (currentEvent?.status==='live' && currentEvent?.type==='group') {
+      const inputRow=document.getElementById('chat-input-row');
+      const banner=document.getElementById('chat-readonly-banner');
+      if (inputRow) inputRow.style.setProperty('display','flex','important');
+      if (banner) banner.style.setProperty('display','none','important');
     }
     subscribeToEventUpdates();
     subscribeToChatUpdates();
