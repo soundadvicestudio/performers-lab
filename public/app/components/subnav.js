@@ -238,18 +238,26 @@ function injectMobileOverflow() {
   }
 }
 
-function showLiveState(eventId) {
+function showLiveState(eventId, eventType = 'group') {
   const banner = document.getElementById('live-banner');
   if (banner) {
     banner.style.display = 'block';
     const link = banner.querySelector('.live-banner-link');
     if (link) link.href = `/app/event.html?id=${eventId}`;
+    const text = banner.querySelector('.live-banner-text');
+    if (text) {
+      text.textContent = eventType === 'private'
+        ? 'ON AIR — Your session is live now'
+        : 'ON AIR — Live Lab is live now';
+    }
   }
-  const liveLabTab = document.querySelector('#app-subnav a[href="/app/events.html"]');
-  if (liveLabTab && !liveLabTab.querySelector('.live-tab-dot')) {
-    const dot = document.createElement('span');
-    dot.className = 'live-tab-dot';
-    liveLabTab.appendChild(dot);
+  if (eventType === 'group') {
+    const liveLabTab = document.querySelector('#app-subnav a[href="/app/events.html"]');
+    if (liveLabTab && !liveLabTab.querySelector('.live-tab-dot')) {
+      const dot = document.createElement('span');
+      dot.className = 'live-tab-dot';
+      liveLabTab.appendChild(dot);
+    }
   }
 }
 
@@ -284,7 +292,7 @@ async function updateServicesBadge(supabase) {
   tab.appendChild(badge);
 }
 
-export function initSubnav(activeTab, supabase) {
+export async function initSubnav(activeTab, supabase) {
   injectStyles();
 
   const container = document.getElementById('app-subnav');
@@ -313,24 +321,82 @@ export function initSubnav(activeTab, supabase) {
 
   updateServicesBadge(supabase);
 
-  supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  const currentUserId = user?.id;
+
+  const { data: liveEvents } = await supabase
     .from('events')
-    .select('id')
+    .select('id, type, member_id')
     .eq('status', 'live')
-    .limit(1)
-    .then(({ data }) => {
-      if (data && data.length > 0) showLiveState(data[0].id);
-    });
+    .limit(5);
+
+  if (liveEvents && liveEvents.length > 0) {
+    const liveGroup = liveEvents.find(e => e.type === 'group');
+    if (liveGroup) {
+      showLiveState(liveGroup.id, 'group');
+    } else {
+      const livePrivate = liveEvents.find(e =>
+        e.type === 'private' && e.member_id === currentUserId
+      );
+      if (livePrivate) {
+        showLiveState(livePrivate.id, 'private');
+      } else {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('user_id', currentUserId)
+          .single();
+        if (profile?.is_admin) showLiveState(liveEvents[0].id, 'private');
+      }
+    }
+  }
 
   const channel = supabase
     .channel('subnav-live-watch')
     .on('postgres_changes', {
       event: 'UPDATE', schema: 'public', table: 'events',
-    }, payload => {
-      if (payload.new.status === 'live') {
-        showLiveState(payload.new.id);
+    }, async payload => {
+      const evt = payload.new;
+      if (evt.status === 'live') {
+        if (evt.type === 'group') {
+          showLiveState(evt.id, 'group');
+        } else if (evt.type === 'private') {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (evt.member_id === user?.id) {
+            showLiveState(evt.id, 'private');
+          } else {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('is_admin')
+              .eq('user_id', user?.id)
+              .single();
+            if (profile?.is_admin) showLiveState(evt.id, 'private');
+          }
+        }
       } else {
-        hideLiveState();
+        const { data: stillLive } = await supabase
+          .from('events')
+          .select('id, type, member_id')
+          .eq('status', 'live')
+          .limit(5);
+        if (!stillLive || stillLive.length === 0) {
+          hideLiveState();
+          return;
+        }
+        const { data: { user } } = await supabase.auth.getUser();
+        const liveGroup = stillLive.find(e => e.type === 'group');
+        if (liveGroup) {
+          showLiveState(liveGroup.id, 'group');
+        } else {
+          const livePrivate = stillLive.find(e =>
+            e.type === 'private' && e.member_id === user?.id
+          );
+          if (livePrivate) {
+            showLiveState(livePrivate.id, 'private');
+          } else {
+            hideLiveState();
+          }
+        }
       }
     })
     .subscribe();

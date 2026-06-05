@@ -1272,6 +1272,19 @@
       return card;
     }
 
+    if (order.status === 'completed') {
+      const sessionDateStr = order.proposed_slot_start ? fmtSessionSlot(order.proposed_slot_start) : '—';
+      card.innerHTML = `
+        <div class="ord-card-header">
+          <div><div class="ord-service-name">1:1 Vocal Coaching Session</div><div class="ord-date">${escHtml(sessionDateStr)}</div></div>
+          <div><span class="ord-badge ord-badge-fulfilled">Completed</span></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:1rem;">${durationStr}</div>
+        <p style="font-size:13px;color:var(--text-muted);font-weight:300;font-style:italic;line-height:1.65;">Session notes will appear here after your session.</p>
+      `;
+      return card;
+    }
+
     card.innerHTML = `
       <div class="ord-card-header">
         <div><div class="ord-service-name">1:1 Vocal Coaching Session</div><div class="ord-date">${dateStr}</div></div>
