@@ -880,7 +880,9 @@
           messages.push(msg);
           updateParticipantCount(msg.user_id);
         })
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log('chat subscription status:', status, err || '');
+      });
 
     // B — deleted messages
     supabase.channel(`event-messages-delete-${eventId}`)
