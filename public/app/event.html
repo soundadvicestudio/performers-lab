@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -163,6 +164,35 @@
   }
   @media (max-width: 600px) { .main { padding: 2rem 1.25rem 3rem; } }
 
+  /* ── Session timer ── */
+  .session-timer-wrap { display: flex; gap: 20px; align-items: center; margin-right: 6px; }
+  .session-timer-block { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .session-timer-label { font-size: 8px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+  .session-timer-digits { font-size: 17px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; line-height: 1; }
+  .session-timer-digits.overtime { color: #dc3232; }
+  @keyframes timer-overtime-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.38; } }
+  .session-timer-digits.overtime-pulse { animation: timer-overtime-pulse 1s ease-in-out infinite; }
+
+  /* ── Session notes panel (Part 3) ── */
+  .session-notes-section { max-width: 1140px; margin: 0 auto; padding: 0 2rem 4rem; }
+  .session-notes-panel { background: var(--bg-2); border: 0.5px solid var(--border-gold); border-radius: 10px; padding: 2rem; }
+  .session-notes-heading { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; color: var(--text); margin-bottom: 1.5rem; }
+  .notes-field { margin-bottom: 1.5rem; }
+  .notes-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+  .notes-editor-wrap .ql-toolbar { background: var(--bg-3) !important; border: 0.5px solid var(--border-gold) !important; border-bottom: none !important; border-radius: 3px 3px 0 0; }
+  .notes-editor-wrap .ql-container { background: var(--bg-3) !important; border: 0.5px solid var(--border-gold) !important; border-top: none !important; border-radius: 0 0 3px 3px; font-family: 'Raleway', sans-serif !important; font-size: 14px !important; color: var(--text) !important; min-height: 120px; }
+  .notes-editor-wrap .ql-editor.ql-blank::before { color: var(--text-dim) !important; font-style: normal !important; }
+  .notes-editor-wrap .ql-snow .ql-stroke { stroke: var(--text-muted) !important; }
+  .notes-editor-wrap .ql-snow .ql-fill { fill: var(--text-muted) !important; }
+  .notes-editor-wrap .ql-snow .ql-picker { color: var(--text-muted) !important; }
+  .notes-editor-wrap .ql-snow button:hover .ql-stroke, .notes-editor-wrap .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
+  .notes-editor-wrap .ql-snow button:hover .ql-fill, .notes-editor-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
+  .btn-save-notes { background: var(--gold); color: #070707; border: none; padding: 10px 28px; border-radius: 2px; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; font-family: 'Raleway', sans-serif; cursor: pointer; transition: background 0.2s; }
+  .btn-save-notes:hover:not(:disabled) { background: var(--gold-light); }
+  .btn-save-notes:disabled { opacity: 0.5; cursor: not-allowed; }
+  .notes-save-msg { font-size: 12px; color: var(--green); font-weight: 600; margin-left: 14px; transition: opacity 0.3s; }
+  @media (max-width: 600px) { .session-notes-section { padding: 0 1.25rem 3rem; } }
+
   /* ── Private session floating chat ── */
   #private-chat {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 900;
@@ -233,10 +263,31 @@
     </div>
   </main>
 
+  <div id="session-notes-section" style="display:none;">
+    <div class="session-notes-section">
+      <div class="session-notes-panel">
+        <h2 class="session-notes-heading">Session Notes</h2>
+        <div class="notes-field">
+          <label class="notes-label">Member Notes (visible to member)</label>
+          <div class="notes-editor-wrap"><div id="notes-public-editor"></div></div>
+        </div>
+        <div class="notes-field">
+          <label class="notes-label">Private Notes (admin only — never shown to member)</label>
+          <div class="notes-editor-wrap"><div id="notes-private-editor"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <button class="btn-save-notes" id="notes-save-btn">Save Notes</button>
+          <span class="notes-save-msg" id="notes-save-msg" style="display:none;">Notes saved</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="app-footer"></div>
 </div>
 <div id="event-toast" class="event-toast"></div>
 
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   import { initNav } from './components/nav.js';
@@ -348,6 +399,18 @@
   let currentUserName = '';
   let currentUserAvatar = '';
 
+  // ── Timer state ─────────────────────────────────────────────────────────
+  let timerIntervalElapsed = null;
+  let timerIntervalCountdown = null;
+  let timerStartMs = null;
+  let chimePlayed = false;
+
+  // ── Session notes state ─────────────────────────────────────────────────
+  let notesOrderId = null;
+  let notesPublicEditor = null;
+  let notesPrivateEditor = null;
+  let notesInitialized = false;
+
   // ── Helpers ─────────────────────────────────────────────────────────────
   function isProfileComplete(profile) {
     return !!(profile?.display_name?.trim() && profile?.birth_year &&
@@ -388,6 +451,31 @@
   }
 
   function convertDriveUrl(url) { return url.replace(/\/view(\?.*)?$/,'/preview'); }
+
+  function sanitizeHTML(html) {
+    const allowed = ['p','br','b','strong','i','em','u','ol','ul','li','a','span','h1','h2','h3','blockquote'];
+    const doc = new DOMParser().parseFromString(html || '', 'text/html');
+    function clean(node) {
+      [...node.childNodes].forEach(child => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const tag = child.tagName.toLowerCase();
+          if (!allowed.includes(tag)) {
+            while (child.firstChild) node.insertBefore(child.firstChild, child);
+            child.remove();
+          } else {
+            [...child.attributes].forEach(attr => {
+              if (attr.name.startsWith('on') || (attr.name === 'href' && !/^(https?:\/\/|\/|#)/.test(attr.value))) {
+                child.removeAttribute(attr.name);
+              }
+            });
+            clean(child);
+          }
+        }
+      });
+    }
+    clean(doc.body);
+    return doc.body.innerHTML;
+  }
 
   function downloadIcs(evt) {
     const now=toIcsDate(new Date()), start=toIcsDate(new Date(evt.starts_at));
@@ -501,10 +589,22 @@
     if (!userIsAdmin || event.status==='completed') return '';
     const showGoLive = event.status==='upcoming';
     const showEndSession = event.status==='live';
+    const showTimer = showEndSession && event.type==='private';
+    const timerHtml = showTimer ? `<div class="session-timer-wrap" id="session-timer-wrap">
+        <div class="session-timer-block">
+          <span class="session-timer-label">Elapsed</span>
+          <span class="session-timer-digits" id="timer-elapsed">0:00</span>
+        </div>
+        ${event.duration_minutes ? `<div class="session-timer-block">
+          <span class="session-timer-label">Remaining</span>
+          <span class="session-timer-digits" id="timer-countdown">${event.duration_minutes}:00</span>
+        </div>` : ''}
+      </div>` : '';
     return `<div id="admin-control-bar" class="admin-ctrl-wrap">
       <div class="admin-ctrl-bar">
         <span class="admin-ctrl-label">Admin Controls</span>
         <div class="admin-ctrl-actions">
+          ${timerHtml}
           ${showGoLive?`<button class="btn-go-live" id="btn-go-live" onclick="window.handleGoLive()">⚡ Go Live</button>`:''}
           ${showEndSession?`<button class="btn-end-session" id="btn-end-session" onclick="window.handleEndSession()">■ End Session</button>`:''}
         </div>
@@ -562,12 +662,19 @@
       if (newEl) adminCtrl.replaceWith(newEl); else adminCtrl.remove();
     }
     updateChatStateForStatus(event.status);
-    if (event.status==='live'&&currentEvent?.type==='private') initPrivateChat();
+    if (event.status==='live'&&currentEvent?.type==='private') {
+      initPrivateChat();
+      if (userIsAdmin) startSessionTimers();
+    }
     if (event.status==='live'&&currentEvent?.type==='group') {
       const inputRow=document.getElementById('chat-input-row');
       const banner=document.getElementById('chat-readonly-banner');
       if (inputRow) inputRow.style.setProperty('display','flex','important');
       if (banner) banner.style.setProperty('display','none','important');
+    }
+    if (event.status==='completed'&&currentEvent?.type==='private'&&userIsAdmin) {
+      stopSessionTimers();
+      initSessionNotesPanel();
     }
   }
 
@@ -1054,6 +1161,7 @@
       showToast('Failed to end session.');
       return;
     }
+    stopSessionTimers();
     if (currentEvent?.type==='private' && currentEvent?.member_id) {
       const {error:orderError}=await supabase.from('service_orders')
         .update({status:'completed'})
@@ -1066,6 +1174,133 @@
     showToast('Session ended.');
     // Realtime subscription handles embed swap and chat state
   };
+
+  // ── Session timer ────────────────────────────────────────────────────────
+  function formatTimerSeconds(totalSeconds) {
+    const abs = Math.abs(totalSeconds);
+    const m = Math.floor(abs / 60);
+    const s = abs % 60;
+    return (totalSeconds < 0 ? '-' : '') + m + ':' + String(s).padStart(2, '0');
+  }
+
+  async function playSessionChime() {
+    try {
+      const { data } = await supabase.from('platform_settings').select('value').eq('key', 'session_chime_url').single();
+      if (data?.value) {
+        const audio = new Audio(data.value);
+        audio.play().catch(() => {});
+      }
+    } catch(e) {}
+  }
+
+  function startSessionTimers() {
+    if (timerIntervalElapsed) clearInterval(timerIntervalElapsed);
+    if (timerIntervalCountdown) clearInterval(timerIntervalCountdown);
+    timerStartMs = Date.now();
+    chimePlayed = false;
+    const durationMs = currentEvent?.duration_minutes ? currentEvent.duration_minutes * 60000 : null;
+
+    timerIntervalElapsed = setInterval(() => {
+      const elapsedSec = Math.floor((Date.now() - timerStartMs) / 1000);
+      const el = document.getElementById('timer-elapsed');
+      if (el) el.textContent = formatTimerSeconds(elapsedSec);
+    }, 1000);
+
+    if (durationMs !== null) {
+      timerIntervalCountdown = setInterval(() => {
+        const remainingSec = Math.floor((durationMs - (Date.now() - timerStartMs)) / 1000);
+        const el = document.getElementById('timer-countdown');
+        if (!el) return;
+        el.textContent = formatTimerSeconds(remainingSec);
+        if (remainingSec <= 0) {
+          el.classList.add('overtime', 'overtime-pulse');
+          if (!chimePlayed) {
+            chimePlayed = true;
+            playSessionChime();
+          }
+        }
+      }, 1000);
+    }
+  }
+
+  function stopSessionTimers() {
+    if (timerIntervalElapsed) { clearInterval(timerIntervalElapsed); timerIntervalElapsed = null; }
+    if (timerIntervalCountdown) { clearInterval(timerIntervalCountdown); timerIntervalCountdown = null; }
+  }
+
+  // ── Session notes panel ──────────────────────────────────────────────────
+  async function initSessionNotesPanel() {
+    if (notesInitialized) return;
+    notesInitialized = true;
+
+    const section = document.getElementById('session-notes-section');
+    if (!section) return;
+
+    if (currentEvent?.member_id) {
+      const { data: orderRows } = await supabase
+        .from('service_orders')
+        .select('id')
+        .eq('member_id', currentEvent.member_id)
+        .in('status', ['completed', 'scheduled'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      notesOrderId = orderRows?.[0]?.id || null;
+    }
+
+    section.style.display = 'block';
+
+    const toolbarOptions = [['bold','italic','underline'],['link'],[{list:'ordered'},{list:'bullet'}]];
+    notesPublicEditor = new Quill('#notes-public-editor', { theme: 'snow', modules: { toolbar: toolbarOptions } });
+    notesPrivateEditor = new Quill('#notes-private-editor', { theme: 'snow', modules: { toolbar: toolbarOptions } });
+
+    if (notesOrderId) {
+      const { data: notesRow } = await supabase
+        .from('session_notes')
+        .select('public_content, private_content')
+        .eq('order_id', notesOrderId)
+        .maybeSingle();
+      if (notesRow?.public_content) notesPublicEditor.root.innerHTML = sanitizeHTML(notesRow.public_content);
+      if (notesRow?.private_content) notesPrivateEditor.root.innerHTML = sanitizeHTML(notesRow.private_content);
+    }
+
+    document.getElementById('notes-save-btn').addEventListener('click', saveSessionNotes);
+  }
+
+  async function saveSessionNotes() {
+    if (!notesOrderId) { showToast('No session order found for this event.'); return; }
+    const saveBtn = document.getElementById('notes-save-btn');
+    const saveMsg = document.getElementById('notes-save-msg');
+    if (saveBtn) saveBtn.disabled = true;
+
+    const publicContent = notesPublicEditor?.root?.innerHTML || '';
+    const privateContent = notesPrivateEditor?.root?.innerHTML || '';
+
+    const { data: existing } = await supabase
+      .from('session_notes')
+      .select('id')
+      .eq('order_id', notesOrderId)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from('session_notes').update({
+        public_content: publicContent,
+        private_content: privateContent,
+        updated_at: new Date().toISOString(),
+      }).eq('order_id', notesOrderId);
+    } else {
+      await supabase.from('session_notes').insert({
+        order_id: notesOrderId,
+        public_content: publicContent,
+        private_content: privateContent,
+      });
+    }
+
+    if (saveBtn) saveBtn.disabled = false;
+    if (saveMsg) {
+      saveMsg.style.display = 'inline';
+      setTimeout(() => { saveMsg.style.display = 'none'; }, 2000);
+    }
+  }
 
   // ── Init ────────────────────────────────────────────────────────────────
   async function init() {
@@ -1121,7 +1356,13 @@
     initChat(chatMsgs||[],eventMods||[]);
     if (currentEvent?.type==='private') {
       document.getElementById('chat-panel').style.display='none';
-      if (currentEvent.status==='live') initPrivateChat();
+      if (currentEvent.status==='live') {
+        initPrivateChat();
+        if (userIsAdmin) startSessionTimers();
+      }
+      if (currentEvent.status==='completed' && userIsAdmin) {
+        initSessionNotesPanel();
+      }
     }
     if (currentEvent?.status==='live' && currentEvent?.type==='group') {
       const inputRow=document.getElementById('chat-input-row');

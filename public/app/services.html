@@ -810,6 +810,31 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function sanitizeOrdHtml(html) {
+    const allowed = ['p','br','b','strong','i','em','u','ol','ul','li','a','span','blockquote'];
+    const doc = new DOMParser().parseFromString(html || '', 'text/html');
+    function clean(node) {
+      [...node.childNodes].forEach(child => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const tag = child.tagName.toLowerCase();
+          if (!allowed.includes(tag)) {
+            while (child.firstChild) node.insertBefore(child.firstChild, child);
+            child.remove();
+          } else {
+            [...child.attributes].forEach(attr => {
+              if (attr.name.startsWith('on') || (attr.name === 'href' && !/^(https?:\/\/|\/|#)/.test(attr.value))) {
+                child.removeAttribute(attr.name);
+              }
+            });
+            clean(child);
+          }
+        }
+      });
+    }
+    clean(doc.body);
+    return doc.body.innerHTML;
+  }
+
   function formatDate(isoString) {
     return new Date(isoString).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   }
@@ -1273,14 +1298,40 @@
     }
 
     if (order.status === 'completed') {
-      const sessionDateStr = order.proposed_slot_start ? fmtSessionSlot(order.proposed_slot_start) : '—';
+      const sessionDateFull = order.proposed_slot_start
+        ? new Intl.DateTimeFormat('en-US', {
+            timeZone: memberTz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+          }).format(new Date(order.proposed_slot_start))
+        : '—';
+      const durationLine = order.session_duration_minutes
+        ? `<div style="font-size:13px;color:var(--text-muted);font-weight:300;margin-top:4px;">${order.session_duration_minutes} min session</div>` : '';
+
+      let notesHtml = `<p style="font-size:13px;color:var(--text-dim);font-weight:300;font-style:italic;line-height:1.65;">Session notes will appear here after your coach reviews your session.</p>`;
+      try {
+        const { data: notesRow } = await supabase
+          .from('session_notes_public')
+          .select('public_content')
+          .eq('order_id', order.id)
+          .maybeSingle();
+        if (notesRow?.public_content && notesRow.public_content.trim() && notesRow.public_content !== '<p><br></p>') {
+          notesHtml = `<div style="font-size:14px;color:var(--text-muted);font-weight:300;line-height:1.7;">${sanitizeOrdHtml(notesRow.public_content)}</div>`;
+        }
+      } catch(e) {}
+
       card.innerHTML = `
         <div class="ord-card-header">
-          <div><div class="ord-service-name">1:1 Vocal Coaching Session</div><div class="ord-date">${escHtml(sessionDateStr)}</div></div>
-          <div><span class="ord-badge ord-badge-fulfilled">Completed</span></div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">My Session</div>
+            <div class="ord-service-name">1:1 Vocal Coaching Session</div>
+          </div>
+          <span style="background:rgba(76,175,132,0.15);color:rgba(76,175,132,0.8);border:0.5px solid rgba(76,175,132,0.3);border-radius:2px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;white-space:nowrap;">Completed</span>
         </div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:1rem;">${durationStr}</div>
-        <p style="font-size:13px;color:var(--text-muted);font-weight:300;font-style:italic;line-height:1.65;">Session notes will appear here after your session.</p>
+        <div style="font-size:14px;color:var(--text);font-weight:500;margin-bottom:2px;">${escHtml(sessionDateFull)}</div>
+        ${durationLine}
+        <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:0.5px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.75rem;">Session Notes</div>
+          ${notesHtml}
+        </div>
       `;
       return card;
     }

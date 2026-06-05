@@ -694,6 +694,17 @@
   .sub-quill-wrap .ql-snow button:hover .ql-fill,
   .sub-quill-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
 
+  /* ── Session notes Quill (admin orders) ── */
+  .sn-quill-wrap .ql-toolbar { background: var(--bg-3) !important; border: 0.5px solid var(--border-gold) !important; border-bottom: none !important; border-radius: 3px 3px 0 0; }
+  .sn-quill-wrap .ql-container { background: var(--bg-3) !important; border: 0.5px solid var(--border-gold) !important; border-top: none !important; border-radius: 0 0 3px 3px; font-family: 'Raleway', sans-serif !important; font-size: 13px !important; color: var(--text) !important; min-height: 100px; }
+  .sn-quill-wrap .ql-container:focus-within { border-color: var(--gold) !important; }
+  .sn-quill-wrap .ql-editor.ql-blank::before { color: var(--text-dim) !important; font-style: normal !important; }
+  .sn-quill-wrap .ql-snow .ql-stroke { stroke: var(--text-dim) !important; }
+  .sn-quill-wrap .ql-snow .ql-fill { fill: var(--text-dim) !important; }
+  .sn-quill-wrap .ql-snow .ql-picker { color: var(--text-dim) !important; }
+  .sn-quill-wrap .ql-snow button:hover .ql-stroke, .sn-quill-wrap .ql-snow button.ql-active .ql-stroke { stroke: var(--gold) !important; }
+  .sn-quill-wrap .ql-snow button:hover .ql-fill, .sn-quill-wrap .ql-snow button.ql-active .ql-fill { fill: var(--gold) !important; }
+
   /* ── RESOURCE MANAGEMENT ── */
   .res-cat-section { background: var(--bg-2); border: 0.5px solid var(--border); border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden; }
   .res-cat-toggle-btn {
@@ -4567,6 +4578,7 @@
       let statusBadge = '';
       if (order.status === 'pending_approval') statusBadge = `<span class="res-pub-badge draft">Pending Review</span>`;
       else if (order.status === 'in_progress') statusBadge = `<span style="background:rgba(100,149,237,0.15);color:rgba(100,149,237,0.8);border:0.5px solid rgba(100,149,237,0.3);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">In Progress</span>`;
+      else if (order.status === 'completed') statusBadge = `<span style="background:rgba(76,175,132,0.15);color:rgba(76,175,132,0.8);border:0.5px solid rgba(76,175,132,0.3);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Session Completed</span>`;
 
       const urgentBadge = isUrgent ? `<span style="background:rgba(224,92,92,0.12);color:#e05c5c;border:0.5px solid rgba(224,92,92,0.3);border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Urgent</span>` : '';
 
@@ -4610,6 +4622,10 @@
           </div>`;
       }
 
+      const isSession = svc.type === 'virtual_session';
+      const sessionNotesPh = isSession && order.status === 'completed'
+        ? `<div id="sn-panel-${escStr(order.id)}"></div>` : '';
+
       return `
         <div class="sub-row" style="${isUrgent ? 'border-left:3px solid #e05c5c;' : ''}">
           <div class="sub-row-header" style="cursor:default;align-items:center;">
@@ -4631,12 +4647,120 @@
           </div>
           ${refFileHtml}${refLinkHtml}${notesHtml}
           ${fulfillSection}
+          ${sessionNotesPh}
         </div>`;
     }).join('');
 
     updateAdminCountdowns();
     window._svcOrdersTimerId = setInterval(updateAdminCountdowns, 60000);
+
+    const completedSessionOrders = orders.filter(o => o.status === 'completed' && (svcMap[o.service_id]?.type === 'virtual_session'));
+    if (completedSessionOrders.length) initAdminSessionNotesPanels(completedSessionOrders);
   }
+
+  async function adminSanitizeHTML(html) {
+    const allowed = ['p','br','b','strong','i','em','u','ol','ul','li','a','span','blockquote'];
+    const doc = new DOMParser().parseFromString(html || '', 'text/html');
+    function clean(node) {
+      [...node.childNodes].forEach(child => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const tag = child.tagName.toLowerCase();
+          if (!allowed.includes(tag)) {
+            while (child.firstChild) node.insertBefore(child.firstChild, child);
+            child.remove();
+          } else {
+            [...child.attributes].forEach(attr => {
+              if (attr.name.startsWith('on') || (attr.name === 'href' && !/^(https?:\/\/|\/|#)/.test(attr.value))) {
+                child.removeAttribute(attr.name);
+              }
+            });
+            clean(child);
+          }
+        }
+      });
+    }
+    clean(doc.body);
+    return doc.body.innerHTML;
+  }
+
+  async function initAdminSessionNotesPanels(completedOrders) {
+    if (!window._adminSessionNotes) window._adminSessionNotes = {};
+    const toolbarOptions = [['bold','italic','underline'],['link'],[{list:'ordered'},{list:'bullet'}]];
+    for (const order of completedOrders) {
+      const { data: evt } = await sbClient
+        .from('events')
+        .select('status')
+        .eq('member_id', order.member_id)
+        .eq('type', 'private')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (evt?.status !== 'completed') continue;
+
+      const container = document.getElementById(`sn-panel-${order.id}`);
+      if (!container) continue;
+
+      container.innerHTML = `
+        <div style="margin-top:14px;padding:14px 24px 16px;border-top:0.5px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:14px;">Session Notes</div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Member Notes (visible to member)</div>
+            <div class="sn-quill-wrap"><div id="sn-pub-${order.id}"></div></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Private Notes (admin only — never shown to member)</div>
+            <div class="sn-quill-wrap"><div id="sn-priv-${order.id}"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button class="action-btn primary" onclick="window.saveAdminNotes('${order.id}')">Save Notes</button>
+            <span id="sn-msg-${order.id}" style="font-size:12px;color:rgba(76,175,132,0.9);display:none;">Notes saved</span>
+          </div>
+        </div>`;
+
+      const pubEditor = new Quill(`#sn-pub-${order.id}`, { theme: 'snow', modules: { toolbar: toolbarOptions } });
+      const privEditor = new Quill(`#sn-priv-${order.id}`, { theme: 'snow', modules: { toolbar: toolbarOptions } });
+
+      const { data: notesRow } = await sbClient
+        .from('session_notes')
+        .select('public_content, private_content')
+        .eq('order_id', order.id)
+        .maybeSingle();
+      if (notesRow?.public_content) pubEditor.root.innerHTML = await adminSanitizeHTML(notesRow.public_content);
+      if (notesRow?.private_content) privEditor.root.innerHTML = await adminSanitizeHTML(notesRow.private_content);
+
+      window._adminSessionNotes[order.id] = { pubEditor, privEditor };
+    }
+  }
+
+  window.saveAdminNotes = async function(orderId) {
+    const saveMsg = document.getElementById(`sn-msg-${orderId}`);
+    const refs = window._adminSessionNotes?.[orderId];
+    if (!refs) return;
+
+    const publicContent = refs.pubEditor.root.innerHTML;
+    const privateContent = refs.privEditor.root.innerHTML;
+
+    const { data: existing } = await sbClient.from('session_notes')
+      .select('id').eq('order_id', orderId).maybeSingle();
+    if (existing) {
+      await sbClient.from('session_notes').update({
+        public_content: publicContent,
+        private_content: privateContent,
+        updated_at: new Date().toISOString(),
+      }).eq('order_id', orderId);
+    } else {
+      await sbClient.from('session_notes').insert({
+        order_id: orderId,
+        public_content: publicContent,
+        private_content: privateContent,
+      });
+    }
+
+    if (saveMsg) {
+      saveMsg.style.display = 'inline';
+      setTimeout(() => { saveMsg.style.display = 'none'; }, 2000);
+    }
+  };
 
   window.openRefFile = async function(path, btn) {
     const orig = btn.textContent;

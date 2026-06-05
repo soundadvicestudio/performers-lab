@@ -96,6 +96,7 @@ export default async function handler(req, res) {
       type: 'private',
       member_id,
       daily_room_url: room.url,
+      duration_minutes: session_duration_minutes || null,
       reminder_sent: false,
       morning_notify_sent: false,
     },
