@@ -162,6 +162,44 @@
     .event-title { font-size: 26px; }
   }
   @media (max-width: 600px) { .main { padding: 2rem 1.25rem 3rem; } }
+
+  /* ── Private session floating chat ── */
+  #private-chat {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 900;
+    background: var(--bg-2); border-top: 1px solid var(--border-gold);
+    display: flex; flex-direction: column; max-height: 280px;
+  }
+  #private-chat-messages {
+    flex: 1; overflow-y: auto; padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 8px; min-height: 60px;
+  }
+  #private-chat-input-row {
+    display: flex; gap: 8px; padding: 10px 16px;
+    border-top: 0.5px solid var(--border); flex-shrink: 0;
+  }
+  #private-chat-input {
+    flex: 1; background: var(--bg-3); border: 0.5px solid var(--border-mid);
+    border-radius: 3px; padding: 8px 12px; color: var(--text);
+    font-family: 'Raleway', sans-serif; font-size: 13px;
+  }
+  #private-chat-input:focus { outline: none; border-color: var(--border-gold); background: var(--bg-4); }
+  #private-chat-send {
+    background: var(--gold); color: #070707; border: none; border-radius: 3px;
+    padding: 8px 16px; font-family: 'Raleway', sans-serif; font-size: 11px;
+    font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+  }
+  #private-chat-send:hover { background: var(--gold-light); }
+  .pc-msg { display: flex; gap: 8px; align-items: flex-start; }
+  .pc-avatar {
+    width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+    flex-shrink: 0; background: var(--bg-3);
+  }
+  .pc-msg-body { display: flex; flex-direction: column; gap: 2px; }
+  .pc-msg-meta { display: flex; align-items: baseline; gap: 6px; }
+  .pc-msg-name { font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.04em; }
+  .pc-msg-time { font-size: 10px; color: var(--text-dim); cursor: default; }
+  .pc-msg-text { font-size: 13px; color: var(--text); line-height: 1.4; word-break: break-word; }
 </style>
 </head>
 <body>
@@ -300,6 +338,7 @@
 
   // ── State ───────────────────────────────────────────────────────────────
   let currentUserId = null;
+  let currentUser = null;
   let userProfile = null;
   let userIsAdmin = false;
   let currentEvent = null;
@@ -311,6 +350,7 @@
   let participantIds = new Set();
   let chatMessagesEl = null;
   let chatErrorTimeout = null;
+  let privateChatInitialized = false;
 
   // ── Helpers ─────────────────────────────────────────────────────────────
   function isProfileComplete(profile) {
@@ -519,6 +559,7 @@
       if (newEl) adminCtrl.replaceWith(newEl); else adminCtrl.remove();
     }
     updateChatStateForStatus(event.status);
+    if (event.status==='live'&&currentEvent?.type==='private') initPrivateChat();
   }
 
   // ── RSVP handlers ───────────────────────────────────────────────────────
@@ -844,6 +885,79 @@
     toastTimeout=setTimeout(()=>el.classList.remove('visible'),3000);
   }
 
+  // ── Private session floating chat ───────────────────────────────────────
+  function renderPrivateMessage(msg, pMap) {
+    const profile=pMap[msg.user_id]||{};
+    const name=profile.display_name||'Unknown';
+    const avatar=profile.photo_url||'';
+    const time=new Date(msg.created_at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    const fullTime=new Date(msg.created_at).toLocaleString();
+    const div=document.createElement('div');
+    div.className='pc-msg';
+    div.innerHTML=`
+      ${avatar?`<img class="pc-avatar" src="${escHtml(avatar)}" alt="">`:`<div class="pc-avatar"></div>`}
+      <div class="pc-msg-body">
+        <div class="pc-msg-meta">
+          <span class="pc-msg-name">${escHtml(name)}</span>
+          <span class="pc-msg-time" title="${escHtml(fullTime)}">${escHtml(time)}</span>
+        </div>
+        <div class="pc-msg-text">${escHtml(msg.content)}</div>
+      </div>`;
+    document.getElementById('private-chat-messages').appendChild(div);
+  }
+
+  function scrollPrivateChatToBottom() {
+    const msgs=document.getElementById('private-chat-messages');
+    if (msgs) msgs.scrollTop=msgs.scrollHeight;
+  }
+
+  async function initPrivateChat() {
+    if (privateChatInitialized) return;
+    privateChatInitialized=true;
+
+    const chatEl=document.getElementById('private-chat');
+    if (!chatEl) return;
+    chatEl.style.display='flex';
+    document.querySelector('.main').style.paddingBottom='290px';
+
+    const {data:msgs}=await supabase.from('event_messages')
+      .select('*').eq('event_id',eventId).order('created_at',{ascending:true});
+    if (msgs&&msgs.length) {
+      const senderIds=[...new Set(msgs.map(m=>m.user_id))];
+      const {data:profiles}=await supabase.from('profiles')
+        .select('user_id,display_name,photo_url').in('user_id',senderIds);
+      const pMap={};
+      (profiles||[]).forEach(p=>{pMap[p.user_id]=p;});
+      msgs.forEach(m=>renderPrivateMessage(m,pMap));
+      scrollPrivateChatToBottom();
+    }
+
+    supabase.channel('private-chat-'+eventId)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_messages',filter:`event_id=eq.${eventId}`},
+        async payload=>{
+          const {data:profile}=await supabase.from('profiles')
+            .select('user_id,display_name,photo_url').eq('user_id',payload.new.user_id).single();
+          renderPrivateMessage(payload.new,{[payload.new.user_id]:profile||{}});
+          scrollPrivateChatToBottom();
+        })
+      .subscribe();
+
+    async function sendPrivateMessage() {
+      const input=document.getElementById('private-chat-input');
+      const text=input.value.trim();
+      if (!text) return;
+      if (!currentUser) return;
+      input.value='';
+      await supabase.from('event_messages').insert({
+        event_id:eventId,user_id:currentUser.id,content:text,
+      });
+    }
+    document.getElementById('private-chat-send').addEventListener('click',sendPrivateMessage);
+    document.getElementById('private-chat-input').addEventListener('keydown',e=>{
+      if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendPrivateMessage();}
+    });
+  }
+
   // ── Admin Go Live / End Session ─────────────────────────────────────────
   window.handleGoLive=async function() {
     const btn=document.getElementById('btn-go-live');
@@ -922,6 +1036,7 @@
     const {data:{session}}=await supabase.auth.getSession();
     if (!session) { location.href='/app/login.html'; return; }
     currentUserId=session.user.id;
+    currentUser=session.user;
 
     const {data:profile}=await supabase.from('profiles')
       .select('display_name,is_admin,is_moderator,theme,bio,location,birth_year,experience,timezone')
@@ -965,6 +1080,10 @@
 
     renderPage();
     initChat(chatMsgs||[],eventMods||[]);
+    if (currentEvent?.type==='private') {
+      document.getElementById('chat-panel').style.display='none';
+      if (currentEvent.status==='live') initPrivateChat();
+    }
     subscribeToEventUpdates();
     subscribeToChatUpdates();
 
@@ -974,5 +1093,12 @@
 
   init();
 </script>
+<div id="private-chat" style="display:none;">
+  <div id="private-chat-messages"></div>
+  <div id="private-chat-input-row">
+    <input type="text" id="private-chat-input" placeholder="Message…" maxlength="500" autocomplete="off">
+    <button id="private-chat-send">Send</button>
+  </div>
+</div>
 </body>
 </html>
