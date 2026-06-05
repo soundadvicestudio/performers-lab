@@ -859,9 +859,10 @@
   function subscribeToChatUpdates() {
     // A — new messages
     supabase.channel(`event-messages-${eventId}`)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_messages',filter:`event_id=eq.${eventId}`},
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_messages'},
         async payload=>{
           const msg=payload.new;
+          if (msg.event_id !== eventId) return;
           if (renderedMessageIds.has(msg.id)) return;
           renderedMessageIds.add(msg.id);
           if (!profileMap[msg.user_id]) {
@@ -961,8 +962,9 @@
     }
 
     supabase.channel('private-chat-'+eventId)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_messages',filter:`event_id=eq.${eventId}`},
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_messages'},
         async payload=>{
+          if (payload.new.event_id !== eventId) return;
           if (renderedMessageIds.has(payload.new.id)) return;
           renderedMessageIds.add(payload.new.id);
           const {data:profile}=await supabase.from('profiles')
