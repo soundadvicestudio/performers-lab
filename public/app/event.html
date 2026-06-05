@@ -387,6 +387,7 @@
 
   function buildRsvpSection(event) {
     if (event.status!=='upcoming') return '';
+    if (event.type==='private') return '';
     const hasRsvp=!!currentRsvp, hasNotify=currentRsvp?.notify===true;
     return `<div class="rsvp-section" id="rsvp-section">
       <div class="rsvp-row">
@@ -413,11 +414,20 @@
     }
     if (event.status==='live') {
       if (!event.daily_room_url) return `<div class="embed-placeholder"><div class="embed-placeholder-text">Session starting…</div></div>`;
-      let src=event.daily_room_url+'?camera=off&microphone=off';
-      if (userIsAdmin) { const t=sessionStorage.getItem(`host_token_${event.id}`); if(t) src=`${event.daily_room_url}?t=${t}&camera=off&microphone=off`; }
+      if (userIsAdmin) {
+        let src=event.daily_room_url+'?camera=off&microphone=off';
+        const t=sessionStorage.getItem(`host_token_${event.id}`); if(t) src=`${event.daily_room_url}?t=${t}&camera=off&microphone=off`;
+        return `<div class="embed-container"><iframe id="daily-frame" src="${escHtml(src)}" allow="camera; microphone; fullscreen; display-capture" style="width:100%;height:100%;border:none;"></iframe></div>`;
+      }
+      if (event.type==='private') {
+        fetchMemberTokenAndEmbed(event);
+        return `<div class="embed-container" id="embed-loading"><div class="embed-placeholder"><div class="embed-placeholder-text">Joining session…</div></div></div>`;
+      }
+      const src=event.daily_room_url+'?camera=off&microphone=off';
       return `<div class="embed-container"><iframe id="daily-frame" src="${escHtml(src)}" allow="camera; microphone; fullscreen; display-capture" style="width:100%;height:100%;border:none;"></iframe></div>`;
     }
     if (event.status==='completed') {
+      if (event.type==='private') return '';
       if (!event.recording_url) return `<div class="embed-placeholder"><div class="embed-placeholder-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></div><div class="embed-placeholder-text">Recording coming soon.</div></div>`;
       const ytId=extractYouTubeId(event.recording_url);
       if (ytId) return `<div class="embed-container"><iframe src="https://www.youtube.com/embed/${escHtml(ytId)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:none;"></iframe></div>`;
@@ -425,6 +435,30 @@
       return `<div class="embed-placeholder"><div class="embed-placeholder-text">Session recording available</div><a href="${escHtml(event.recording_url)}" class="embed-ext-link" target="_blank" rel="noopener noreferrer">Watch Recording →</a></div>`;
     }
     return '';
+  }
+
+  async function fetchMemberTokenAndEmbed(event) {
+    try {
+      const {data:{session}}=await supabase.auth.getSession();
+      const res=await fetch('/api/sessions/getMemberToken',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+        body:JSON.stringify({eventId:event.id}),
+      });
+      const json=await res.json();
+      if (!res.ok) {
+        const el=document.getElementById('embed-loading');
+        if (el) el.innerHTML=`<div class="embed-placeholder"><div class="embed-placeholder-text">Could not join session: ${escHtml(json.error||'Unknown error')}</div></div>`;
+        return;
+      }
+      const src=`${json.roomUrl}?t=${json.token}&camera=off&microphone=off`;
+      const el=document.getElementById('embed-loading');
+      if (el) el.outerHTML=`<div class="embed-container"><iframe id="daily-frame" src="${escHtml(src)}" allow="camera; microphone; fullscreen; display-capture" style="width:100%;height:100%;border:none;"></iframe></div>`;
+    } catch(err) {
+      console.error('fetchMemberTokenAndEmbed error:',err);
+      const el=document.getElementById('embed-loading');
+      if (el) el.innerHTML=`<div class="embed-placeholder"><div class="embed-placeholder-text">Could not join session. Please refresh and try again.</div></div>`;
+    }
   }
 
   function buildAdminControls(event) {
