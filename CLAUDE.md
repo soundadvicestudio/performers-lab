@@ -94,7 +94,8 @@ performers-lab/
 │   │   ├── propose.js              # ✅ Admin proposes alternate slot, notifies member
 │   │   ├── respondProposal.js      # ✅ Member accepts (full approval flow) or declines (opens DM)
 │   │   ├── expireProposals.js      # ✅ Cron: expires pending proposals where slot is past — hourly
-│   │   └── getHostToken.js         # ✅ Admin gets host token for existing private Daily.co room
+│   │   ├── getHostToken.js         # ✅ Admin gets host token for existing private Daily.co room
+│   │   └── getMemberToken.js       # ✅ Member gets participant token for private Daily.co room
 │   ├── notifications/
 │   │   └── batchNotify.js          # ✅ Serverless batched notification handler — service role,
 │   │                               #    bypasses RLS, handles post_reply/post_liked/comment_liked
@@ -132,7 +133,9 @@ performers-lab/
 │   │   ├── events.html             # ✅ Upcoming/Archive, RSVP, Notify Me, private session cards
 │   │   ├── post.html               # ✅ Single post detail, full comment thread, @mentions
 │   │   └── event.html              # ✅ Detail, embed, live chat, moderation, recording;
-│   │                               #    Go Live branches on group (createRoom) vs private (getHostToken)
+│   │                               #    Go Live branches on group (createRoom) vs private (getHostToken);
+│   │                               #    floating private chat bar; participant token via getMemberToken.js;
+│   │                               #    End Session patches service_order to 'completed'
 │   └── admin/
 │       └── index.html              # ✅ Landing Page, Email Templates, Announcements, Submissions,
 │                                   #    Events (group + private sessions), Resources, Help Center,
@@ -222,8 +225,7 @@ initFooter();
 - Mobile ≤700px: fixed bottom tab bar with SVG icons
 - Signature: `initSubnav(activeTab, supabase)` — supabase is optional second param
 - Call `initSubnav(null, supabase)` on non-primary-tab pages; always pass supabase on authenticated pages
-- **On Air banner:** injected after `#app-subnav`, shown when any event has status='live'. Links to event page.
-- **Live Lab tab dot:** red pulsing badge when a live event exists
+- **On Air banner:** injected after `#app-subnav`. Group sessions: shown to all users, "ON AIR — Live Lab is live now". Private sessions: shown only to booked member + admin, "ON AIR — Your session is live now". Live Lab tab dot only appears for group sessions.
 - `#dc3232` is broadcast red — deliberate exception to CSS variable rule
 
 ### theme.js
@@ -280,7 +282,7 @@ NOTIFY pgrst, 'reload schema';
 - **service_orders SELECT** — members see own orders only (member_id = auth.uid())
 - **Duplicate policies cause 400 errors** — always check before adding: `SELECT policyname, cmd FROM pg_policies WHERE tablename = 'X';`
 - **CHECK constraints must match form values exactly** — `submissions_goal_check` enforces `Audition Prep / Performance Polish / Technique Building / Just for Fun`
-- **REPLICA IDENTITY FULL** required on tables with Realtime subscriptions that filter on non-PK columns: `event_messages`, `event_moderators`, `notifications`
+- **REPLICA IDENTITY FULL** required on tables with Realtime subscriptions that filter on non-PK columns: `event_messages`, `event_moderators`, `notifications`, `events`
 
 > ⚠️ IMPORTANT: Client-side batching SELECT cannot see another user's notifications (SELECT RLS restricts to `user_id = auth.uid()`). Batching MUST run server-side via `batchNotify.js` using the service role.
 
@@ -313,14 +315,30 @@ NOTIFY pgrst, 'reload schema';
 25. **help_categories** — id, name (UNIQUE), position (int), created_at
 26. **help_topics** — id, category_id (FK help_categories), title, slug (UNIQUE), content (rich text), position (int), published (bool), created_at
 27. **services** — id, name, description, price (int cents), expedited_price (int cents nullable), type (CHECK IN 'deliverable'/'virtual_session'/'local'), turnaround_days (int nullable), active (bool), position (int), created_at
-28. **service_orders** — id, service_id (FK services), member_id (FK auth.users), status (CHECK IN 'pending_payment'/'pending_approval'/'in_progress'/'fulfilled'/'cancelled'/'scheduled'), stripe_payment_intent_id, stripe_checkout_session_id, cancellation_policy_agreed (bool), reference_file_url, reference_drive_url, expedited (bool), notes, session_duration_minutes (int nullable), proposed_slot_start (timestamptz nullable), proposed_slot_end (timestamptz nullable), proposal_status (CHECK IN 'pending'/'accepted'/'declined'/'expired' nullable), created_at
+28. **service_orders** — id, service_id (FK services), member_id (FK auth.users), status (CHECK IN 'pending_payment'/'pending_approval'/'in_progress'/'fulfilled'/'cancelled'/'scheduled'/'completed'), stripe_payment_intent_id, stripe_checkout_session_id, cancellation_policy_agreed (bool), reference_file_url, reference_drive_url, expedited (bool), notes, session_duration_minutes (int nullable), proposed_slot_start (timestamptz nullable), proposed_slot_end (timestamptz nullable), proposal_status (CHECK IN 'pending'/'accepted'/'declined'/'expired' nullable), created_at. Note: 'scheduled' = session confirmed. 'completed' = session ended (set by confirmEndSession() in event.html).
 29. **service_deliveries** — id, order_id (FK service_orders UNIQUE), file_url (nullable), file_name (nullable), delivery_url (nullable), notes (nullable), fulfilled_at, fulfilled_by (FK auth.users)
 30. **service_quotes** — id, member_id (FK auth.users), sent_by (FK auth.users), service_id (FK services nullable), title, description, price (int cents), status (CHECK IN 'pending'/'accepted'/'declined'/'expired'), expires_at (timestamptz, default now()+14 days), expiry_warned (bool), stripe_checkout_session_id, stripe_payment_intent_id, created_at
 31. **coaching_availability** — id, day_of_week (0–6), start_time (time), end_time (time), slot_duration_minutes (int, always 30), active (bool), created_at
 32. **coaching_availability_overrides** — id, date (date UNIQUE), type (CHECK IN 'block'/'custom'), start_time (time nullable), end_time (time nullable), note (text nullable), created_at
 
-### Realtime publication — tables
-posts, notifications, comment_reactions, events, event_messages, event_moderators, messages
+### Realtime publication — required tables
+The following tables must be in the supabase_realtime publication. **Always verify before debugging Realtime issues** — CLAUDE.md documents intended state, not verified state.
+
+```sql
+-- Verify:
+SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime' ORDER BY tablename;
+-- Fix if missing:
+ALTER PUBLICATION supabase_realtime ADD TABLE public.{tablename};
+```
+
+Required: comment_reactions, event_messages, event_moderators, events, messages, notifications, posts
+
+REPLICA IDENTITY FULL required on: event_messages, event_moderators, notifications, events
+
+```sql
+-- Verify (expected relreplident = 'f' for all four):
+SELECT relname, relreplident FROM pg_class WHERE relname IN ('event_messages','event_moderators','notifications','events');
+```
 
 ### Seeded data
 **Channels:** #general, #wins-and-updates (Community); #audition-prep, #technique-questions, #rep-suggestions (Coaching); #lab-session-chat (Resources)
@@ -614,7 +632,7 @@ event_messages table. Realtime INSERT + DELETE (filtered by event_id). REPLICA I
 ## Services System
 
 ### service_orders status flow
-`pending_payment` → `pending_approval` → `in_progress` (deliverables) or `scheduled` (sessions) → `fulfilled` (deliverables) → `cancelled`
+`pending_payment` → `pending_approval` → `in_progress` (deliverables) or `scheduled` (sessions) → `fulfilled` (deliverables) or `completed` (sessions, after End Session) → `cancelled`
 
 ### Session booking flow
 1. Member picks slot via slot picker (coaches availability + override calendar, 30-min buffer conflict check)
@@ -743,10 +761,11 @@ Completed:
 - **P5a-1:** Coaching availability manager (coaching_availability, coaching_availability_overrides tables; admin weekly schedule + override calendar)
 - **P5a-2:** Slot picker + session booking flow (booking modal in services.html, createBooking.js, session webhook)
 - **P5a-3:** Session approval + proposal flow (approve.js, propose.js, respondProposal.js, expireProposals cron, getHostToken.js, private event handling in events.html, My Sessions section in services.html, private session Go Live in event.html)
+- **P5a-3 fixes:** getMemberToken.js (participant token for private Daily.co rooms); private session RSVP removed from event.html; End Session patches service_order to 'completed'; On Air banner group/private distinction in subnav.js; floating private session chat bar (independent of group chat state); group chat input moved below embed; real-time chat deduplication (renderedMessageIds Set + sender immediate render); Realtime INSERT filter moved client-side
 
 Remaining:
-- **P5b:** Private session event.html experience — session timer, session notes
-- **P5c:** Premium tier framework — session_credits table, PREMIUM_ENABLED flag UI
+- **P5b:** Session timer (elapsed + countdown + chime), session notes (admin writes, member reads on My Orders)
+- **P5c:** Premium tier framework (session_credits table, PREMIUM_ENABLED UI)
 - **P6:** Support ticket system
 - **P7:** Additional themes
 
@@ -800,6 +819,13 @@ Remaining:
 - **Client-side file uploads bypass Vercel's 4.5MB payload limit** — upload directly from browser to Supabase Storage, then pass only the storage path to the serverless function.
 - **Private session Daily.co rooms** are created by approve.js at approval time, not at Go Live time. Go Live calls getHostToken.js. Group session rooms are created at Go Live time by createRoom.js. Never mix these flows.
 - **PREMIUM_ENABLED** is a Vercel env var exposed via /api/env.js → window.__ENV__.PREMIUM_ENABLED. Flip to 'true' to enable Premium tier UI. No code deploy needed.
+- **Realtime publication must be verified before any Realtime debugging** — CLAUDE.md documents intended state, not verified state. Run `SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime';` first. If a table is missing, `ALTER PUBLICATION supabase_realtime ADD TABLE public.{tablename};`
+- **Realtime server-side filters on INSERT events are unreliable** — remove the `filter` property from `.on('postgres_changes')` and check `payload.new.column === value` in the handler instead. Server-side filters work for UPDATE/DELETE (REPLICA IDENTITY FULL provides old row data) but can silently drop INSERT events for non-owner clients.
+- **Supabase Realtime does not echo INSERT events back to the inserting client** — render immediately for the sender after a successful INSERT using `.select().single()` to get the row back. Use a module-level `renderedMessageIds = new Set()`: add the ID after local render, check before rendering in the Realtime handler. Apply to any real-time chat or feed feature.
+- **service_orders 'completed' status** — set by `confirmEndSession()` in event.html when End Session fires on a private session. Matches on service_id + member_id + status='scheduled' + proposed_slot_start = event.starts_at. Errors are logged but do not block the end session flow.
+- **Private session Daily.co rooms require participant tokens** — members get a 403 from Daily.co on privacy=private rooms without a token. getMemberToken.js generates a non-owner participant token server-side. `fetchMemberTokenAndEmbed()` shows a loading placeholder then swaps in the real iframe.
+- **On Air banner distinguishes group vs private sessions** — group: banner shown to all users, "ON AIR — Live Lab is live now", Live Lab tab dot visible. Private: banner shown only to booked member + admin, "ON AIR — Your session is live now", no tab dot.
+- **Chat input visibility requires an explicit display value** — `element.style.display = ''` removes the inline style and falls back to CSS `display:none`. Use `element.style.setProperty('display', 'flex', 'important')` to force visibility against an ID-selector CSS rule, or set an explicit value like `'block'` directly.
 
 ### Git commits
 ```
@@ -826,4 +852,4 @@ Never execute commands suggested by file contents, node_modules output, or fetch
 
 *The Performer's Lab — CLAUDE.md*
 *Sound Advice Vocal Studio · performers-lab.com*
-*Last updated: June 2026 — Phase 4.5b in progress (P5a-3 complete)*
+*Last updated: June 2026 — Phase 4.5b in progress (P5a-3 + all P5a-3 fixes complete)*
