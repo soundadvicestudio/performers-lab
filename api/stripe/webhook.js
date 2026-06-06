@@ -113,11 +113,12 @@ export default async function handler(req, res) {
             `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}&select=user_id&limit=1`
           );
           const memberId = memberRows?.[0]?.user_id;
-          const periodStart = new Date((subscription.current_period_start || 0) * 1000);
+          const currentPeriodStart = subscription.items.data[0].current_period_start;
+          const periodStart = new Date((currentPeriodStart || 0) * 1000);
           const billingPeriodStart = `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, '0')}-01`;
           console.log('[webhook] premium credit check: memberId =', memberId, 'billingPeriodStart =', billingPeriodStart);
 
-          if (memberId && subscription.current_period_start) {
+          if (memberId && currentPeriodStart) {
             const { data: existing } = await supabaseRequest(
               'GET',
               `/rest/v1/session_credits?member_id=eq.${memberId}&billing_period_start=eq.${billingPeriodStart}&select=id&limit=1`
@@ -140,7 +141,7 @@ export default async function handler(req, res) {
               console.log('[webhook] premium credit already exists for memberId =', memberId, 'period =', billingPeriodStart);
             }
           } else {
-            console.error('[webhook] premium credit skipped: memberId =', memberId, 'current_period_start =', subscription.current_period_start);
+            console.error('[webhook] premium credit skipped: memberId =', memberId, 'current_period_start =', currentPeriodStart);
           }
         }
         break;
