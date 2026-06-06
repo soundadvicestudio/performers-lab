@@ -4687,13 +4687,11 @@
     if (!window._adminSessionNotes) window._adminSessionNotes = {};
     const toolbarOptions = [['bold','italic','underline'],['link'],[{list:'ordered'},{list:'bullet'}]];
     for (const order of completedOrders) {
+      if (!order.event_id) continue;
       const { data: evt } = await sbClient
         .from('events')
         .select('status')
-        .eq('member_id', order.member_id)
-        .eq('type', 'private')
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .eq('id', order.event_id)
         .maybeSingle();
       if (evt?.status !== 'completed') continue;
 

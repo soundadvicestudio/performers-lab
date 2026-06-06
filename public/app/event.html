@@ -193,19 +193,15 @@
   .notes-save-msg { font-size: 12px; color: var(--green); font-weight: 600; margin-left: 14px; transition: opacity 0.3s; }
   @media (max-width: 600px) { .session-notes-section { padding: 0 1.25rem 3rem; } }
 
-  /* ── Private session floating chat ── */
+  /* ── Private session chat input (in-flow, left column, below embed) ── */
   #private-chat {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 900;
-    background: var(--bg-2); border-top: 1px solid var(--border-gold);
-    display: flex; flex-direction: column; max-height: 280px;
-  }
-  #private-chat-messages {
-    flex: 1; overflow-y: auto; padding: 12px 16px;
-    display: flex; flex-direction: column; gap: 8px; min-height: 60px;
+    margin-top: 1rem;
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 8px;
+    display: flex; flex-direction: column; overflow: hidden;
   }
   #private-chat-input-row {
-    display: flex; gap: 8px; padding: 10px 16px;
-    border-top: 0.5px solid var(--border); flex-shrink: 0;
+    display: flex; gap: 8px; padding: 10px 16px; flex-shrink: 0;
   }
   #private-chat-input {
     flex: 1; background: var(--bg-3); border: 0.5px solid var(--border-mid);
@@ -220,16 +216,6 @@
     cursor: pointer; transition: background 0.2s; flex-shrink: 0;
   }
   #private-chat-send:hover { background: var(--gold-light); }
-  .pc-msg { display: flex; gap: 8px; align-items: flex-start; }
-  .pc-avatar {
-    width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
-    flex-shrink: 0; background: var(--bg-3);
-  }
-  .pc-msg-body { display: flex; flex-direction: column; gap: 2px; }
-  .pc-msg-meta { display: flex; align-items: baseline; gap: 6px; }
-  .pc-msg-name { font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.04em; }
-  .pc-msg-time { font-size: 10px; color: var(--text-dim); cursor: default; }
-  .pc-msg-text { font-size: 13px; color: var(--text); line-height: 1.4; word-break: break-word; }
 </style>
 </head>
 <body>
@@ -1021,65 +1007,19 @@
     toastTimeout=setTimeout(()=>el.classList.remove('visible'),3000);
   }
 
-  // ── Private session floating chat ───────────────────────────────────────
-  function renderPrivateMessage(msg, pMap) {
-    const profile=pMap[msg.user_id]||{};
-    const name=profile.display_name||'Unknown';
-    const avatar=profile.photo_url||'';
-    const time=new Date(msg.created_at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-    const fullTime=new Date(msg.created_at).toLocaleString();
-    const div=document.createElement('div');
-    div.className='pc-msg';
-    div.innerHTML=`
-      ${avatar?`<img class="pc-avatar" src="${escHtml(avatar)}" alt="">`:`<div class="pc-avatar"></div>`}
-      <div class="pc-msg-body">
-        <div class="pc-msg-meta">
-          <span class="pc-msg-name">${escHtml(name)}</span>
-          <span class="pc-msg-time" title="${escHtml(fullTime)}">${escHtml(time)}</span>
-        </div>
-        <div class="pc-msg-text">${escHtml(msg.content)}</div>
-      </div>`;
-    document.getElementById('private-chat-messages').appendChild(div);
-  }
-
-  function scrollPrivateChatToBottom() {
-    const msgs=document.getElementById('private-chat-messages');
-    if (msgs) msgs.scrollTop=msgs.scrollHeight;
-  }
-
+  // ── Private session chat input (left column, below embed, input-only) ────
+  // Message display is handled by the right-column #chat-panel via initChat().
   async function initPrivateChat() {
     if (privateChatInitialized) return;
     privateChatInitialized=true;
 
     const chatEl=document.getElementById('private-chat');
     if (!chatEl) return;
+
+    // Move into left column immediately after the embed area (in-flow, not fixed)
+    const embedArea=document.getElementById('event-embed-area');
+    if (embedArea) embedArea.insertAdjacentElement('afterend', chatEl);
     chatEl.style.display='flex';
-    document.querySelector('.main').style.paddingBottom='290px';
-
-    const {data:msgs}=await supabase.from('event_messages')
-      .select('*').eq('event_id',eventId).order('created_at',{ascending:true});
-    if (msgs&&msgs.length) {
-      const senderIds=[...new Set(msgs.map(m=>m.user_id))];
-      const {data:profiles}=await supabase.from('profiles')
-        .select('user_id,display_name,photo_url').in('user_id',senderIds);
-      const pMap={};
-      (profiles||[]).forEach(p=>{pMap[p.user_id]=p;});
-      msgs.forEach(m=>{renderedMessageIds.add(m.id);renderPrivateMessage(m,pMap);});
-      scrollPrivateChatToBottom();
-    }
-
-    supabase.channel('private-chat-'+eventId)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_messages'},
-        async payload=>{
-          if (payload.new.event_id !== eventId) return;
-          if (renderedMessageIds.has(payload.new.id)) return;
-          renderedMessageIds.add(payload.new.id);
-          const {data:profile}=await supabase.from('profiles')
-            .select('user_id,display_name,photo_url').eq('user_id',payload.new.user_id).single();
-          renderPrivateMessage(payload.new,{[payload.new.user_id]:profile||{}});
-          scrollPrivateChatToBottom();
-        })
-      .subscribe();
 
     async function sendPrivateMessage() {
       const input=document.getElementById('private-chat-input');
@@ -1090,10 +1030,19 @@
       const {data:insertedMsg}=await supabase.from('event_messages')
         .insert({event_id:eventId,user_id:currentUser.id,content:text})
         .select().single();
+      // Render immediately for sender — Realtime does not echo back to inserter
       if (insertedMsg&&!renderedMessageIds.has(insertedMsg.id)) {
         renderedMessageIds.add(insertedMsg.id);
-        renderPrivateMessage(insertedMsg,{[currentUser.id]:{display_name:currentUserName,photo_url:currentUserAvatar}});
-        scrollPrivateChatToBottom();
+        const profile=profileMap[currentUserId]||{display_name:currentUserName,photo_url:currentUserAvatar,is_admin:userIsAdmin,is_moderator:!!userProfile?.is_moderator};
+        const html=renderMessage(insertedMsg,profile,perEventModIds.has(currentUserId));
+        document.getElementById('chat-empty')?.remove();
+        const wrapper=document.createElement('div');
+        wrapper.innerHTML=html;
+        const child=wrapper.firstElementChild;
+        if (child&&chatMessagesEl) chatMessagesEl.appendChild(child);
+        if (chatMessagesEl) chatMessagesEl.scrollTop=chatMessagesEl.scrollHeight;
+        messages.push(insertedMsg);
+        updateParticipantCount(currentUserId);
       }
     }
     document.getElementById('private-chat-send').addEventListener('click',sendPrivateMessage);
@@ -1162,13 +1111,11 @@
       return;
     }
     stopSessionTimers();
-    if (currentEvent?.type==='private' && currentEvent?.member_id) {
+    if (currentEvent?.type==='private') {
       const {error:orderError}=await supabase.from('service_orders')
         .update({status:'completed'})
-        .eq('service_id','920fec9d-03e5-4ade-9ddc-e5d225c354e2')
-        .eq('member_id',currentEvent.member_id)
-        .eq('status','scheduled')
-        .eq('proposed_slot_start',currentEvent.starts_at);
+        .eq('event_id',eventId)
+        .eq('status','scheduled');
       if (orderError) console.error('Failed to update session order status:',orderError);
     }
     showToast('Session ended.');
@@ -1236,16 +1183,12 @@
     const section = document.getElementById('session-notes-section');
     if (!section) return;
 
-    if (currentEvent?.member_id) {
-      const { data: orderRows } = await supabase
-        .from('service_orders')
-        .select('id')
-        .eq('member_id', currentEvent.member_id)
-        .in('status', ['completed', 'scheduled'])
-        .order('created_at', { ascending: false })
-        .limit(1);
-      notesOrderId = orderRows?.[0]?.id || null;
-    }
+    const { data: orderRows } = await supabase
+      .from('service_orders')
+      .select('id')
+      .eq('event_id', eventId)
+      .limit(1);
+    notesOrderId = orderRows?.[0]?.id || null;
 
     section.style.display = 'block';
 
@@ -1355,7 +1298,6 @@
     renderPage();
     initChat(chatMsgs||[],eventMods||[]);
     if (currentEvent?.type==='private') {
-      document.getElementById('chat-panel').style.display='none';
       if (currentEvent.status==='live') {
         initPrivateChat();
         if (userIsAdmin) startSessionTimers();
@@ -1380,7 +1322,6 @@
   init();
 </script>
 <div id="private-chat" style="display:none;">
-  <div id="private-chat-messages"></div>
   <div id="private-chat-input-row">
     <input type="text" id="private-chat-input" placeholder="Message…" maxlength="500" autocomplete="off">
     <button id="private-chat-send">Send</button>

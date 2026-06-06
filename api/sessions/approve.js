@@ -111,6 +111,7 @@ export default async function handler(req, res) {
   await supabaseRequest('PATCH', `/rest/v1/service_orders?id=eq.${orderId}`, {
     status: 'scheduled',
     proposal_status: null,
+    event_id: eventId,
   });
 
   await supabaseRequest('POST', '/rest/v1/notifications', {
