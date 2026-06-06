@@ -410,8 +410,14 @@
 
     // ── POPULATE MEMBERSHIP DATA ──
     if (membership) {
-      const planLabel = membership.plan === 'founding' ? 'Founding Member' : 'Standard Member';
-      const planPrice = membership.plan === 'founding' ? '$40 / month' : '$60 / month';
+      let planLabel, planPrice;
+      if (membership.plan === 'founding') {
+        planLabel = 'Founding Member'; planPrice = '$40 / month';
+      } else if (membership.plan === 'premium') {
+        planLabel = 'Premium Member'; planPrice = '$90 / month';
+      } else {
+        planLabel = 'Standard Member'; planPrice = '$60 / month';
+      }
       document.getElementById('plan-name').textContent  = planLabel;
       document.getElementById('plan-price').textContent = planPrice;
 
@@ -513,8 +519,6 @@
         } else if (membership.status === 'active' || membership.status === 'cancelling') {
           // Show upgrade card for non-premium active members
           document.getElementById('upgrade-card').style.display = 'block';
-          // Plan display label update
-          document.getElementById('plan-name').textContent = membership.plan === 'founding' ? 'Founding Member' : 'Standard Member';
         }
       }
     }

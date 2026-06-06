@@ -104,6 +104,35 @@ export default async function handler(req, res) {
           );
           console.log('[webhook] patch response:', JSON.stringify(patchResult));
         }
+
+        // Fallback credit issuance for Premium — runs regardless of cancel_at_period_end
+        // Guards against invoice.payment_succeeded not being registered in Stripe webhook events
+        if (planPatch.plan === 'premium') {
+          const { data: memberRows } = await supabaseRequest(
+            'GET',
+            `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}&select=user_id&limit=1`
+          );
+          const memberId = memberRows?.[0]?.user_id;
+          if (memberId && subscription.current_period_start) {
+            const periodStart = new Date(subscription.current_period_start * 1000);
+            const billingPeriodStart = `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, '0')}-01`;
+            const { data: existing } = await supabaseRequest(
+              'GET',
+              `/rest/v1/session_credits?member_id=eq.${memberId}&billing_period_start=eq.${billingPeriodStart}&limit=1`
+            );
+            if (!existing || !existing.length) {
+              await supabaseRequest(
+                'POST',
+                '/rest/v1/session_credits',
+                { member_id: memberId, billing_period_start: billingPeriodStart, used: false, used_order_id: null },
+                { 'Prefer': 'return=representation' }
+              );
+              console.log('[webhook] subscription.updated: issued Premium credit for', memberId, 'period', billingPeriodStart);
+            } else {
+              console.log('[webhook] subscription.updated: credit already exists for', memberId, 'period', billingPeriodStart);
+            }
+          }
+        }
         break;
       }
 
@@ -119,10 +148,15 @@ export default async function handler(req, res) {
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object;
+        console.log('[webhook] invoice.payment_succeeded: invoice.id =', invoice.id, 'customer =', invoice.customer, 'subscription =', invoice.subscription);
+        if (!process.env.STRIPE_PREMIUM_PRICE_ID) {
+          console.error('[webhook] invoice.payment_succeeded: STRIPE_PREMIUM_PRICE_ID env var is not set — credit issuance will not work');
+        }
         if (!invoice.subscription) break;
 
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
         const priceId = subscription.items?.data?.[0]?.price?.id;
+        console.log('[webhook] invoice.payment_succeeded: sub priceId =', priceId, 'expected =', process.env.STRIPE_PREMIUM_PRICE_ID);
         if (priceId !== process.env.STRIPE_PREMIUM_PRICE_ID) break;
 
         const { data: memberships } = await supabaseRequest(
