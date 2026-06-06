@@ -134,6 +134,15 @@ export default async function handler(req, res) {
               );
               if (insertRes.ok) {
                 console.log('[webhook] premium credit INSERT success: memberId =', memberId, 'period =', billingPeriodStart, 'row =', JSON.stringify(insertRes.data));
+                await supabaseRequest('POST', '/rest/v1/notifications', {
+                  user_id: memberId,
+                  type: 'credit_available',
+                  title: 'Session Credit Available',
+                  body: 'Your monthly 30-minute coaching session credit is ready to use.',
+                  link: '/app/services.html?usecredit=true',
+                  read: false,
+                  notification_count: 1,
+                }, { 'Prefer': 'return=representation' });
               } else {
                 console.error('[webhook] premium credit INSERT failed: memberId =', memberId, 'period =', billingPeriodStart, 'response =', JSON.stringify(insertRes.data));
               }

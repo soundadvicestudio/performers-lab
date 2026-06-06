@@ -360,11 +360,41 @@
   .bk-error { font-size: 12px; color: var(--red); font-weight: 500; min-height: 18px; margin-top: 0.5rem; }
   .bk-loading { text-align: center; padding: 2rem 1rem; font-size: 13px; color: var(--text-dim); font-style: italic; }
 
+  /* ── CREDIT BANNER ── */
+  #credit-banner {
+    background: var(--bg-2); border: 1.5px solid var(--gold); border-radius: 4px;
+    padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
+    display: flex; justify-content: space-between; align-items: center; gap: 1.5rem;
+  }
+  .credit-banner-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 0.3rem;
+  }
+  .credit-banner-heading {
+    font-family: 'Cormorant Garamond', serif; font-size: 22px;
+    font-weight: 400; color: var(--text); margin-bottom: 0.35rem; line-height: 1.2;
+  }
+  .credit-banner-sub { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.65; }
+  .btn-book-credit {
+    background: var(--gold); color: #070707; border: none;
+    padding: 12px 24px; border-radius: 2px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; font-family: 'Raleway', sans-serif;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+  }
+  .btn-book-credit:hover { background: var(--gold-light); transform: translateY(-1px); }
+  #booking-confirm-msg {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold); border-radius: 4px;
+    padding: 1rem 1.5rem; margin-bottom: 1.5rem;
+    font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.65;
+  }
+
   @media (max-width: 600px) {
     .main { padding: 2rem 1.25rem 5rem; }
     .page-heading { font-size: 32px; }
     .order-modal { padding: 1.5rem; }
     .ord-quote-actions { flex-direction: column; }
+    #credit-banner { flex-direction: column; align-items: stretch; }
+    .btn-book-credit { width: 100%; text-align: center; }
   }
 </style>
 </head>
@@ -382,6 +412,21 @@
   <div id="app-subnav"></div>
 
   <main class="main">
+
+    <!-- Credit banner (Premium members with unused credit) -->
+    <div id="credit-banner" style="display:none;">
+      <div>
+        <div class="credit-banner-eyebrow">Premium Benefit</div>
+        <div class="credit-banner-heading">Your Monthly Session Credit is Ready</div>
+        <div class="credit-banner-sub">You have 1 complimentary 30-minute coaching session available this month.</div>
+      </div>
+      <button class="btn-book-credit" onclick="window.openCreditBookingModal()">Book My Session →</button>
+    </div>
+
+    <!-- Inline booking confirmation message -->
+    <div id="booking-confirm-msg" style="display:none;">
+      Session request submitted. You'll receive confirmation from Jonathan shortly.
+    </div>
 
     <!-- Tab navigation -->
     <div class="svc-tab-nav">
@@ -529,7 +574,8 @@
   });
 
   const ADMIN_ID = '6abb9d4d-ed5f-456e-aebb-aa76c8696c44';
-  const VIRTUAL_SESSION_ID = '920fec9d-03e5-4ade-9ddc-e5d225c354e2';
+  const VIRTUAL_SESSION_ID  = '920fec9d-03e5-4ade-9ddc-e5d225c354e2';
+  const CREDIT_SERVICE_ID   = '4cb7b43d-0884-4da3-873c-634fe474adfe';
 
   let currentUser = null;
   let currentProfile = null;
@@ -538,13 +584,15 @@
   let ordersTabLoaded = false;
   let ordersCountdownTimer = null;
 
+  // Premium credit state — module-level
+  let availableCredit = null;
+  let creditBookingMode = false;
+
   // Booking modal — MUST be module-level (race condition lesson from P3.6)
   let selectedDate = null;
   let selectedSlot = null;
   let sessionDuration = 60;
   let sessionPrice = 6000;
-  let usingCredit = false;
-  let selectedCreditId = null;
   let bookingCalYear = new Date().getFullYear();
   let bookingCalMonth = new Date().getMonth();
   let bookingAvailMap = {};
@@ -1051,8 +1099,9 @@
 
     const orders = ordersRes.data || [];
     const quotes = quotesRes.data || [];
-    const sessionOrders = orders.filter(o => o.service_id === VIRTUAL_SESSION_ID);
-    const deliverableOrders = orders.filter(o => o.service_id !== VIRTUAL_SESSION_ID);
+    const SESSION_IDS = [VIRTUAL_SESSION_ID, CREDIT_SERVICE_ID];
+    const sessionOrders = orders.filter(o => SESSION_IDS.includes(o.service_id));
+    const deliverableOrders = orders.filter(o => !SESSION_IDS.includes(o.service_id));
 
     const serviceIds = [...new Set(orders.map(o => o.service_id).filter(Boolean))];
     let serviceMap = {};
@@ -1381,9 +1430,34 @@
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
 
-    // Check URL param to auto-switch tab
-    const tabParam = new URLSearchParams(window.location.search).get('tab');
-    if (tabParam === 'orders') {
+    // Premium credit check — load available credit for Premium members
+    const premiumEnabled = (window.__ENV__?.PREMIUM_ENABLED || 'false') === 'true';
+    if (premiumEnabled && !profile?.is_admin) {
+      const { data: membership } = await supabase
+        .from('memberships').select('plan, status').eq('user_id', currentUser.id).single();
+      if (membership?.plan === 'premium' && (membership.status === 'active' || membership.status === 'cancelling')) {
+        const { data: settingRow } = await supabase
+          .from('platform_settings').select('value').eq('key', 'premium_visible').maybeSingle();
+        if (settingRow?.value === 'true') {
+          const { data: credits } = await supabase
+            .from('session_credits').select('id')
+            .eq('member_id', currentUser.id).eq('used', false)
+            .order('billing_period_start', { ascending: true }).limit(1);
+          if (credits?.length) {
+            availableCredit = credits[0];
+            const banner = document.getElementById('credit-banner');
+            if (banner) banner.style.display = 'flex';
+          }
+        }
+      }
+    }
+
+    // Check URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('usecredit') === 'true' && availableCredit) {
+      openCreditBookingModal();
+    }
+    if (params.get('tab') === 'orders') {
       switchSvcTab('orders');
     }
   }
@@ -1408,83 +1482,30 @@
   }
 
   function openBookingModal() {
-    const premiumEnabled = (window.__ENV__?.PREMIUM_ENABLED || 'false') === 'true';
+    creditBookingMode = false;
     selectedDate = null;
     selectedSlot = null;
     sessionDuration = 60;
     sessionPrice = 6000;
-    usingCredit = false;
-    selectedCreditId = null;
     bookingCalYear = new Date().getFullYear();
     bookingCalMonth = new Date().getMonth();
-    bookingCurrentStep = premiumEnabled ? 1 : 2;
+    bookingCurrentStep = 2;
     document.getElementById('booking-modal-overlay').classList.add('open');
     document.body.style.overflow = 'hidden';
-    renderBookingStep(bookingCurrentStep);
+    renderBookingStep(2);
   }
 
   async function renderBookingStep(step) {
-    const premiumEnabled = (window.__ENV__?.PREMIUM_ENABLED || 'false') === 'true';
-    const firstStep = premiumEnabled ? 1 : 2;
     const indicator = document.getElementById('bk-step-indicator');
     const backBtn = document.getElementById('bk-back-btn');
     const body = document.getElementById('bk-modal-body');
-    if (indicator) indicator.textContent = `Step ${step} of 3`;
-    if (backBtn) backBtn.style.display = step > firstStep ? 'inline-block' : 'none';
-    if (step === 1) renderStep1(body);
-    else if (step === 2) await renderStep2(body);
-    else if (step === 3) renderStep3(body);
-  }
-
-  function renderStep1(body) {
-    body.innerHTML = '<div class="bk-loading">Checking your credits…</div>';
-    (async () => {
-      const { data: settingRow } = await supabase
-        .from('platform_settings').select('value').eq('key', 'premium_visible').maybeSingle();
-      if (settingRow?.value !== 'true') {
-        sessionDuration = 60; sessionPrice = 6000; usingCredit = false;
-        bookingCurrentStep = 2;
-        await renderBookingStep(2);
-        return;
-      }
-      const today = new Date();
-      const billingPeriodStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-      const { data: credits } = await supabase
-        .from('session_credits')
-        .select('id')
-        .eq('member_id', currentUser.id)
-        .eq('used', false)
-        .eq('billing_period_start', billingPeriodStart);
-      if (!credits || !credits.length) {
-        sessionDuration = 60; sessionPrice = 6000; usingCredit = false;
-        bookingCurrentStep = 2;
-        await renderBookingStep(2);
-        return;
-      }
-      body.innerHTML = `
-        <p style="font-size:14px;color:var(--text-muted);font-weight:300;line-height:1.7;margin-bottom:1.5rem;">Choose your session type:</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="service-card" style="cursor:pointer;border-color:var(--border-gold);" id="bk-credit-opt">
-            <div class="service-name" style="font-size:18px;">Use My Monthly Credit</div>
-            <p class="service-description">Your included Premium coaching session</p>
-            <div class="service-price" style="margin-top:auto;">$0</div>
-            <div style="font-size:11px;color:var(--text-dim);font-weight:300;">30-minute session</div>
-          </div>
-          <div class="service-card" style="cursor:pointer;" id="bk-additional-opt">
-            <div class="service-name" style="font-size:18px;">Book Additional Session</div>
-            <p class="service-description">Full 60-minute 1:1 coaching session</p>
-            <div class="service-price" style="margin-top:auto;">$60</div>
-          </div>
-        </div>`;
-      document.getElementById('bk-credit-opt').addEventListener('click', async () => {
-        sessionDuration = 30; sessionPrice = 0; usingCredit = true;
-        bookingCurrentStep = 2; await renderBookingStep(2);
-      });
-      document.getElementById('bk-additional-opt').addEventListener('click', async () => {
-        sessionDuration = 60; sessionPrice = 6000; usingCredit = false;
-        bookingCurrentStep = 2; await renderBookingStep(2);
-      });
-    })();
+    if (indicator) indicator.textContent = step === 2 ? 'Step 1 of 2' : 'Step 2 of 2';
+    if (backBtn) backBtn.style.display = step > 2 ? 'inline-block' : 'none';
+    if (step === 2) await renderStep2(body);
+    else if (step === 3) {
+      if (creditBookingMode) renderCreditStep3(body);
+      else renderStep3(body);
+    }
   }
 
   async function renderStep2(body) {
@@ -1526,7 +1547,11 @@
     const maxMonth = todayM === 11 ? 0 : todayM + 1;
     const isNextDisabled = bookingCalYear === maxYear && bookingCalMonth === maxMonth;
 
-    let html = `<div class="bk-cal-header">
+    let html = '';
+    if (creditBookingMode) {
+      html += `<div style="background:var(--gold-dim);border:0.5px solid var(--border-gold);border-radius:4px;padding:10px 16px;margin-bottom:1rem;font-size:12px;color:var(--gold);font-weight:600;letter-spacing:0.04em;">Using your monthly session credit — no charge.</div>`;
+    }
+    html += `<div class="bk-cal-header">
       <button class="bk-cal-nav" id="bk-prev" ${isPrevDisabled ? 'disabled' : ''}>← Prev</button>
       <div class="bk-cal-month">${MONTHS[bookingCalMonth]} ${bookingCalYear}</div>
       <button class="bk-cal-nav" id="bk-next" ${isNextDisabled ? 'disabled' : ''}>Next →</button>
@@ -1749,87 +1774,94 @@
     focusEl.addEventListener('input', () => { document.getElementById('bk-focus-count').textContent = focusEl.value.length; recheckValid(); });
     policyEl.addEventListener('change', recheckValid);
 
-    // Async: load credit option or show checkout button
-    (async () => {
-      const actionArea = document.getElementById('bk-action-area');
-      if (!actionArea) return;
-
-      let availableCredit = null;
-      if (!usingCredit) {
-        const premiumEnabled = (window.__ENV__?.PREMIUM_ENABLED || 'false') === 'true';
-        if (premiumEnabled) {
-          const { data: settingRow } = await supabase
-            .from('platform_settings').select('value').eq('key', 'premium_visible').maybeSingle();
-          if (settingRow?.value === 'true') {
-            const { data: credits } = await supabase
-              .from('session_credits').select('id')
-              .eq('member_id', currentUser.id).eq('used', false)
-              .order('billing_period_start', { ascending: true }).limit(1);
-            if (credits?.length) availableCredit = credits[0];
-          }
-        }
-      }
-
-      if (availableCredit) {
-        actionArea.innerHTML = `
-          <div style="background:var(--gold-dim);border:0.5px solid var(--border-gold);border-radius:6px;padding:1.25rem;margin-bottom:0.5rem;">
-            <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.4rem;">Monthly Credit Available</div>
-            <div style="font-size:13px;color:var(--text-muted);font-weight:300;line-height:1.6;margin-bottom:0.75rem;">You have 1 session credit available. Use it for this booking?</div>
-            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-              <button class="btn-checkout" id="bk-use-credit-btn" style="padding:10px 20px;font-size:10px;">Use my credit</button>
-              <button id="bk-pay-card-btn" style="background:none;border:0.5px solid var(--border-mid);color:var(--text-muted);padding:10px 16px;border-radius:2px;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;font-family:'Raleway',sans-serif;cursor:pointer;">Pay with card instead</button>
-            </div>
-          </div>`;
-        document.getElementById('bk-use-credit-btn').addEventListener('click', () => {
-          if (!isFormValid()) {
-            document.getElementById('bk-error').textContent = 'Please fill in all required fields and agree to the cancellation policy.';
-            return;
-          }
-          submitBookingWithCredit(availableCredit.id);
-        });
-        document.getElementById('bk-pay-card-btn').addEventListener('click', () => {
-          actionArea.innerHTML = `<div class="modal-actions"><button class="btn-checkout" id="bk-submit-btn" ${isFormValid() ? '' : 'disabled'}>Proceed to Checkout →</button></div>`;
-          document.getElementById('bk-submit-btn').addEventListener('click', submitBooking);
-        });
-      } else {
-        actionArea.innerHTML = `<div class="modal-actions"><button class="btn-checkout" id="bk-submit-btn" ${isFormValid() ? '' : 'disabled'}>Proceed to Checkout →</button></div>`;
-        document.getElementById('bk-submit-btn').addEventListener('click', submitBooking);
-      }
-    })();
+    // Standard booking always goes to Stripe — no credit check here
+    const actionArea = document.getElementById('bk-action-area');
+    if (actionArea) {
+      actionArea.innerHTML = `<div class="modal-actions"><button class="btn-checkout" id="bk-submit-btn" ${isFormValid() ? '' : 'disabled'}>Proceed to Checkout →</button></div>`;
+      document.getElementById('bk-submit-btn').addEventListener('click', submitBooking);
+    }
   }
 
-  async function submitBookingWithCredit(creditId) {
+  function renderCreditStep3(body) {
+    const userTz = currentProfile?.timezone || 'America/Chicago';
+    const sessionDateDisplay = selectedSlot
+      ? new Intl.DateTimeFormat('en-US', {
+          timeZone: userTz, weekday: 'long', month: 'long',
+          day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+        }).format(new Date(selectedSlot.start))
+      : '';
+    body.innerHTML = `
+      <div class="bk-summary">
+        <div class="bk-summary-title">Session Summary</div>
+        <div class="bk-summary-detail">
+          <strong>${escHtml(sessionDateDisplay)}</strong><br>
+          30 minutes · Complimentary Credit
+        </div>
+      </div>
+      <div style="background:var(--gold-dim);border:0.5px solid var(--border-gold);border-radius:4px;padding:10px 16px;margin-bottom:1.25rem;font-size:12px;color:var(--gold);font-weight:600;letter-spacing:0.04em;">Using your monthly session credit — no charge.</div>
+      <div class="bk-error" id="bk-error"></div>
+      <div class="modal-actions">
+        <button class="btn-checkout" id="bk-credit-submit-btn">Book My Session →</button>
+      </div>`;
+    document.getElementById('bk-credit-submit-btn').addEventListener('click', () => {
+      submitBookingWithCredit(availableCredit.id, selectedSlot);
+    });
+  }
+
+  window.openCreditBookingModal = async function() {
+    creditBookingMode = true;
+    selectedDate = null;
+    selectedSlot = null;
+    sessionDuration = 30;
+    sessionPrice = 0;
+    bookingCalYear = new Date().getFullYear();
+    bookingCalMonth = new Date().getMonth();
+    bookingCurrentStep = 2;
+    document.getElementById('booking-modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    await renderBookingStep(2);
+  };
+
+  async function submitBookingWithCredit(creditId, slot) {
     const errEl = document.getElementById('bk-error');
-    const btn = document.getElementById('bk-use-credit-btn');
-    errEl.textContent = '';
+    const btn = document.getElementById('bk-credit-submit-btn');
+    if (errEl) errEl.textContent = '';
     if (btn) { btn.disabled = true; btn.textContent = 'Booking…'; }
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const creditSlotEnd = new Date(new Date(selectedSlot.start).getTime() + 30 * 60 * 1000).toISOString();
+      const slotEnd = new Date(new Date(slot.start).getTime() + 30 * 60 * 1000).toISOString();
       const res = await fetch('/api/sessions/createBooking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
         body: JSON.stringify({
-          serviceId: VIRTUAL_SESSION_ID,
-          duration: 30,
-          slotStart: selectedSlot.start,
-          slotEnd: creditSlotEnd,
-          goals: document.getElementById('bk-goals').value.trim(),
-          repertoire: document.getElementById('bk-repertoire').value.trim(),
-          focusAreas: document.getElementById('bk-focus').value.trim(),
+          serviceId: CREDIT_SERVICE_ID,
+          slotStart: slot.start,
+          slotEnd,
           useCreditId: creditId,
+          session_duration_minutes: 30,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        errEl.textContent = data.error || 'Could not complete booking. Please try again.';
-        if (btn) { btn.disabled = false; btn.textContent = 'Use my credit'; }
+        if (errEl) errEl.textContent = data.error || 'Could not complete booking. Please try again.';
+        if (btn) { btn.disabled = false; btn.textContent = 'Book My Session →'; }
         return;
       }
-      window.location.href = '/app/checkout-success.html?type=session';
+      // Success: close modal, hide banner, show confirmation, reload orders
+      closeBookingModal();
+      availableCredit = null;
+      const banner = document.getElementById('credit-banner');
+      if (banner) banner.style.display = 'none';
+      const confirm = document.getElementById('booking-confirm-msg');
+      if (confirm) {
+        confirm.style.display = 'block';
+        setTimeout(() => { confirm.style.display = 'none'; }, 8000);
+      }
+      ordersTabLoaded = false;
+      switchSvcTab('orders');
     } catch {
-      errEl.textContent = 'Connection error. Please try again.';
-      if (btn) { btn.disabled = false; btn.textContent = 'Use my credit'; }
+      if (errEl) errEl.textContent = 'Connection error. Please try again.';
+      if (btn) { btn.disabled = false; btn.textContent = 'Book My Session →'; }
     }
   }
 
@@ -1852,7 +1884,6 @@
           goals: document.getElementById('bk-goals').value.trim(),
           repertoire: document.getElementById('bk-repertoire').value.trim(),
           focusAreas: document.getElementById('bk-focus').value.trim(),
-          usingCredit,
         }),
       });
       const data = await res.json();

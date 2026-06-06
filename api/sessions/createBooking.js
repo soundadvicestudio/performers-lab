@@ -3,6 +3,7 @@ import { supabaseRequest } from '../lib/supabaseAdmin.js';
 
 const ADMIN_ID = '6abb9d4d-ed5f-456e-aebb-aa76c8696c44';
 const VIRTUAL_SESSION_ID = '920fec9d-03e5-4ade-9ddc-e5d225c354e2';
+const CREDIT_SERVICE_ID  = '4cb7b43d-0884-4da3-873c-634fe474adfe';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -27,8 +28,11 @@ export default async function handler(req, res) {
   const duration = useCreditId ? 30 : rawDuration;
 
   // Validate
-  if (serviceId !== VIRTUAL_SESSION_ID) {
+  if (serviceId !== VIRTUAL_SESSION_ID && serviceId !== CREDIT_SERVICE_ID) {
     return res.status(400).json({ error: 'Invalid service' });
+  }
+  if (serviceId === CREDIT_SERVICE_ID && !useCreditId) {
+    return res.status(400).json({ error: 'This service requires a session credit to book.' });
   }
   if (duration !== 30 && duration !== 60) {
     return res.status(400).json({ error: 'Duration must be 30 or 60' });
@@ -44,10 +48,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Sessions must be booked at least 24 hours in advance.' });
   }
 
-  // Conflict check
+  // Conflict check (includes both regular and credit session orders)
   const { data: existingOrders } = await supabaseRequest(
     'GET',
-    `/rest/v1/service_orders?service_id=eq.${VIRTUAL_SESSION_ID}&status=not.in.(cancelled)&proposed_slot_start=not.is.null&select=proposed_slot_start,proposed_slot_end`
+    `/rest/v1/service_orders?service_id=in.(${VIRTUAL_SESSION_ID},${CREDIT_SERVICE_ID})&status=not.in.(cancelled)&proposed_slot_start=not.is.null&select=proposed_slot_start,proposed_slot_end`
   );
   const newStart = new Date(slotStart).getTime();
   const newEnd = new Date(slotEnd).getTime();
@@ -73,7 +77,9 @@ export default async function handler(req, res) {
     hour: 'numeric', minute: '2-digit', hour12: true,
   }).format(new Date(slotStart)) + ' CT';
 
-  const notes = `Goals: ${goals}\n\nRepertoire: ${repertoire}\n\nFocus: ${focusAreas}`;
+  const notes = useCreditId
+    ? 'Booked using monthly Premium session credit.'
+    : `Goals: ${goals}\n\nRepertoire: ${repertoire}\n\nFocus: ${focusAreas}`;
 
   // ── Credit path ─────────────────────────────────────────────────────────────
   if (useCreditId || usingCredit === true) {
