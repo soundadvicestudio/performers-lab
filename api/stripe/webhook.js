@@ -113,24 +113,34 @@ export default async function handler(req, res) {
             `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}&select=user_id&limit=1`
           );
           const memberId = memberRows?.[0]?.user_id;
+          const periodStart = new Date((subscription.current_period_start || 0) * 1000);
+          const billingPeriodStart = `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, '0')}-01`;
+          console.log('[webhook] premium credit check: memberId =', memberId, 'billingPeriodStart =', billingPeriodStart);
+
           if (memberId && subscription.current_period_start) {
-            const periodStart = new Date(subscription.current_period_start * 1000);
-            const billingPeriodStart = `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, '0')}-01`;
             const { data: existing } = await supabaseRequest(
               'GET',
-              `/rest/v1/session_credits?member_id=eq.${memberId}&billing_period_start=eq.${billingPeriodStart}&limit=1`
+              `/rest/v1/session_credits?member_id=eq.${memberId}&billing_period_start=eq.${billingPeriodStart}&select=id&limit=1`
             );
+            console.log('[webhook] premium credit check: existing rows =', JSON.stringify(existing));
+
             if (!existing || !existing.length) {
-              await supabaseRequest(
+              const insertRes = await supabaseRequest(
                 'POST',
                 '/rest/v1/session_credits',
-                { member_id: memberId, billing_period_start: billingPeriodStart, used: false, used_order_id: null },
+                { member_id: memberId, billing_period_start: billingPeriodStart, used: false },
                 { 'Prefer': 'return=representation' }
               );
-              console.log('[webhook] subscription.updated: issued Premium credit for', memberId, 'period', billingPeriodStart);
+              if (insertRes.ok) {
+                console.log('[webhook] premium credit INSERT success: memberId =', memberId, 'period =', billingPeriodStart, 'row =', JSON.stringify(insertRes.data));
+              } else {
+                console.error('[webhook] premium credit INSERT failed: memberId =', memberId, 'period =', billingPeriodStart, 'response =', JSON.stringify(insertRes.data));
+              }
             } else {
-              console.log('[webhook] subscription.updated: credit already exists for', memberId, 'period', billingPeriodStart);
+              console.log('[webhook] premium credit already exists for memberId =', memberId, 'period =', billingPeriodStart);
             }
+          } else {
+            console.error('[webhook] premium credit skipped: memberId =', memberId, 'current_period_start =', subscription.current_period_start);
           }
         }
         break;
