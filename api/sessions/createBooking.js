@@ -23,7 +23,8 @@ export default async function handler(req, res) {
   const caller = await userRes.json();
   const userId = caller.id;
 
-  const { serviceId, duration, slotStart, slotEnd, goals, repertoire, focusAreas, usingCredit } = req.body || {};
+  const { serviceId, duration: rawDuration, slotStart, slotEnd, goals, repertoire, focusAreas, usingCredit, useCreditId } = req.body || {};
+  const duration = useCreditId ? 30 : rawDuration;
 
   // Validate
   if (serviceId !== VIRTUAL_SESSION_ID) {
@@ -75,18 +76,29 @@ export default async function handler(req, res) {
   const notes = `Goals: ${goals}\n\nRepertoire: ${repertoire}\n\nFocus: ${focusAreas}`;
 
   // ── Credit path ─────────────────────────────────────────────────────────────
-  if (usingCredit === true) {
-    const today = new Date();
-    const billingPeriodStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-
-    const { data: credits } = await supabaseRequest(
-      'GET',
-      `/rest/v1/session_credits?member_id=eq.${userId}&used=eq.false&billing_period_start=eq.${billingPeriodStart}&select=id&limit=1`
-    );
-    if (!credits || !credits.length) {
-      return res.status(400).json({ error: 'No session credit available.' });
+  if (useCreditId || usingCredit === true) {
+    let creditId;
+    if (useCreditId) {
+      const { data: creditRows } = await supabaseRequest(
+        'GET',
+        `/rest/v1/session_credits?id=eq.${useCreditId}&member_id=eq.${userId}&used=eq.false&select=id&limit=1`
+      );
+      if (!creditRows || !creditRows.length) {
+        return res.status(400).json({ error: 'Session credit not available.' });
+      }
+      creditId = creditRows[0].id;
+    } else {
+      const today = new Date();
+      const billingPeriodStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      const { data: credits } = await supabaseRequest(
+        'GET',
+        `/rest/v1/session_credits?member_id=eq.${userId}&used=eq.false&billing_period_start=eq.${billingPeriodStart}&select=id&limit=1`
+      );
+      if (!credits || !credits.length) {
+        return res.status(400).json({ error: 'No session credit available.' });
+      }
+      creditId = credits[0].id;
     }
-    const creditId = credits[0].id;
 
     const insertRes = await supabaseRequest('POST', '/rest/v1/service_orders', {
       service_id: serviceId,

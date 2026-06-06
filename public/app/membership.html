@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="/api/env"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -88,10 +89,58 @@
   /* ── POLICY NOTE ── */
   .policy-note {
     background: var(--bg-2); border: 0.5px solid var(--border);
-    border-radius: 6px; padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+    border-radius: 6px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
   }
   .policy-note-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.4rem; }
   .policy-note-text { font-size: 13px; color: var(--text-dim); font-weight: 300; line-height: 1.65; }
+
+  /* ── CREDIT CARD ── */
+  .credit-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-left: 2px solid var(--gold); border-radius: 6px; padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .credit-card-label { font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.4rem; }
+  .credit-card-heading { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--text); margin-bottom: 0.5rem; }
+  .credit-card-body { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.65; }
+  .credit-card-link { font-size: 13px; color: var(--gold); text-decoration: none; font-weight: 600; display: inline-block; margin-top: 0.75rem; }
+  .credit-card-link:hover { color: var(--gold-light); }
+  .downgrade-wrap { margin-top: 1rem; border-top: 0.5px solid var(--border); padding-top: 0.75rem; }
+  .downgrade-link { font-size: 12px; color: var(--text-dim); text-decoration: underline; cursor: pointer; background: none; border: none; font-family: 'Raleway', sans-serif; padding: 0; }
+  .downgrade-link:hover { color: var(--text-muted); }
+  .downgrade-confirm { margin-top: 0.75rem; font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.65; }
+  .downgrade-confirm strong { color: var(--text); font-weight: 500; }
+  .downgrade-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap; }
+  .btn-downgrade-yes { background: none; border: 0.5px solid var(--border-mid); color: var(--text-muted); padding: 8px 16px; border-radius: 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; font-family: 'Raleway', sans-serif; cursor: pointer; }
+  .btn-downgrade-yes:hover { border-color: var(--text-dim); }
+  .btn-downgrade-yes:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-downgrade-cancel { background: none; border: none; color: var(--text-dim); padding: 8px 12px; border-radius: 2px; font-size: 11px; font-family: 'Raleway', sans-serif; cursor: pointer; }
+
+  /* ── UPGRADE CARD ── */
+  .upgrade-card {
+    background: var(--bg-2); border: 0.5px solid var(--border-gold);
+    border-radius: 6px; padding: 1.75rem; margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .upgrade-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .upgrade-badge { display: inline-block; background: var(--gold); color: #070707; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; margin-bottom: 0.75rem; }
+  .upgrade-heading { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; color: var(--text); margin-bottom: 0.25rem; line-height: 1.1; }
+  .upgrade-price { font-size: 13px; color: var(--text-muted); margin-bottom: 1rem; font-weight: 300; }
+  .upgrade-features { list-style: none; margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
+  .upgrade-features li { font-size: 13px; color: var(--text-muted); font-weight: 300; padding-left: 1.25rem; position: relative; }
+  .upgrade-features li::before { content: '✓'; position: absolute; left: 0; color: var(--gold); font-weight: 600; }
+  .btn-upgrade {
+    background: var(--gold); color: #070707; border: none;
+    padding: 12px 28px; border-radius: 2px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; font-family: 'Raleway', sans-serif;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-upgrade:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-upgrade:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .upgrade-msg { font-size: 12px; margin-top: 0.75rem; font-weight: 400; line-height: 1.5; }
 
   /* ── ACTIONS ── */
   .actions { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
@@ -175,6 +224,40 @@
       <div class="policy-note-text" id="policy-note-text">Cancel anytime — no penalty. Access continues until the end of your current billing period.</div>
     </div>
 
+    <!-- Session credit card (Premium members only) -->
+    <div class="credit-card" id="credit-card" style="display:none;">
+      <div class="credit-card-label">Premium Benefit</div>
+      <div class="credit-card-heading">Monthly Session Credit</div>
+      <div class="credit-card-body" id="credit-card-body">—</div>
+      <a href="/app/services.html" class="credit-card-link" id="credit-card-link" style="display:none;">Book your session →</a>
+      <div class="downgrade-wrap">
+        <button class="downgrade-link" id="btn-downgrade-link">Downgrade to Standard</button>
+        <div id="downgrade-confirm-area" style="display:none;">
+          <div class="downgrade-confirm">Your monthly session credit will stop at the end of your current billing period. You'll be moved to <strong>Standard ($60/mo)</strong>.</div>
+          <div class="downgrade-actions">
+            <button class="btn-downgrade-yes" id="btn-downgrade-yes">Yes, downgrade</button>
+            <button class="btn-downgrade-cancel" id="btn-downgrade-cancel">Cancel</button>
+          </div>
+        </div>
+        <div class="upgrade-msg" id="downgrade-msg"></div>
+      </div>
+    </div>
+
+    <!-- Upgrade to Premium card (non-premium members) -->
+    <div class="upgrade-card" id="upgrade-card" style="display:none;">
+      <span class="upgrade-badge">Premium</span>
+      <div class="upgrade-heading">Step up your practice</div>
+      <div class="upgrade-price">$90 / month</div>
+      <ul class="upgrade-features">
+        <li>Everything in your current plan</li>
+        <li>One 30-minute coaching session per month — included</li>
+        <li>Priority feedback queue</li>
+        <li>Cancel or downgrade anytime</li>
+      </ul>
+      <button class="btn-upgrade" id="btn-upgrade">Upgrade to Premium →</button>
+      <div class="upgrade-msg" id="upgrade-msg"></div>
+    </div>
+
     <!-- Actions -->
     <div class="actions">
       <button class="btn-portal" id="btn-portal" style="display:none;">Manage billing &amp; subscription →</button>
@@ -212,6 +295,61 @@
       persistSession: true,
       detectSessionInUrl: true
     }
+  });
+
+  // ── UPGRADE / DOWNGRADE ──
+  async function callUpgradeSession(direction, btnEl, msgEl) {
+    btnEl.disabled = true;
+    const orig = btnEl.textContent;
+    btnEl.textContent = 'Processing…';
+    msgEl.textContent = '';
+    msgEl.style.color = '';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/stripe/createUpgradeSession', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ direction }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        msgEl.textContent = data.error || 'Something went wrong. Please try again.';
+        msgEl.style.color = 'var(--red)';
+        btnEl.disabled = false;
+        btnEl.textContent = orig;
+        return;
+      }
+      if (direction === 'upgrade') {
+        msgEl.textContent = 'You\'re now on Premium. Refresh to see your credit.';
+        msgEl.style.color = 'var(--green)';
+        btnEl.textContent = 'Upgraded!';
+      } else {
+        msgEl.textContent = 'Downgrade scheduled. Your session credit remains active until the end of this billing period.';
+        msgEl.style.color = 'var(--text-muted)';
+        btnEl.textContent = 'Downgrade scheduled';
+      }
+    } catch {
+      msgEl.textContent = 'Connection error. Please try again.';
+      msgEl.style.color = 'var(--red)';
+      btnEl.disabled = false;
+      btnEl.textContent = orig;
+    }
+  }
+
+  document.getElementById('btn-upgrade').addEventListener('click', () => {
+    callUpgradeSession('upgrade', document.getElementById('btn-upgrade'), document.getElementById('upgrade-msg'));
+  });
+
+  document.getElementById('btn-downgrade-link').addEventListener('click', () => {
+    document.getElementById('btn-downgrade-link').style.display = 'none';
+    document.getElementById('downgrade-confirm-area').style.display = 'block';
+  });
+  document.getElementById('btn-downgrade-cancel').addEventListener('click', () => {
+    document.getElementById('downgrade-confirm-area').style.display = 'none';
+    document.getElementById('btn-downgrade-link').style.display = 'inline';
+  });
+  document.getElementById('btn-downgrade-yes').addEventListener('click', () => {
+    callUpgradeSession('downgrade', document.getElementById('btn-downgrade-yes'), document.getElementById('downgrade-msg'));
   });
 
   // ── MANAGE BILLING ──
@@ -259,6 +397,8 @@
         .eq('user_id', userId)
         .single(),
     ]);
+
+    const premiumEnabled = (window.__ENV__?.PREMIUM_ENABLED || 'false') === 'true';
 
     const profile    = profileRes.data;
     const membership = membershipRes.data;
@@ -337,6 +477,46 @@
       document.getElementById('status-badge').textContent = 'Inactive';
       document.getElementById('status-badge').className  = 'status-badge past-due';
       document.getElementById('btn-reactivate').style.display = 'inline-block';
+    }
+
+    // ── PREMIUM UI ──
+    if (premiumEnabled && membership) {
+      const { data: settingRow } = await supabase
+        .from('platform_settings').select('value').eq('key', 'premium_visible').maybeSingle();
+      const premiumVisible = settingRow?.value === 'true';
+
+      if (premiumVisible) {
+        const isPremium = membership.plan === 'premium';
+
+        if (isPremium) {
+          // Show credit card
+          const { data: credits } = await supabase
+            .from('session_credits')
+            .select('id, used, billing_period_start')
+            .eq('member_id', userId)
+            .order('billing_period_start', { ascending: false })
+            .limit(1);
+          const credit = credits?.[0];
+          const creditCardBody = document.getElementById('credit-card-body');
+          const creditCardLink = document.getElementById('credit-card-link');
+          if (credit && !credit.used) {
+            creditCardBody.textContent = 'You have 1 session credit available this month — book a 30-minute 1:1 coaching session.';
+            creditCardLink.style.display = 'inline-block';
+          } else if (credit && credit.used) {
+            creditCardBody.textContent = 'Your session credit for this month has been used. Your next credit arrives at the start of your next billing period.';
+          } else {
+            creditCardBody.textContent = 'Your first session credit will appear here after your next billing date.';
+          }
+          document.getElementById('credit-card').style.display = 'block';
+          document.getElementById('upgrade-card').style.display = 'none';
+
+        } else if (membership.status === 'active' || membership.status === 'cancelling') {
+          // Show upgrade card for non-premium active members
+          document.getElementById('upgrade-card').style.display = 'block';
+          // Plan display label update
+          document.getElementById('plan-name').textContent = membership.plan === 'founding' ? 'Founding Member' : 'Standard Member';
+        }
+      }
     }
 
     initFooter();

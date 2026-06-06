@@ -1182,6 +1182,13 @@
         </svg>
         Availability
       </div>
+      <div class="nav-item" data-panel="platform-settings" onclick="switchPanel(this,'platform-settings'); window.initPlatformSettings?.()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        Platform Settings
+      </div>
     </nav>
     <div class="sidebar-footer">
       <button class="preview-btn" onclick="openPreview()">Preview Site ↗</button>
@@ -1991,6 +1998,40 @@
           </div>
           <div class="avail-cal-grid" id="avail-cal-grid"></div>
           <div id="avail-override-panel-wrap"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-platform-settings">
+        <div class="panel-title">Platform Settings</div>
+        <div class="panel-desc">Control feature flags and platform-wide configuration.</div>
+
+        <div style="background:var(--bg-3);border:0.5px solid var(--border);border-radius:6px;padding:1.25rem 1.5rem;margin-top:1.25rem;max-width:520px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text);margin-bottom:4px;">Premium Tier Visible</div>
+              <div style="font-size:12px;color:var(--text-muted);font-weight:300;line-height:1.55;">Show the Premium upgrade card and credit UI to members on the Membership page.</div>
+            </div>
+            <button id="ps-premium-toggle" style="flex-shrink:0;width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;background:var(--border-mid);transition:background 0.2s;" aria-label="Toggle premium visibility">
+              <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left 0.2s;display:block;" id="ps-premium-toggle-knob"></span>
+            </button>
+          </div>
+          <div style="margin-top:0.5rem;font-size:11px;color:var(--text-dim);" id="ps-premium-status"></div>
+        </div>
+
+        <div style="margin-top:1.25rem;max-width:520px;" id="ps-credit-section">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.75rem;">Member Credits</div>
+          <div style="background:var(--bg-3);border:0.5px solid var(--border);border-radius:6px;padding:1rem 1.25rem;">
+            <div style="font-size:13px;color:var(--text-muted);font-weight:300;line-height:1.6;margin-bottom:0.75rem;">Grant or manage session credits for Premium members. Credits are normally issued automatically via the billing webhook.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              <div style="flex:1;min-width:180px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Member User ID</div>
+                <input type="text" id="ps-credit-member-id" placeholder="User ID (UUID)…" style="width:100%;background:var(--bg-4);border:0.5px solid var(--border-mid);border-radius:3px;padding:8px 10px;color:var(--text);font-family:'Raleway',sans-serif;font-size:12px;">
+              </div>
+              <button class="action-btn primary" id="ps-grant-credit-btn" onclick="window.grantCredit()" style="white-space:nowrap;">Grant Credit</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:0.5rem;">Grants an unused credit for the current billing month. Skips silently if one already exists.</div>
+            <div id="ps-credit-msg" style="font-size:12px;min-height:16px;margin-top:0.5rem;"></div>
+          </div>
         </div>
       </div>
 
@@ -6229,6 +6270,68 @@
     }
     await renderOverrideCalendar(availCurrentYear, availCurrentMonth);
     showToast('Override removed.');
+  };
+
+  // ── PLATFORM SETTINGS ──────────────────────────────────────────────────────
+  let psLoaded = false;
+
+  window.initPlatformSettings = async function() {
+    if (psLoaded) return;
+    psLoaded = true;
+
+    const toggle = document.getElementById('ps-premium-toggle');
+    const knob = document.getElementById('ps-premium-toggle-knob');
+    const statusEl = document.getElementById('ps-premium-status');
+
+    async function loadPremiumVisible() {
+      const { data } = await sbClient
+        .from('platform_settings').select('value').eq('key', 'premium_visible').maybeSingle();
+      const isOn = data?.value === 'true';
+      toggle.style.background = isOn ? 'var(--gold)' : 'var(--border-mid)';
+      knob.style.left = isOn ? '23px' : '3px';
+      statusEl.textContent = isOn ? 'Enabled — Premium upgrade card visible to members.' : 'Disabled — Premium UI hidden from members.';
+      statusEl.style.color = isOn ? 'var(--gold)' : 'var(--text-dim)';
+    }
+
+    await loadPremiumVisible();
+
+    toggle.addEventListener('click', async () => {
+      const { data: current } = await sbClient
+        .from('platform_settings').select('value').eq('key', 'premium_visible').maybeSingle();
+      const newVal = current?.value === 'true' ? 'false' : 'true';
+      await sbClient.from('platform_settings')
+        .upsert({ key: 'premium_visible', value: newVal }, { onConflict: 'key' });
+      await loadPremiumVisible();
+      showToast('Platform settings saved.');
+    });
+  };
+
+  window.grantCredit = async function() {
+    const memberId = document.getElementById('ps-credit-member-id').value.trim();
+    const msgEl = document.getElementById('ps-credit-msg');
+    const btn = document.getElementById('ps-grant-credit-btn');
+    msgEl.textContent = '';
+    if (!memberId) { msgEl.textContent = 'Enter a member user ID.'; msgEl.style.color = 'var(--red)'; return; }
+
+    btn.disabled = true;
+    const today = new Date();
+    const billingPeriodStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+
+    const { error } = await sbClient.from('session_credits')
+      .upsert(
+        { member_id: memberId, billing_period_start: billingPeriodStart, used: false, used_order_id: null },
+        { onConflict: 'member_id,billing_period_start', ignoreDuplicates: true }
+      );
+
+    btn.disabled = false;
+    if (error) {
+      msgEl.textContent = 'Error: ' + (error.message || 'Could not grant credit.');
+      msgEl.style.color = 'var(--red)';
+    } else {
+      msgEl.textContent = 'Credit granted (or already existed for this period).';
+      msgEl.style.color = 'var(--green)';
+      document.getElementById('ps-credit-member-id').value = '';
+    }
   };
 </script>
 </body>

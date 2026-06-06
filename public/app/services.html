@@ -544,6 +544,7 @@
   let sessionDuration = 60;
   let sessionPrice = 6000;
   let usingCredit = false;
+  let selectedCreditId = null;
   let bookingCalYear = new Date().getFullYear();
   let bookingCalMonth = new Date().getMonth();
   let bookingAvailMap = {};
@@ -1413,6 +1414,7 @@
     sessionDuration = 60;
     sessionPrice = 6000;
     usingCredit = false;
+    selectedCreditId = null;
     bookingCalYear = new Date().getFullYear();
     bookingCalMonth = new Date().getMonth();
     bookingCurrentStep = premiumEnabled ? 1 : 2;
@@ -1437,6 +1439,14 @@
   function renderStep1(body) {
     body.innerHTML = '<div class="bk-loading">Checking your credits…</div>';
     (async () => {
+      const { data: settingRow } = await supabase
+        .from('platform_settings').select('value').eq('key', 'premium_visible').maybeSingle();
+      if (settingRow?.value !== 'true') {
+        sessionDuration = 60; sessionPrice = 6000; usingCredit = false;
+        bookingCurrentStep = 2;
+        await renderBookingStep(2);
+        return;
+      }
       const today = new Date();
       const billingPeriodStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
       const { data: credits } = await supabase
@@ -1720,24 +1730,107 @@
         </label>
       </div>
       <div class="bk-error" id="bk-error"></div>
-      <div class="modal-actions">
-        <button class="btn-checkout" id="bk-submit-btn" disabled>Proceed to Checkout →</button>
-      </div>`;
+      <div id="bk-action-area"><div class="bk-loading" style="padding:0.5rem 0;">Loading…</div></div>`;
 
     const goalsEl = document.getElementById('bk-goals');
     const repEl = document.getElementById('bk-repertoire');
     const focusEl = document.getElementById('bk-focus');
     const policyEl = document.getElementById('bk-policy-check');
-    const submitBtn = document.getElementById('bk-submit-btn');
 
-    function checkValid() {
-      submitBtn.disabled = !(goalsEl.value.trim() && repEl.value.trim() && focusEl.value.trim() && policyEl.checked);
+    function isFormValid() {
+      return !!(goalsEl.value.trim() && repEl.value.trim() && focusEl.value.trim() && policyEl.checked);
     }
-    goalsEl.addEventListener('input', () => { document.getElementById('bk-goals-count').textContent = goalsEl.value.length; checkValid(); });
-    repEl.addEventListener('input', () => { document.getElementById('bk-rep-count').textContent = repEl.value.length; checkValid(); });
-    focusEl.addEventListener('input', () => { document.getElementById('bk-focus-count').textContent = focusEl.value.length; checkValid(); });
-    policyEl.addEventListener('change', checkValid);
-    submitBtn.addEventListener('click', submitBooking);
+    function recheckValid() {
+      const btn = document.getElementById('bk-submit-btn');
+      if (btn) btn.disabled = !isFormValid();
+    }
+    goalsEl.addEventListener('input', () => { document.getElementById('bk-goals-count').textContent = goalsEl.value.length; recheckValid(); });
+    repEl.addEventListener('input', () => { document.getElementById('bk-rep-count').textContent = repEl.value.length; recheckValid(); });
+    focusEl.addEventListener('input', () => { document.getElementById('bk-focus-count').textContent = focusEl.value.length; recheckValid(); });
+    policyEl.addEventListener('change', recheckValid);
+
+    // Async: load credit option or show checkout button
+    (async () => {
+      const actionArea = document.getElementById('bk-action-area');
+      if (!actionArea) return;
+
+      let availableCredit = null;
+      if (!usingCredit) {
+        const premiumEnabled = (window.__ENV__?.PREMIUM_ENABLED || 'false') === 'true';
+        if (premiumEnabled) {
+          const { data: settingRow } = await supabase
+            .from('platform_settings').select('value').eq('key', 'premium_visible').maybeSingle();
+          if (settingRow?.value === 'true') {
+            const { data: credits } = await supabase
+              .from('session_credits').select('id')
+              .eq('member_id', currentUser.id).eq('used', false)
+              .order('billing_period_start', { ascending: true }).limit(1);
+            if (credits?.length) availableCredit = credits[0];
+          }
+        }
+      }
+
+      if (availableCredit) {
+        actionArea.innerHTML = `
+          <div style="background:var(--gold-dim);border:0.5px solid var(--border-gold);border-radius:6px;padding:1.25rem;margin-bottom:0.5rem;">
+            <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.4rem;">Monthly Credit Available</div>
+            <div style="font-size:13px;color:var(--text-muted);font-weight:300;line-height:1.6;margin-bottom:0.75rem;">You have 1 session credit available. Use it for this booking?</div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+              <button class="btn-checkout" id="bk-use-credit-btn" style="padding:10px 20px;font-size:10px;">Use my credit</button>
+              <button id="bk-pay-card-btn" style="background:none;border:0.5px solid var(--border-mid);color:var(--text-muted);padding:10px 16px;border-radius:2px;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;font-family:'Raleway',sans-serif;cursor:pointer;">Pay with card instead</button>
+            </div>
+          </div>`;
+        document.getElementById('bk-use-credit-btn').addEventListener('click', () => {
+          if (!isFormValid()) {
+            document.getElementById('bk-error').textContent = 'Please fill in all required fields and agree to the cancellation policy.';
+            return;
+          }
+          submitBookingWithCredit(availableCredit.id);
+        });
+        document.getElementById('bk-pay-card-btn').addEventListener('click', () => {
+          actionArea.innerHTML = `<div class="modal-actions"><button class="btn-checkout" id="bk-submit-btn" ${isFormValid() ? '' : 'disabled'}>Proceed to Checkout →</button></div>`;
+          document.getElementById('bk-submit-btn').addEventListener('click', submitBooking);
+        });
+      } else {
+        actionArea.innerHTML = `<div class="modal-actions"><button class="btn-checkout" id="bk-submit-btn" ${isFormValid() ? '' : 'disabled'}>Proceed to Checkout →</button></div>`;
+        document.getElementById('bk-submit-btn').addEventListener('click', submitBooking);
+      }
+    })();
+  }
+
+  async function submitBookingWithCredit(creditId) {
+    const errEl = document.getElementById('bk-error');
+    const btn = document.getElementById('bk-use-credit-btn');
+    errEl.textContent = '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Booking…'; }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const creditSlotEnd = new Date(new Date(selectedSlot.start).getTime() + 30 * 60 * 1000).toISOString();
+      const res = await fetch('/api/sessions/createBooking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          serviceId: VIRTUAL_SESSION_ID,
+          duration: 30,
+          slotStart: selectedSlot.start,
+          slotEnd: creditSlotEnd,
+          goals: document.getElementById('bk-goals').value.trim(),
+          repertoire: document.getElementById('bk-repertoire').value.trim(),
+          focusAreas: document.getElementById('bk-focus').value.trim(),
+          useCreditId: creditId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Could not complete booking. Please try again.';
+        if (btn) { btn.disabled = false; btn.textContent = 'Use my credit'; }
+        return;
+      }
+      window.location.href = '/app/checkout-success.html?type=session';
+    } catch {
+      errEl.textContent = 'Connection error. Please try again.';
+      if (btn) { btn.disabled = false; btn.textContent = 'Use my credit'; }
+    }
   }
 
   async function submitBooking() {

@@ -76,6 +76,13 @@ export default async function handler(req, res) {
         const subscription = event.data.object;
         console.log('[webhook] subscription.updated sub_id:', subscription.id);
         console.log('[webhook] cancel_at_period_end:', subscription.cancel_at_period_end);
+
+        const priceId = subscription.items?.data?.[0]?.price?.id;
+        let planPatch = {};
+        if (priceId === process.env.STRIPE_FOUNDING_PRICE_ID) planPatch = { plan: 'founding' };
+        else if (priceId === process.env.STRIPE_STANDARD_PRICE_ID) planPatch = { plan: 'standard' };
+        else if (priceId === process.env.STRIPE_PREMIUM_PRICE_ID) planPatch = { plan: 'premium' };
+
         if (subscription.cancel_at_period_end) {
           const patchResult = await supabaseRequest(
             'PATCH',
@@ -85,6 +92,7 @@ export default async function handler(req, res) {
               cancel_at: subscription.cancel_at
                 ? new Date(subscription.cancel_at * 1000).toISOString()
                 : null,
+              ...planPatch,
             }
           );
           console.log('[webhook] patch response:', JSON.stringify(patchResult));
@@ -92,7 +100,7 @@ export default async function handler(req, res) {
           const patchResult = await supabaseRequest(
             'PATCH',
             `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}`,
-            { status: 'active', cancel_at: null }
+            { status: 'active', cancel_at: null, ...planPatch }
           );
           console.log('[webhook] patch response:', JSON.stringify(patchResult));
         }
@@ -105,6 +113,33 @@ export default async function handler(req, res) {
           'PATCH',
           `/rest/v1/memberships?stripe_subscription_id=eq.${subscription.id}`,
           { status: 'cancelled' }
+        );
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+        if (!invoice.subscription) break;
+
+        const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+        const priceId = subscription.items?.data?.[0]?.price?.id;
+        if (priceId !== process.env.STRIPE_PREMIUM_PRICE_ID) break;
+
+        const { data: memberships } = await supabaseRequest(
+          'GET',
+          `/rest/v1/memberships?stripe_customer_id=eq.${invoice.customer}&select=user_id&limit=1`
+        );
+        const memberId = memberships?.[0]?.user_id;
+        if (!memberId) break;
+
+        const periodStart = new Date(invoice.period_start * 1000);
+        const billingPeriodStart = `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, '0')}-01`;
+
+        await supabaseRequest(
+          'POST',
+          '/rest/v1/session_credits?on_conflict=member_id,billing_period_start',
+          { member_id: memberId, billing_period_start: billingPeriodStart, used: false, used_order_id: null },
+          { 'Prefer': 'resolution=ignore-duplicates,return=representation' }
         );
         break;
       }
