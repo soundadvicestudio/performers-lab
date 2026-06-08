@@ -787,7 +787,7 @@
         <button class="btn-ghost" id="btn-book-session">Book a Session</button>
       </div>
     `;
-    card.querySelector('#btn-book-session').addEventListener('click', () => openBookingModal());
+    card.querySelector('#btn-book-session').addEventListener('click', () => openBookingModal(service.id));
     wrap.appendChild(card);
   }
 
@@ -1421,6 +1421,7 @@
 
     const deliverableGrid = document.getElementById('deliverable-grid');
     for (const service of (services || [])) {
+      if (service.id === CREDIT_SERVICE_ID) continue;
       if (service.type === 'deliverable') deliverableGrid.appendChild(renderDeliverableCard(service));
       else if (service.type === 'virtual_session') renderCoachingCard(service);
       else if (service.type === 'local') renderStudioCard(service);
@@ -1481,7 +1482,15 @@
     document.body.style.overflow = '';
   }
 
-  function openBookingModal() {
+  function openBookingModal(serviceId) {
+    if (serviceId === CREDIT_SERVICE_ID) {
+      if (availableCredit) {
+        window.openCreditBookingModal();
+      } else {
+        ordShowToast('This session requires a Premium session credit. Visit your membership page to upgrade.');
+      }
+      return;
+    }
     creditBookingMode = false;
     selectedDate = null;
     selectedSlot = null;
